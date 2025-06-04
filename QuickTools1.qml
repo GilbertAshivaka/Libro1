@@ -229,7 +229,7 @@ Rectangle{
                 }
 
                 onClicked: {
-                    CustomComponentLoader.customCreateComponent(issueBook,"IssueBookSearchList", mainPageContainer)
+                    CustomComponentLoader.customCreateComponent(issueBook,"IssueBookSearchList", mainPageContainer)  
                 }
             }
             Component.onCompleted: {

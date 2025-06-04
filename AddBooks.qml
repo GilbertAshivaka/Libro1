@@ -1,5 +1,6 @@
 import QtQuick
-import QtQuick.Controls
+import QtQuick.Controls.Windows
+import com.bookmanager 1.0
 
 Rectangle {
     id: addBooksContainer
@@ -9,6 +10,19 @@ Rectangle {
     border.color: "#CDCACA"
 
     signal closeClicked()
+
+    //the book manager class for adding and removing books
+    BookManager{
+        id: bookManager
+
+        onErrorOccured: (error) => {
+                            console.log(error)
+                        }
+
+        onBookAdded: {
+            console.log("Book added successfully!")
+        }
+    }
 
     Rectangle{
         id: topItemsContainer
@@ -47,7 +61,7 @@ Rectangle {
                     id: back
                     anchors.fill: parent
                     fillMode: Image.PreserveAspectFit
-                    source: "qrc:Libro1/assets/backArrow.png"
+                    source: "assets/backArrow.png"
                 }
             }
 
@@ -136,7 +150,7 @@ Rectangle {
                     id: coverImg
                     anchors.fill: parent
                     fillMode: Image.PreserveAspectFit
-                    source: "qrc:Libro1/assets/stack-of-books.png"
+                    source: "assets/stack-of-books.png"
                 }
             }
 
@@ -180,7 +194,7 @@ Rectangle {
             Rectangle{
                 id: metadataContainer
                 width: parent.width/2
-                height: parent.height/2
+                height: Math.min(260, parent.height/2)
                 anchors{
                     left: metadataTxtRect.left
                     top: metadataTxtRect.bottom
@@ -215,7 +229,7 @@ Rectangle {
                 }
 
                 CustomTextField{
-                    id: bookNumber
+                    id: callNumber
                     width: parent.width/3
                     height: 40
                     anchors{
@@ -231,8 +245,8 @@ Rectangle {
                     id: bookPublisher
                     height: 40
                     anchors{
-                        left: bookNumber.right
-                        top: bookNumber.top
+                        left: callNumber.right
+                        top: callNumber.top
                         leftMargin: 5
                         right: bookTitle.right
                         rightMargin: 5
@@ -241,7 +255,7 @@ Rectangle {
                 }
 
                 CustomTextField{
-                    id: bookEdition
+                    id: isbn
                     height: 40
                     anchors{
                         left: bookPublisher.right
@@ -250,20 +264,35 @@ Rectangle {
                         right: parent.right
                         rightMargin: 5
                     }
-                    placeholderText: "Edition"
+                    placeholderText: "ISBN"
                 }
 
+                //make it readOnly so that it's contents will be decided by the generateBarcode function
                 CustomTextField{
-                    id: bookVolume
+                    id: barcode
                     width: parent.width/3
                     height: 40
                     anchors{
                         left: parent.left
-                        top: bookEdition.bottom
+                        top: isbn.bottom
                         leftMargin: 5
                         topMargin: 5
                     }
-                    placeholderText: "Volume"
+                    readOnly: true
+                    placeholderText: "Barcode"
+                }
+
+                CustomTextField{
+                    id: yearPublished
+                    width: parent.width/3
+                    height: 40
+                    anchors{
+                        left: barcode.right
+                        top: isbn.bottom
+                        leftMargin: 5
+                        topMargin: 5
+                    }
+                    placeholderText: "Year Published"
                 }
 
                 Rectangle{
@@ -273,7 +302,7 @@ Rectangle {
                     color: "transparent"
 
                     anchors{
-                        top: bookVolume.bottom
+                        top: barcode.bottom
                         leftMargin: 5
                         topMargin: 5
                     }
@@ -288,24 +317,128 @@ Rectangle {
                     }
                 }
 
-                CustomTxtInput{
-                    id: shelfNumber
+                Rectangle{
+                    id: shelfNumberRect
+                    radius: 4
+                    width: (parent.width/2) - 10
+                    height: 40
+                    border.color: shelfNumber.activeFocus ? "#399ED9" : "transparent" //"#D2D2D2"
+                    property string placeHolderText: ""
+                    color: "#E0E0E0" //"#CBCECE"
+                    border.width: 2
+
                     anchors{
                         left: locationTxtRect.left
                         top: locationTxtRect.bottom
                         leftMargin: 5
                     }
-                    placeHolderText: "Shelf Number"
+
+                    MouseArea{
+                        id: shelfMA
+                        anchors.fill: parent
+                        cursorShape: "IBeamCursor"
+
+                        TextInput{
+                            id: shelfNumber
+                            clip: true
+                            anchors{
+                                right: parent.right
+                                rightMargin: 5
+                                top: parent.top
+                                bottom: parent.bottom
+                                left: parent.left
+                                leftMargin: 5
+                            }
+
+                            verticalAlignment: Text.AlignVCenter
+                            font.pixelSize: 16
+//                            validator: RegularExpressionValidator {
+//                                // Regular expression to validate only letters and spaces
+//                                regularExpression: /^[a-zA-Z\s]+$/
+//                            }
+                        }
+                    }
+
+                    Text{
+                        id: shelfTextInputPlaceHolder
+                        visible: shelfNumber.text === ""
+                        color: "#585757"
+                        text: "Shelf number"
+                        anchors{
+                            left: parent.left
+                            leftMargin: 5
+                            verticalCenter: parent.verticalCenter
+                        }
+                        font.pixelSize: 16
+                    }
                 }
 
-                CustomTxtInput{
-                    id: description
+                CustomTextField{
+                    id: language
+                    width: parent.width/3
+                    height: 40
                     anchors{
-                        top: shelfNumber.top
-                        left: shelfNumber.right
+                        left: locationTxtRect.left
+                        top: shelfNumberRect.bottom
+                        topMargin: 20
+                    }
+                    placeholderText: "Language"
+                }
+
+                Rectangle{
+                    id: descriptionRect
+                    radius: 4
+                    width: (parent.width/2) - 10
+                    height: 40
+                    border.color: description.activeFocus ? "#399ED9" : "transparent" //"#D2D2D2"
+                    property string placeHolderText: ""
+                    color: "#E0E0E0" //"#CBCECE"
+                    border.width: 2
+
+                    anchors{
+                        top: shelfNumberRect.top
+                        left: shelfNumberRect.right
                         leftMargin: 10
                     }
-                    placeHolderText: "Description"
+
+                    MouseArea{
+                        id: descriptionMA
+                        anchors.fill: parent
+                        cursorShape: "IBeamCursor"
+
+                        TextInput{
+                            id: description
+                            clip: true
+                            anchors{
+                                right: parent.right
+                                rightMargin: 5
+                                top: parent.top
+                                bottom: parent.bottom
+                                left: parent.left
+                                leftMargin: 5
+                            }
+
+                            verticalAlignment: Text.AlignVCenter
+                            font.pixelSize: 16
+//                            validator: RegularExpressionValidator {
+//                                // Regular expression to validate only letters and spaces
+//                                regularExpression: /^[a-zA-Z\s]+$/
+//                            }
+                        }
+                    }
+
+                    Text{
+                        id: descriptionTextInputPlaceHolder
+                        visible: description.text === ""
+                        color: "#585757"
+                        text: "Description"
+                        anchors{
+                            left: parent.left
+                            leftMargin: 5
+                            verticalCenter: parent.verticalCenter
+                        }
+                        font.pixelSize: 16
+                    }
                 }
             }
 
@@ -385,11 +518,12 @@ Rectangle {
                         topMargin: 5
                     }
                     model: ListModel {
-                        ListElement { text: "Fiction" }
-                        ListElement { text: "Non-fiction" }
-                        ListElement { text: "Science Fiction" }
-                        ListElement { text: "Fantasy" }
-                        ListElement { text: "Mystery" }
+                        ListElement { text: "Mathematics" }
+                        ListElement { text: "History" }
+                        ListElement { text: "Biology" }
+                        ListElement { text: "Computer Science" }
+                        ListElement { text: "Literature" }
+                        ListElement { text: "Religous Studies" }
                     }
                     Keys.onReturnPressed: {
                         var newText = subjectComboBox.editText
@@ -397,7 +531,7 @@ Rectangle {
                         if (newText && !containsGenre(newText)) {
                             console.log("Adding new Subject:", newText)
                             subjectComboBox.model.append({"text": newText})
-                            subjectComboBox.currentText = newText
+                            subjectComboBox.currentIndex = subjectComboBox.count - 1
                         } else {
                             console.log("Subject already exists or invalid:", newText)
                         }
@@ -411,6 +545,7 @@ Rectangle {
                         }
                         return false
                     }
+
                 }
 
                 Label{
@@ -446,6 +581,9 @@ Rectangle {
                         ListElement { text: "Science Fiction" }
                         ListElement { text: "Fantasy" }
                         ListElement { text: "Mystery" }
+                        ListElement { text: "Biography" }
+                        ListElement { text: "Academic" }
+                        ListElement { text: "Reference" }
                     }
                     Keys.onReturnPressed: {
                         var newText = genreComboBox.editText
@@ -453,7 +591,7 @@ Rectangle {
                         if (newText && !containsGenre(newText)) {
                             console.log("Adding new genre:", newText)
                             genreComboBox.model.append({"text": newText})
-                            genreComboBox.currentText = newText
+                            genreComboBox.currentIndex = genreComboBox.count -1
                         } else {
                             console.log("Genre already exists or invalid:", newText)
                         }
@@ -560,7 +698,7 @@ Rectangle {
                     anchors{
                         right: parent.right
                         top: acquisitionMethodComboBox.bottom
-                        topMargin: 20
+                        topMargin: 40
 //                        rightMargin: 10
                     }
                     defaultColor: "#399ED9"
@@ -568,6 +706,23 @@ Rectangle {
                     text: "Add"
 
                     onClicked: {
+                        barcode.text = generateBarcode(subjectComboBox.currentText)
+                        console.log(shelfNumber.text)
+                        allBooksList.addBook(bookTitle.text,
+                                            bookAuthor.text,
+                                            callNumber.text,
+                                            bookPublisher.text,
+                                            isbn.text,
+                                            barcode.text,
+                                            yearPublished.text,
+                                            shelfNumber.text,
+                                            description.text,
+                                            language.text,
+                                            subjectComboBox.currentText,
+                                            genreComboBox.currentText,
+                                            bookValue.text,
+                                            acquisitionMethodComboBox.currentText
+                                            )
                     }
                 }
 
@@ -580,37 +735,29 @@ Rectangle {
                     }
                     text: "Cancel"
                     defaultColor: "#E0E0E0"
+                    onClicked: {
+
+                    }
                 }
             }
-
-//            CustomButton{
-//                id: closeBtn
-//                anchors{
-//                    right: parent.right
-//                    top: cartegoryRect.bottom
-//                    topMargin: 20
-//                    rightMargin: 10
-//                }
-//                defaultColor: "#399ED9"
-//                hoveredColor: "#399ED9"
-//                text: "Add"
-
-//                onClicked: {
-//                }
-//            }
-
-//            CustomButton{
-//                id: cancelButton
-//                anchors{
-//                    right: closeBtn.left
-//                    rightMargin: 7
-//                    top: closeBtn.top
-//                }
-//                text: "Cancel"
-//                defaultColor: "#E0E0E0"
-//            }
         }
     }
-}
 
+    function generateBarcode(category = "") {
+        // use the first two characters of category, or default to "BC"
+        const prefix = category ? category.substring(0, 2).toUpperCase() : "BC";
+
+        //get current date in YYDDMM format
+        const now = new Date();
+        const year = now.getFullYear().toString().slice(-2);
+        const month = (now.getMonth() + 1).toString().padStart(2, '0');
+        const day = now.getDate().toString().padStart(2, '0');
+        const timestamp = year + month + day;
+
+        // Generate random 6-digit number
+        const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+
+        return prefix + timestamp + random;
+    }
+}
 

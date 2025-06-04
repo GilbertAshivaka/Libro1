@@ -1,5 +1,8 @@
 import QtQuick
 import QtQuick.Controls
+import "DynamicComponentLoader.js" as ComponentLoader
+import com.allbookslistmodel 1.0
+import com.categorylist 1.0
 
 Rectangle {
     id: allBooks
@@ -7,9 +10,20 @@ Rectangle {
     width: parent.width //600
     height: parent.height //400
     color: "#FBFBFB"
-//    title: "Library Management System"
 
-//    property int btnWidth: width* .87
+    property var addNewBook: null
+
+    property int itemsPerPage: 100
+    property string category: "all"
+    property int totalPages: Math.ceil(allBooksList.getTotalBooksCount / itemsPerPage)
+    property int previousPage: 0
+    property int currentPage: 1
+    property int nextPage: 2
+
+    //categoryList
+    property var categoryList: CategoryList{}
+
+
     signal closeClicked()
 
     MouseArea{
@@ -19,80 +33,307 @@ Rectangle {
 
 
     Rectangle{
+        id: backRect
+        width: 40
+        height: 40
+        radius: 4
+        color: "#DDDDDD"
+        anchors{
+            left: parent.left
+            leftMargin: 10
+            top: parent.top
+            topMargin: 10
+        }
+
+        Rectangle{
+            id: backBtnRect
+            width: 20
+            height: 20
+            radius: 4
+            anchors.centerIn: parent
+            color: "transparent"
+
+            Image{
+                id: back
+                anchors.fill: parent
+                fillMode: Image.PreserveAspectFit
+                source: "assets/backArrow.png"
+            }
+        }
+
+        MouseArea{
+            id: backMA
+            anchors.fill: parent
+            hoverEnabled: true
+
+            onEntered: {
+                backRect.color = "#E8E3E4"
+            }
+            onExited: {
+                backRect.color = "#DDDDDD"
+            }
+
+            onClicked: {
+                allBooks.closeClicked()
+            }
+        }
+    }
+
+    Rectangle{
         id: cartegoryContainer
-        color: "#FBFBFB"
+        color: "#FBFBFB" //"#e2dada"
         width: parent.width* .21
+        radius: 8
+        border.width: 1
+        border.color: "#E0E0E0" //"#f0f0f0"
+        clip: true
         property int btnWidth: width* .87
 
         anchors{
             left: parent.left
-            top: parent.top
+            top: backRect.bottom
             bottom: parent.bottom
+            margins: 10
         }
 
         Rectangle{
-            id: cartegories
+            id: categoriesLabelRect
             height: 40
             width: cartegoryContainer.btnWidth
             anchors{
                 top: parent.top
-                topMargin: 10
+                topMargin: 16
                 left: parent.left
-//                right: parent.right
                 leftMargin: 5
             }
+
             color: "transparent"
             radius: 4
+
             Label{
-                id: quickActionsTxt
-                anchors.left: parent.left
-                anchors.leftMargin: 5
-                text: "Quick Actions"
+                id: categoriesTxt
+                width: parent.width
+                anchors{
+                    left: parent.left
+                    leftMargin: 5
+                    verticalCenter: parent.verticalCenter
+                }
+
+                text: " Categories and Quick Actions"
                 verticalAlignment: Text.AlignVCenter
-    //                verticalCenter: parent.verticalCenter
                 font.bold: true
+                elide: "ElideRight"
+                maximumLineCount: 1
             }
         }
 
-        CustomButton{
-            id: homeBtn
-            text: qsTr("English")
-            height: 40
+        ListView{
+            id: categoriesListView
+            height: parent.height * 0.40
+            clip: true
+
+            ScrollBar.vertical: ScrollBar {
+                id: vbar
+                active: true
+                policy: ScrollBar.AlwaysOn
+                width: 6
+
+                contentItem: Rectangle {
+                    implicitWidth: 6
+                    radius: width / 2
+                    color: vbar.pressed ? "#818181" : "#c2c2c2"  // Darker when pressed
+                }
+                background: Rectangle {
+                    implicitWidth: 6
+                    radius: width / 2
+                    color: "#f0f0f0"  // Light background color
+                }
+            }
+
+            anchors{
+                top: categoriesLabelRect.bottom
+                left: parent.left
+                right: parent.right
+                margins: 5
+            }
+
+            model: categoryList.getCategories()
+            delegate: CustomButton{
+                text: modelData
+                width: cartegoryContainer.btnWidth
+                height: 50
+
+                onClicked: {
+                    pageTitle.text = text
+                    category = text
+                    resetPagination()
+                    fetchCurrentPageData()
+                }
+            }
+        }
+
+        Rectangle{
+            id: actionsLabelRect
+            height:40
             width: cartegoryContainer.btnWidth
             anchors{
-                top: cartegories.bottom
+                top: categoriesListView.bottom
+                topMargin: 16
                 left: parent.left
                 leftMargin: 5
-                topMargin: 10
             }
 
-            onClicked: {
+            color: "transparent"
+            radius: 4
 
+            Label{
+                id: quickActionsTxt
+                width: parent.width
+                anchors{
+                    left: parent.left
+                    leftMargin: 5
+                    verticalCenter: parent.verticalCenter
+                }
+
+                text: "Quick Actions"
+                verticalAlignment: Text.AlignVCenter
+                font.bold: true
+                elide: "ElideRight"
+                maximumLineCount: 1
             }
         }
 
+        //to show up when the height of the window gets too small
+        Rectangle {
+            id: shortcutsContainer
+            width: cartegoryContainer.btnWidth
+            height: 32
+            enabled: true
+            opacity: enabled ? 1 : 0.3
+            color: "transparent" //"white" //"#f0f0f0"
+            radius: 4
+            border.color: "#E0E0E0"
+            visible: allBooks.height < 630
+            anchors {
+                top: actionsLabelRect.bottom
+                left:actionsLabelRect.left
+                leftMargin: 5
+                topMargin: 5
+            }
+
+            // Calculate a reasonable size for icons based on container size
+            property real iconSize: Math.min(height * 0.64, width / 5)  // Ensure icons don't get too large
+
+            Row {
+                anchors {
+                    fill: parent
+                    // Use percentage-based margins instead of fixed pixels
+                    leftMargin: parent.width * 0.05
+                    rightMargin: parent.width * 0.05
+                    // Center vertically
+                    topMargin: (parent.height - height) / 2
+                    bottomMargin: (parent.height - height) / 2
+                }
+                spacing: (width - (shortcutsContainer.iconSize * 4)) / 3
+
+                Image {
+                    id: allBooksShortcut
+                    source: "assets/allBooksList.png"
+                    height: shortcutsContainer.iconSize
+                    width: height
+                    fillMode: Image.PreserveAspectFit
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: "PointingHandCursor"
+                        onClicked:{
+                            pageTitle.text = "All Books"
+                            category = "all"
+                            resetPagination()
+                            fetchCurrentPageData()
+                        }
+                    }
+                }
+
+                Image {
+                    id: addNewBookShortcut
+                    source: "assets/addNewBook.png"
+                    height: shortcutsContainer.iconSize
+                    width: height
+                    fillMode: Image.PreserveAspectFit
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: "PointingHandCursor"
+                        onClicked:{
+                            ComponentLoader.customCreateComponent(addNewBook, "AddBooks", mainContainer)
+                        }
+                    }
+                }
+
+                Image {
+                    id: advancedSearchShortcut
+                    source: "assets/advancedSearch.png"
+                    height: shortcutsContainer.iconSize
+                    width: height
+                    fillMode: Image.PreserveAspectFit
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: "PointingHandCursor"
+                        onClicked: {
+                        }
+                    }
+                }
+
+                Image {
+                    id: openSettingsShortcut
+                    source: "assets/openSettings.png"
+                    height: shortcutsContainer.iconSize
+                    width: height
+                    fillMode: Image.PreserveAspectFit
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: "PointingHandCursor"
+                        onClicked: {
+                        }
+                    }
+                }
+            }
+        }
 
         CustomButton{
             id: allBooksBtn
-            text: qsTr("Maths")
-            height: 40
+            text: qsTr("All Books")
+            height: 50
             width: cartegoryContainer.btnWidth
+            visible: !shortcutsContainer.visible
             anchors{
-                top: homeBtn.bottom
+                top: actionsLabelRect.bottom
                 left: parent.left
                 leftMargin: 5
                 topMargin: 5
             }
-            onClicked:{
 
+            onClicked:{
+                pageTitle.text = "All Books"
+                category = "all"
+                resetPagination()
+                fetchCurrentPageData()
             }
         }
 
         CustomButton{
-            id: pendingBtn
-            text: qsTr("History")
-            height: 40
+            id: action1Btn
+            text: qsTr("Add new book")
+            height: 50
             width: cartegoryContainer.btnWidth
+            visible: !shortcutsContainer.visible
             anchors{
                 top: allBooksBtn.bottom
                 left: parent.left
@@ -101,33 +342,51 @@ Rectangle {
             }
 
             onClicked:{
+                ComponentLoader.customCreateComponent(addNewBook, "AddBooks", mainContainer)
+            }
+        }
+
+        CustomButton{
+            id: advancedSearchBtn
+            text: qsTr("Advanced Search")
+            height: 50
+            width: cartegoryContainer.btnWidth
+            visible: !shortcutsContainer.visible
+            anchors{
+                top: action1Btn.bottom
+                left: parent.left
+                leftMargin: 5
+                topMargin: 5
+            }
+
+            onClicked:{
 
             }
         }
 
         CustomButton{
-            id: closeBtn
-            text: qsTr("Close")
-            height: 40
+            id: openSettingsBtn
+            text: qsTr("Open Settings")
+            height: 50
             width: cartegoryContainer.btnWidth
+            visible: !shortcutsContainer.visible
             anchors{
-                top: pendingBtn.bottom
+                top: advancedSearchBtn.bottom
                 left: parent.left
                 leftMargin: 5
                 topMargin: 5
             }
-            defaultColor: "#399ED9"
-            hoveredColor: "#399ED9"
 
             onClicked:{
-                allBooks.closeClicked()
+
             }
         }
     }
 
+
     Rectangle{
         id: pageTitleRect
-        height: 50
+        height: 40
         width: pageTitle.width
         color: "transparent"
         anchors{
@@ -165,8 +424,6 @@ Rectangle {
 
     ListView {
         id: listView
-//        width: parent.width
-//        height: parent.height
         clip: true
         anchors{
             top: pageTitleRect.bottom
@@ -177,32 +434,13 @@ Rectangle {
             right: parent.right
         }
 
-        model: ListModel {
-            ListElement {
-                title: "Artificial Intelligence: A Modern Approach"
-                author: "Stuart Russell and Peter Norvig"
-                iconSource: "assets/delegateBook.png"
-            }
-            ListElement {
-                title: "Pattern Recognition and Machine Learning"
-                author: "Christopher M. Bishop"
-                iconSource: "assets/delegateBook.png"
-            }
-            ListElement {
-                title: "Operating Systems: Three Easy Pieces"
-                author: "Remzi H. Arpaci-Dusseau and Andrea C. Arpaci-Dusseau"
-                iconSource: "assets/delegateBook.png"
-            }
-            ListElement {
-                title: "Computer Architecture: A Quantitative Approach"
-                author: "John L. Hennessy and David A. Patterson"
-                iconSource: "assets/delegateBook.png"
-            }
-            ListElement {
-                title: "Discrete Mathematics and Its Applications"
-                author: "Kenneth H. Rosen"
-                iconSource: "assets/delegateBook.png"
-            }
+        ScrollBar.vertical: ScrollBar {
+            active: true
+            policy: ScrollBar.AlwaysOn
+        }
+
+        model: AllBooksListModel{
+            list: allBooksList
         }
 
         delegate: Item {
@@ -215,7 +453,6 @@ Rectangle {
                 height: parent.height
                 color: "transparent"
                 anchors.left: parent.left
-//                anchors.leftMargin: 20
 
                 Row {
                     anchors.verticalCenter: parent.verticalCenter
@@ -223,7 +460,7 @@ Rectangle {
 
                     Image {
                         id: icon
-                        source: model.iconSource
+                        source: "assets/delegateBook.png"
                         width: 32
                         height: 32
                     }
@@ -292,6 +529,9 @@ Rectangle {
                         onExited: {
                             deleteIcon.source = "assets/deleteClosed.png"
                         }
+                        onClicked: {
+                            allBooksList.removeBook(model.callNumber)
+                        }
                     }
                 }
             }
@@ -307,5 +547,176 @@ Rectangle {
                 }
             }
         }
+    }
+
+    //navigation Rectangle
+    Rectangle {
+        id: navigationRect
+        width: 200
+        height: 50
+        radius: 8
+        border.color: "lightgray"
+        color: "white"
+        opacity: 0.9
+
+        // Initial position
+        x: Math.min(Math.max(0, parent.width - 230), parent.width - width)
+        y: Math.min(Math.max(0, parent.height - 80), parent.height - height)
+
+        // Ensure the rectangle stays within parent bounds when parent is resized
+        onXChanged: {
+            if (x < 0) x = 0
+            if (x > parent.width - width) x = parent.width - width
+        }
+        onYChanged: {
+            if (y < 0) y = 0
+            if (y > parent.height - height) y = parent.height - height
+        }
+
+        MouseArea {
+            id: navigationRectMA
+            anchors.fill: parent
+            drag {
+                target: parent
+                minimumX: 0
+                minimumY: 0
+                maximumX: parent.parent.width - parent.width
+                maximumY: parent.parent.height - parent.height
+                smoothed: true
+            }
+            onReleased: console.log("Rectangle moved to x:", parent.x, "y:", parent.y)
+        }
+
+        Image {
+            id: previousNavigator
+            width: 32
+            height: 32
+            source: enabled ? "assets/leftArrow.png" : "assets/leftChevron.png"
+            enabled: previousPage >0
+            anchors{
+                left: parent.left
+                leftMargin: 8
+                verticalCenter: parent.verticalCenter
+            }
+
+            MouseArea{
+                id: previousPageMA
+                anchors.fill: parent
+                onClicked: {
+                    if (currentPage > 1) {
+                        --currentPage
+                        --previousPage
+                        --nextPage
+                        fetchCurrentPageData()
+                    }
+                }
+            }
+        }
+
+        Text {
+            id: previousPageText
+            text: previousPage == 0 ? "" : previousPage
+            color: "gray"
+            font.pointSize: 11
+            anchors{
+                left: previousNavigator.right
+                leftMargin: 5
+                verticalCenter: parent.verticalCenter
+            }
+            verticalAlignment: Text.AlignVCenter
+        }
+
+        Image {
+            id: nextNavigator
+            width: 32
+            height: 32
+            source: enabled ? "assets/rightArrow.png" : "assets/rightChevron.png"
+            enabled: currentPage < totalPages
+            anchors{
+                right: parent.right
+                rightMargin: 8
+                verticalCenter: parent.verticalCenter
+            }
+
+            MouseArea{
+                id: nextPageMA
+                anchors.fill: parent
+                onClicked: {
+                    if (currentPage < totalPages) {
+                        ++currentPage
+                        ++previousPage
+                        ++nextPage
+                        fetchCurrentPageData()
+                    }
+                }
+            }
+        }
+
+        Text {
+            id: nextPageText
+            text: nextPage <= totalPages ? nextPage : ""
+            color: "gray"
+            font.pointSize: 11
+            anchors{
+                right: nextNavigator.left
+                rightMargin: 5
+                verticalCenter: parent.verticalCenter
+            }
+            verticalAlignment: Text.AlignVCenter
+        }
+
+        TextField {
+            id: pageInput
+            height: parent.height * 0.8
+            font.pointSize: 11
+            color: "red"
+            validator: IntValidator { bottom: 1; top: totalPages }
+            anchors {
+                left: previousPageText.right
+                leftMargin: 5
+                right: nextPageText.left
+                rightMargin: 5
+                verticalCenter: parent.verticalCenter
+            }
+            text: currentPage
+            horizontalAlignment: TextField.AlignHCenter
+            verticalAlignment: TextField.AlignVCenter
+
+            onAccepted: {
+                let newPage = parseInt(text)
+                if (newPage >= 1 && newPage <= totalPages) {
+                    currentPage = newPage
+                    previousPage = Math.max(0, newPage - 1)
+                    nextPage = Math.min(totalPages, newPage + 1)
+                    fetchCurrentPageData()
+                } else {
+                    text = currentPage  // Reset to valid value
+                }
+            }
+        }
+    }
+
+
+    function resetPagination() {
+        currentPage = 1
+        previousPage = 0
+        nextPage = 2
+    }
+
+    function fetchCurrentPageData() {
+        const offset = currentPage //* itemsPerPage
+        //        allUsersList.fetchUsers(currentUserType, offset, itemsPerPage)
+        allBooksList.fetchBooks(offset, itemsPerPage, category)
+    }
+
+
+
+    Component.onCompleted: {
+        //        allBooksList.fetchBooks(1, 100)
+        category = "all"
+        resetPagination()
+        fetchCurrentPageData()
+        totalPages= Math.ceil(allBooksList.getTotalBooksCount(category)/itemsPerPage)
+        console.log(totalPages)
     }
 }

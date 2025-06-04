@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import "DynamicComponentLoader.js" as CustomComponentLoader
+import com.issuedBooksListModel 1.0
 
 Rectangle {
     id: approved
@@ -129,7 +130,30 @@ Rectangle {
                 }
 
                 onClicked: {
+                    sortMenu.open()
+                }
+            }
 
+            Menu {
+                id: sortMenu
+                title: "Sort by: "
+                width: 160
+                y: sortRect.height
+                x: -sortMenu.width +sortRect.width //place top right corner at the bottom right corner of sortRect
+                enabled: emptyApprovedList.visible ? false : true
+
+                MenuItem {
+                    text: "Issue date: ASC"
+                    onClicked: {
+                        issuedBooksList.loadSortedIssuedBooks("ASC")
+                    }
+                }
+
+                MenuItem {
+                    text: "Issue date: DESC"
+                    onClicked: {
+                        issuedBooksList.loadSortedIssuedBooks("DESC")
+                    }
                 }
             }
         }
@@ -223,28 +247,106 @@ Rectangle {
                 MenuItem {
                     text: "Return"
                     onClicked: {
-                        removeSelectedBooks()
+                        issuedBooksList.returnSelectedBooks()
                     }
                 }
-                MenuItem {
-                    text: "Add to lost book"
-                }
+
                 MenuItem {
                     text: "Select all"
                     onClicked: {
-                        selectAll()
+                        issuedBooksList.selectAllBooks()
                     }
                 }
                 MenuItem {
                     text: "Deselect all"
                     onClicked: {
-                        deselectAll()
+                        issuedBooksList.deselectAllBooks()
                     }
                 }
                 MenuItem {
                     text: emptyApprovedList.visible ? "Hide empty page" : "Show empty page"
                     onClicked: {
                         emptyApprovedList.visible = !emptyApprovedList.visible
+                    }
+                }
+            }
+        }
+
+        Rectangle{
+            id: approvedSearchBox
+            width: approved.width < 680 ? 400* (parent.width/1080) : 400
+            height: 40
+            radius: 4
+            color: "transparent"
+            border.color: "#E0E0E0"
+            visible: approved.width > 325
+            anchors{
+                right: menuRect.left
+                rightMargin: 10
+                verticalCenter: menuRect.verticalCenter
+            }
+
+            Image {
+                id: searchBoxIcon
+                anchors{
+                    left: parent.left
+                    leftMargin: 15
+                    verticalCenter: parent.verticalCenter
+                }
+
+                height: parent.height *.45
+                fillMode: Image.PreserveAspectFit
+                source: "assets/searchIcon.png"
+
+                MouseArea{
+                    id: searchBoxMA
+                    anchors.fill: parent
+                    cursorShape: "PointingHandCursor"
+                    enabled: navigationTextInput.text !== ""
+                    onClicked: {
+
+                    }
+                }
+            }
+
+            Text{
+                id: searchBoxPlaceHolder
+                visible: navigationTextInput.text === ""
+                color: "#585757"
+                text: "Search issued books"
+                anchors{
+                    left: searchBoxIcon.right
+                    verticalCenter: parent.verticalCenter
+                    leftMargin: 20
+                }
+            }
+
+            MouseArea{
+                id: approvedSearchBoxMA
+                cursorShape: "IBeamCursor"
+                anchors{
+                    right: parent.right
+                    top: parent.top
+                    bottom: parent.bottom
+                    left: searchBoxIcon.right
+                    leftMargin: 20
+                }
+
+                TextInput{
+                    id: navigationTextInput
+                    clip: true
+                    anchors{
+                        right: parent.right
+                        rightMargin: 5
+                        top: parent.top
+                        bottom: parent.bottom
+                        left: parent.left
+                    }
+                    verticalAlignment: Text.AlignVCenter
+                    font.pixelSize: 11
+
+                    onTextChanged: {
+                        issuedBooksList.searchBooksInDatabase(navigationTextInput.text)
                     }
                 }
             }
@@ -364,42 +466,9 @@ Rectangle {
         anchors.bottom: parent.bottom
         clip: true
 
-        model: ListModel {
-            ListElement {
-                name: "Gilbert Ashivaka"
-                bookNumber: "23/NRW/2024"
-                issueDate: "01/01/2024"
-                status: "Pending"
-                isSelected: false
-            }
-            ListElement {
-                name: "John Doe"
-                bookNumber: "24/NRW/2024"
-                issueDate: "02/01/2024"
-                status: "Overdue"
-                isSelected: false
-            }
-            ListElement {
-                name: "Jane Doe"
-                bookNumber: "25/NRW/2024"
-                issueDate: "03/01/2024"
-                status: "Pending"
-                isSelected: false
-            }
-            ListElement {
-                name: "Mary Doen"
-                bookNumber: "26/NRW/2024"
-                issueDate: "04/01/2024"
-                status: "Pending"
-                isSelected: false
-            }
-            ListElement {
-                name: "Simon Dan"
-                bookNumber: "27/NRW/2024"
-                issueDate: "05/01/2024"
-                status: "Lost"
-                isSelected: false
-            }
+        model: IssuedBooksListModel{
+            id: issuedBooksListModel
+            list: issuedBooksList
         }
 
         delegate: Rectangle {
@@ -562,7 +631,7 @@ Rectangle {
     EmptyApprovedList{
         id: emptyApprovedList
         width: parent.width
-        visible: listView.count === 0 ? true : false
+        visible: false // issuedBooksListModel.rowCount() === 0 ? true : false
 
         anchors{
             top: approvedTitleRect.bottom
@@ -570,17 +639,36 @@ Rectangle {
         }
     }
 
-    function selectAll(){
-        for (var i = 0; i < listView.count; ++i) {
-            listView.model.setProperty(i, "isSelected", true)
+    Dialog {
+        id: errorDialog
+        title: "Error"
+        property alias text: errorLabel.text
+        modal: true
+        standardButtons: Dialog.Ok
+        anchors.centerIn: parent
+
+        Text {
+            id: errorLabel
+            color: "#8E8E8E"
         }
     }
 
-    function deselectAll(){
-        for (var i = 0; i < listView.count; ++i) {
-            listView.model.setProperty(i, "isSelected", false)
+    Connections{
+        target: issuedBooksList
+
+        function onErrorOccured(errorMsg){
+            errorDialog.title = "Error!"
+            errorDialog.text = errorMsg
+            errorDialog.open()
+        }
+
+        function onOperationSuccessful(successMsg){
+            errorDialog.title = "Success!"
+            errorDialog.text = successMsg
+            errorDialog.open()
         }
     }
+
 
     function removeSelectedBooks() {
         // Iterate from the end to avoid index issues when removing items
@@ -592,6 +680,10 @@ Rectangle {
         // Update menu item enabled state
 //        menu.items[2].enabled = listView.model.count > 0 && listView.model.some(book => !book.isSelected);
 //        menu.items[3].enabled = listView.model.some(book => book.isSelected);
+    }
+
+    Component.onCompleted:{
+        issuedBooksList.loadIssuedBooks()
     }
 
 }

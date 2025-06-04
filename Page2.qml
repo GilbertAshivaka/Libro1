@@ -57,7 +57,7 @@ Rectangle {
                 Text {
                     id: libraryName
                     anchors.verticalCenter: parent.verticalCenter
-                    text: qsTr("Libro library management system")
+                    text: qsTr("Libro Integrated Library Management System")
                     font.pointSize: 12
                     verticalAlignment: Text.AlignVCenter
                 }

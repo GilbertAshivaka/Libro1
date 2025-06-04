@@ -16,8 +16,6 @@ Rectangle{
 //    color: "#f4f4f4"
         property int btnWidth: width* .87
 
-
-
         property var addBooks: null
         property var quickTools: null
         property var addUser: null
@@ -25,6 +23,7 @@ Rectangle{
         property var allBooks: null
         property var issueBook: null
         property var pendingApprovals: null
+        property var allUsers: null
 
         function createAddUserPage(){
             if (addUser == null){
@@ -52,14 +51,14 @@ Rectangle{
         ScrollBar.vertical.policy: ScrollBar.AlwaysOn
         contentHeight: allBooksBtn.height + addBooktn.height + addUserBtn.height + quickActions.height +
                                addBooksBtn.height + cartegoryBtn.height + settingsBtn.height + logoutBtn.height + reportBtn.height +
-                               pendingApprovalsBtn.height + (10 * 5) + 10 // Add the space between items (5 units) for each item
+                               pendingApprovalsBtn.height + allUsersBtn.height + (10 * 6) + 10 // Add the space between items (5 units) for each item
 
 
 
         CustomButton{
             id: allBooksBtn
             text: qsTr("All books")
-            height: 40
+            height: 50
             width: buttonsRect.btnWidth
             anchors{
                 top: parent.top
@@ -78,7 +77,7 @@ Rectangle{
         CustomButton{
             id: addBooktn
             text: qsTr("Add book")
-            height: 40
+            height: 50
             width: buttonsRect.btnWidth
             anchors{
                 top: allBooksBtn.bottom
@@ -94,7 +93,7 @@ Rectangle{
         CustomButton{
             id: addUserBtn
             text: qsTr("Add User")
-            height: 40
+            height: 50
             width: buttonsRect.btnWidth
             anchors{
                 top: addBooktn.bottom
@@ -110,7 +109,7 @@ Rectangle{
 
         Rectangle{
             id: quickActions
-            height: 40
+            height: 50
             width: buttonsRect.btnWidth
             anchors{
                 top: addUserBtn.bottom
@@ -134,7 +133,7 @@ Rectangle{
         CustomButton{
             id: addBooksBtn
             text: qsTr("Add books")
-            height: 40
+            height: 50
             width: buttonsRect.btnWidth
             anchors{
                 top: quickActions.bottom
@@ -153,7 +152,7 @@ Rectangle{
         CustomButton{
             id: cartegoryBtn
             text: qsTr("Issue book")
-            height: 40
+            height: 50
             width: buttonsRect.btnWidth
             anchors{
                 top: addBooksBtn.bottom
@@ -171,7 +170,7 @@ Rectangle{
         CustomButton{
             id: settingsBtn
             text: qsTr("Settings")
-            height: 40
+            height: 50
             width: buttonsRect.btnWidth
             anchors{
                 top: cartegoryBtn.bottom
@@ -189,7 +188,7 @@ Rectangle{
         CustomButton{
             id: logoutBtn
             text: qsTr("Logout")
-            height: 40
+            height: 50
             width: buttonsRect.btnWidth
             anchors{
                 top: settingsBtn.bottom
@@ -202,7 +201,7 @@ Rectangle{
         CustomButton{
             id: pendingApprovalsBtn
             text: qsTr("Pending Approvals")
-            height: 40
+            height: 50
             width: buttonsRect.btnWidth
             anchors{
                 top: logoutBtn.bottom
@@ -220,7 +219,7 @@ Rectangle{
         CustomButton{
             id: reportBtn
             text: qsTr("Report")
-            height: 40
+            height: 50
             width: buttonsRect.btnWidth
             enabled: false
             anchors{
@@ -228,6 +227,23 @@ Rectangle{
                 left: parent.left
                 leftMargin: 5
                 topMargin: 5
+            }
+        }
+
+        CustomButton{
+            id: allUsersBtn
+            text: qsTr("All Users")
+            height: 50
+            width: buttonsRect.btnWidth
+            anchors{
+                top: reportBtn.bottom
+                left: parent.left
+                leftMargin: 5
+                topMargin: 5
+            }
+
+            onClicked: {
+                CustomComponentLoader.customCreateComponent(allUsers,"AllUsers", mainContainer)
             }
         }
     }

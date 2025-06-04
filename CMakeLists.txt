@@ -1,14 +1,22 @@
 cmake_minimum_required(VERSION 3.16)
-
 project(Libro1 VERSION 0.1 LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+
 
 find_package(Qt6 6.4 REQUIRED COMPONENTS Quick)
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Widgets)
+find_package(Qt6 6.4 REQUIRED COMPONENTS Core Gui Qml Widgets Sql Concurrent)
+find_package(Qt6 6.4 REQUIRED COMPONENTS QuickControls2 Multimedia)
 
 
 qt_standard_project_setup()
+set(CMAKE_AUTOMOC ON)
+
+# Add ZXing library
+add_subdirectory(zxing-cpp)
 
 qt_add_executable(appLibro1
     main.cpp
@@ -141,6 +149,35 @@ qt_add_qml_module(appLibro1
     QML_FILES ReportsUsersContainer.qml
     QML_FILES ReportsActivity.qml
     QML_FILES ReportsActivityContainer.qml
+    QML_FILES AllUsers.qml
+    QML_FILES ImportBooks.qml
+    SOURCES databasemanager.h databasemanager.cpp
+    SOURCES usermanager.h usermanager.cpp
+    SOURCES userimporter.h userimporter.cpp
+    SOURCES bookmanager.h bookmanager.cpp
+    SOURCES bookimporter.h bookimporter.cpp
+    SOURCES allbookslist.h allbookslist.cpp
+    SOURCES allbookslistmodel.h allbookslistmodel.cpp
+    SOURCES alluserslist.h alluserslist.cpp
+    SOURCES alluserslistmodel.h alluserslistmodel.cpp
+    SOURCES categorylist.h categorylist.cpp
+    RESOURCES assets/addNewBook.png assets/advancedSearch.png assets/allBooksList.png assets/leftChevron.png assets/openSettings.png assets/rightChevron.png
+    SOURCES barcodewriter.h barcodewriter.cpp
+    SOURCES barcodereader.h barcodereader.cpp
+    QML_FILES BarcodeMain.qml
+    QML_FILES BarcodeWriter.qml
+    QML_FILES ReadBarcode.qml
+    SOURCES issuebookslist.h issuebookslist.cpp
+    SOURCES issuebookslistmodel.h issuebookslistmodel.cpp
+    RESOURCES assets/barcodeScan.png
+    RESOURCES assets/reload.png
+    SOURCES issuedbookslist.h issuedbookslist.cpp
+    SOURCES issuedbookslistmodel.h issuedbookslistmodel.cpp
+)
+
+# Include directories for ZXing
+target_include_directories(appLibro1 PRIVATE
+    ${CMAKE_SOURCE_DIR}/zxing-cpp/core
 )
 
 
@@ -174,8 +211,16 @@ if(WIN32)
 endif()
 
 target_link_libraries(appLibro1
+    PRIVATE ZXing::ZXing
     PRIVATE Qt6::Quick
     PRIVATE Qt6::Widgets
+    PRIVATE Qt6::Sql
+    PRIVATE Qt6::Concurrent
+    PRIVATE Qt6::QuickControls2
+    PRIVATE Qt6::Core
+    PRIVATE Qt6::Gui
+    PRIVATE Qt6::Qml
+    PRIVATE Qt6::Multimedia
 )
 
 
