@@ -23,7 +23,7 @@ QVector<IssuedBookInfo> IssuedBooksList::getIssuedBooks() const
 
 bool IssuedBooksList::loadIssuedBooks()
 {
-    if (!db.isOpen()){
+    if (!db.open()){
         emit errorOccured("Database not open: " + db.lastError().text());
         qDebug() << "Database not open: " + db.lastError().text();
         return false;
@@ -321,13 +321,25 @@ bool IssuedBooksList::processBookReturn(const IssuedBookInfo &bookInfo)
 
 bool IssuedBooksList::updateBookAvailability(int bookId)
 {
+    if (!db.open()){
+        emit errorOccured("Failed to open database to update book availability.");
+        return false;
+    }
+
     QSqlQuery query(db);
 
     query.prepare("UPDATE books SET availability = 'Available', timesBorrowed = timesBorrowed + 1 WHERE bookID = ?");
     query.addBindValue(bookId);
 
+    qDebug() << "Book Id: " << bookId;
+
     if (!query.exec()){
         emit errorOccured("Error updating book availability: " + query.lastError().text());
+        return false;
+    }
+
+    if (query.numRowsAffected() == 0) {
+        emit errorOccured("No book found with bookID: " + QString::number(bookId));
         return false;
     }
 
@@ -352,7 +364,7 @@ bool IssuedBooksList::logReturnTransaction(const IssuedBookInfo &bookInfo, doubl
 {
     QSqlQuery query(db);
 
-    if (!db.isOpen()){
+    if (!db.open()){
         emit errorOccured("Database not open; " + query.lastError().text());
         return false;
     }
@@ -488,7 +500,7 @@ bool IssuedBooksList::addToLostBooks(const IssuedBookInfo &bookInfo)
 //lazy implementation of sort toggling
 bool IssuedBooksList::loadSortedIssuedBooks(const QString sortBy)
 {
-    if (!db.isOpen()){
+    if (!db.open()){
         emit errorOccured("Database not open: " + db.lastError().text());
         qDebug() << "Database not open: " + db.lastError().text();
         return false;
@@ -555,6 +567,11 @@ bool IssuedBooksList::loadSortedIssuedBooks(const QString sortBy)
     emit postModelReset();
     emit booksUpdated();
     return true;
+}
+
+int IssuedBooksList::getRowCount()
+{
+    return issuedBooks.size();
 }
 
 

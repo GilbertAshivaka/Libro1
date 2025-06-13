@@ -291,7 +291,7 @@ bool IssueBooksList::issueBook(int bookId, const QString &userNumber){
     }
 
     QSqlQuery upd(m_db);
-    upd.prepare("UPDATE books SET availability = 'Borrowed', timesBorrowed = timesBorrowed + 1 WHERE bookID = ?");
+    upd.prepare("UPDATE books SET availability = 'Borrowed', timesBorrowed = timesBorrowed+1 WHERE bookID = ?");
     upd.addBindValue(bookId);
     if (!upd.exec()){
         m_db.rollback();

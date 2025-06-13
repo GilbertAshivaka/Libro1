@@ -10,6 +10,8 @@ Rectangle {
     height: parent.height
     color: "#FBFBFB"
 
+    property int  rowCount: 0
+
     signal closeClicked()
 
     MouseArea{
@@ -247,7 +249,8 @@ Rectangle {
                 MenuItem {
                     text: "Return"
                     onClicked: {
-                        issuedBooksList.returnSelectedBooks()
+                        confirmDialog.open()
+                        // issuedBooksList.returnSelectedBooks() this function is now called on the popup
                     }
                 }
 
@@ -261,12 +264,6 @@ Rectangle {
                     text: "Deselect all"
                     onClicked: {
                         issuedBooksList.deselectAllBooks()
-                    }
-                }
-                MenuItem {
-                    text: emptyApprovedList.visible ? "Hide empty page" : "Show empty page"
-                    onClicked: {
-                        emptyApprovedList.visible = !emptyApprovedList.visible
                     }
                 }
             }
@@ -631,7 +628,7 @@ Rectangle {
     EmptyApprovedList{
         id: emptyApprovedList
         width: parent.width
-        visible: false // issuedBooksListModel.rowCount() === 0 ? true : false
+        visible: rowCount === 0 ? true : false
 
         anchors{
             top: approvedTitleRect.bottom
@@ -653,6 +650,28 @@ Rectangle {
         }
     }
 
+    Dialog {
+        id: confirmDialog
+        title: "Confirm"
+        property alias text: confirmLabel.text
+        modal: true
+        standardButtons: Dialog.Yes | Dialog.No
+        anchors.centerIn: parent
+
+        Text {
+            id: confirmLabel
+            color: "#8E8E8E"
+            text: "Are you sure you want to return selected books?"
+        }
+
+        onAccepted:{
+            issuedBooksList.returnSelectedBooks()
+        }
+        onRejected: {
+            close()
+        }
+    }
+
     Connections{
         target: issuedBooksList
 
@@ -667,23 +686,13 @@ Rectangle {
             errorDialog.text = successMsg
             errorDialog.open()
         }
-    }
 
-
-    function removeSelectedBooks() {
-        // Iterate from the end to avoid index issues when removing items
-        for (var i = listView.model.count - 1; i >= 0; i--) {
-            if (listView.model.get(i).isSelected) {
-                listView.model.remove(i);
-            }
+        function onBooksUpdated(){
+            rowCount = issuedBooksList.getRowCount()
         }
-        // Update menu item enabled state
-//        menu.items[2].enabled = listView.model.count > 0 && listView.model.some(book => !book.isSelected);
-//        menu.items[3].enabled = listView.model.some(book => book.isSelected);
     }
 
     Component.onCompleted:{
         issuedBooksList.loadIssuedBooks()
     }
-
 }

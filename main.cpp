@@ -14,6 +14,9 @@
 #include "alluserslistmodel.h"
 #include "bookimporter.h"
 #include "categorylist.h" //for the class to populate a model for the categories of the books
+#include "singlebookreturn.h"
+#include "inventorymanager.h"
+
 
 #include "issuebookslist.h"// for issuing books
 #include "issuebookslistmodel.h"
@@ -49,6 +52,9 @@ int main(int argc, char *argv[])
 
     qmlRegisterType<IssueBooksListModel>("com.issueBooksListModel", 1, 0, "IssueBooksListModel");
     qmlRegisterType<IssuedBooksListModel>("com.issuedBooksListModel", 1, 0, "IssuedBooksListModel");
+
+    qmlRegisterType<SingleBookReturn>("com.singleBookReturn", 1, 0, "SingleBookReturn");
+    qmlRegisterType<InventoryManager>("com.inventoryManager", 1, 0, "InventoryManager");
 
 
     qmlRegisterUncreatableType<AllBooksList>("AllBooksList", 1, 0, "AllBooksList",

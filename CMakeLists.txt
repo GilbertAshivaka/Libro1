@@ -173,6 +173,10 @@ qt_add_qml_module(appLibro1
     RESOURCES assets/reload.png
     SOURCES issuedbookslist.h issuedbookslist.cpp
     SOURCES issuedbookslistmodel.h issuedbookslistmodel.cpp
+    SOURCES singlebookreturn.h singlebookreturn.cpp
+    QML_FILES InventoryTracking.qml
+    SOURCES inventorymanager.h inventorymanager.cpp
+    RESOURCES assets/bell.png assets/settings.png
 )
 
 # Include directories for ZXing

@@ -107,6 +107,7 @@ bool AllBooksList::fetchBooks(int page, int pageSize, const QString &category = 
             );
         emit preBookAppended();
         books.append(book);
+        qDebug() << book.callNumber << " " << book.availability;
         emit postBookAppended();
     }
 

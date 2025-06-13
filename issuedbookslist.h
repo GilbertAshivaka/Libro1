@@ -46,6 +46,7 @@ public slots:
     bool searchBooksInDatabase(const QString &searchTerm);
 
     bool loadSortedIssuedBooks(const QString sortBy);
+    int getRowCount();
 
 signals:
     void preModelReset();

@@ -53,6 +53,7 @@ signals:
     void listChanged();
 private:
     IssuedBooksList* mList;
+    int rows;
 
 };
 

@@ -42,6 +42,8 @@ bool DatabaseManager::createDatabase()
         return false;
     }
 
+    QSqlQuery(db).exec("PRAGMA foreign_keys = ON;"); //ensure that the foreign keys are enforced
+
     QSqlQuery query(db);
 
 
@@ -116,10 +118,15 @@ bool DatabaseManager::createDatabase()
                     "condition TEXT DEFAULT 'Good')")) {
         emit errorOccured("Error creating the books table: " + query.lastError().text());
         return false;
-
     }
 
-    //Creating the issued books table
+    // // Drop and recreate issued_books with correct foreign key
+    // if (!query.exec("DROP TABLE IF EXISTS issued_books")) {
+    //     emit errorOccured("Error dropping issued_books table: " + query.lastError().text());
+    //     return false;
+    // }
+
+    //Creating the issued_books table
     if(!query.exec("CREATE TABLE IF NOT EXISTS issued_books ("
             "issue_id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "book_id INTEGER NOT NULL,"
@@ -139,7 +146,7 @@ bool DatabaseManager::createDatabase()
             "issued_by INTEGER,"
             "received_by INTEGER,"
             "reservation_id INTEGER,"
-            "FOREIGN KEY (book_id) REFERENCES books(book_id) ON DELETE CASCADE,"
+            "FOREIGN KEY (book_id) REFERENCES books(bookID) ON DELETE CASCADE,"
             "FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,"
             "FOREIGN KEY (issued_by) REFERENCES users(user_id),"
             "FOREIGN KEY (received_by) REFERENCES users(user_id)"
@@ -236,6 +243,7 @@ QSqlDatabase DatabaseManager::getConnection()
     }
     return QSqlDatabase::database("libraryConnection");
 }
+
 
 int DatabaseManager::getTotalUsersCount(const QString &userType)
 {

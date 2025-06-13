@@ -22,6 +22,7 @@ public:
     // static method to obtain a thread-safe database connection
     static QSqlDatabase getConnection();
 
+
 public slots:
     void deleteTables();
 

@@ -1,6 +1,11 @@
 import QtQuick
 import QtQuick.Controls
 import "DynamicComponentLoader.js" as CustomComponentLoader
+import com.singleBookReturn
+import QtQuick.Layouts
+import QtMultimedia
+import ZXing
+import QtQuick.Shapes
 
 Rectangle {
     id: returnBook
@@ -10,10 +15,24 @@ Rectangle {
     signal closeClicked()
     property var returnBookNumberRect: null
 
+    // Add state management for better visibility control
+    property bool showBookInput: true
+    property bool showBookDetails: false
 
     MouseArea{
         id: returnBookMA
         anchors.fill: parent
+    }
+
+    SingleBookReturn{
+        id: bookReturn
+    }
+
+    Shortcut {
+        sequence: "RETURN"
+        onActivated: {
+            bookReturn.searchByCallNumber(bookNumberTxtField.text)
+        }
     }
 
     Rectangle{
@@ -81,9 +100,61 @@ Rectangle {
                 }
             }
         }
+
+        //holds the barcode button
+        Rectangle{
+            id: topOptionsRect
+            height: 32
+            width: 140
+            radius: 4
+            border.color: "#DCD8D8"
+            anchors{
+                right: closeRect.left
+                rightMargin: 20
+                verticalCenter: parent.verticalCenter
+            }
+
+            Image {
+                id: barcodeReaderIcon
+                source: "assets/barcodeScan.png"
+                height: 20
+                width: 20
+                anchors{
+                    left: parent.left
+                    leftMargin: 16
+                    verticalCenter: parent.verticalCenter
+                }
+                MouseArea{
+                    anchors.fill: parent
+                    cursorShape: "PointingHandCursor"
+                    onClicked: {
+                        // Hide both components before opening barcode scanner
+                        showBookDetails = false
+                        barcodeReaderPopup.open()
+                    }
+                }
+            }
+
+            Text {
+                id: barcodeReaderTxt
+                text: qsTr("Scan Barcode")
+                anchors{
+                    left: barcodeReaderIcon.right
+                    leftMargin: 5
+                    verticalCenter: barcodeReaderIcon.verticalCenter
+                }
+                MouseArea{
+                    anchors.fill: parent
+                    cursorShape: "PointingHandCursor"
+                    onClicked: {
+                        // Hide both components before opening barcode scanner
+                        showBookDetails = false
+                        barcodeReaderPopup.open()
+                    }
+                }
+            }
+        }
     }
-
-
 
     Rectangle{
         id: returnDetailsContainer
@@ -94,7 +165,7 @@ Rectangle {
         }
         color: parent.color
         clip: true
-        visible: false
+        visible: showBookDetails // Use state property
 
         Rectangle{
             id: bookTitleRect
@@ -117,7 +188,7 @@ Rectangle {
                     verticalCenter: parent.verticalCenter
                 }
 
-                text: "Artificial Intelligence: A Modern Approach"
+                text: bookReturn.bookTitle //"Artificial Intelligence: A Modern Approach"
                 font.pointSize: 14
             }
         }
@@ -141,7 +212,7 @@ Rectangle {
                     leftMargin: 20
                     verticalCenter: parent.verticalCenter
                 }
-                text:  "Book No/ID: "
+                text:"Book No/ID: "
                 font.pointSize: 12
             }
 
@@ -153,7 +224,7 @@ Rectangle {
                     verticalCenter: parent.verticalCenter
                 }
 
-                text: "13/NRW/2024"
+                text: bookReturn.callNumber //"13/NRW/2024"
                 font.pointSize: 12
             }
         }
@@ -169,7 +240,6 @@ Rectangle {
                 bottom: bookNumberRect.bottom
             }
         }
-
 
         Rectangle{
             id: dueDateRect
@@ -197,11 +267,11 @@ Rectangle {
                 id: dueDate
                 anchors{
                     left: dueDateLabel.right
-                    leftMargin: 20
+                    leftMargin: 12
                     verticalCenter: parent.verticalCenter
                 }
 
-                text: "11/06/2024"
+                text:bookReturn.dueDate //"11/06/2024"
                 font.pointSize: 12
             }
         }
@@ -239,7 +309,6 @@ Rectangle {
                     verticalCenter: parent.verticalCenter
                 }
                 model: ListModel {
-                    ListElement { text: "Perfect" }
                     ListElement { text: "Good" }
                     ListElement { text: "Fair" }
                     ListElement { text: "Damaged" }
@@ -277,7 +346,7 @@ Rectangle {
                     verticalCenter: parent.verticalCenter
                 }
 
-                text: "Expired"
+                text:bookReturn.status //"Expired"
                 font.pointSize: 12
             }
 
@@ -286,7 +355,7 @@ Rectangle {
                 width: 12
                 height: width
                 radius: width/2
-                color: status.text === "Active" ? "#7ED297" : "red"
+                color: status.text === "Pending" ? "#7ED297" : "red"
                 anchors{
                     left: status.right
                     leftMargin: 5
@@ -315,7 +384,6 @@ Rectangle {
             anchors{
                 top: bookTitleRect.bottom
                 topMargin: 10
-//                horizontalCenter: someRect.horizontalCenter
                 left: separater1.right
                 leftMargin: 30
             }
@@ -358,18 +426,17 @@ Rectangle {
                     verticalCenter: parent.verticalCenter
                 }
 
-                text: "Gilbert Ashivaka"
+                text: bookReturn.userName //"Gilbert Ashivaka"
                 font.pointSize: 12
             }
         }
-
 
         Rectangle{
             id: fineRect
             width: parent.width/4
             height: 50
             clip: true
-            visible: status.text === "Expired"
+            visible:true //status.text === "Expired"
             anchors{
                 top: conditionRect.bottom
                 topMargin: 20
@@ -395,7 +462,7 @@ Rectangle {
                     verticalCenter: parent.verticalCenter
                 }
 
-                text: "56"
+                text:bookReturn.fineAmount //"56"
                 font.pointSize: 12
             }
         }
@@ -412,8 +479,7 @@ Rectangle {
             }
 
             onClicked: {
-                returnDetailsContainer.visible = !returnDetailsContainer.visible
-                CustomComponentLoader.customCreateComponent(returnBookNumberRect,"ReturnBookNumberRect", returnBook)
+                confirmDialog.open()
             }
         }
 
@@ -425,6 +491,13 @@ Rectangle {
                 bottom: returnBookBtn.bottom
                 right: returnBookBtn.left
                 rightMargin: 7
+            }
+            onClicked: {
+                bookReturn.clearBookData()
+                // Use state properties for clean transition
+                showBookDetails = false
+                showBookInput = true
+                bookNumberTxtField.focus = true
             }
         }
 
@@ -464,7 +537,8 @@ Rectangle {
 
             Menu {
                 id: menu
-                width: 120
+                width: 160
+                x: -menu.width + menuRect.width
                 y: menuRect.height
 
                 MenuItem {
@@ -475,15 +549,406 @@ Rectangle {
         }
     }
 
+    Item {
+        id: returnBookNumberRect
+        visible: showBookInput // Use state property
+        anchors{
+            top: returnBookTitleRect.bottom
+            bottom: parent.bottom
+            right: parent.right
+            left: parent.left
+        }
+
+        Rectangle{
+            id: returnBookNumberRect1
+            width: parent.width/2
+            height: parent.height/2
+            anchors.centerIn: parent
+
+            Text {
+                id: returnBookMsg
+                anchors{
+                    left: parent.left
+                    leftMargin: 20
+                    top: parent.top
+                    topMargin: 20
+                }
+                text: qsTr("Please enter the book number")
+                elide: Text.ElideRight
+                font.pointSize: 10
+            }
+
+            CustomTextField{
+                id: bookNumberTxtField
+                width: parent.width* .8
+                anchors.centerIn: parent
+                placeholderText: "Book number"
+            }
+
+            CustomButton{
+                id: showDetailsBtn
+                text: "Continue"
+                anchors{
+                    right: parent.right
+                    rightMargin: 20
+                    bottom: parent.bottom
+                    bottomMargin: 20
+                }
+                hoveredColor: "#399ED9"
+                defaultColor: "#E0E0E0"
+
+                onClicked: {
+                    bookReturn.searchByCallNumber(bookNumberTxtField.text)
+                }
+            }
+        }
+
+        CustomDropShadow{
+            source: returnBookNumberRect1
+            visible: true
+            samples: 33
+            radius: 28
+            color: "#30000000"
+        }
+
+        CustomDropShadow{
+            source: returnBookNumberRect1
+            visible: true
+            horizontalOffset: -3
+            verticalOffset: -3
+            samples: 33
+            radius: 28
+            color: "#30000000"
+        }
+    }
+
+    Popup {
+        id: barcodeReaderPopup
+        width: parent.width * .7
+        height: parent.height * .6
+        anchors.centerIn: parent
+        modal: true
+        focus: true
+        topInset: 8
+        leftInset: 8
+        rightInset: 8
+        bottomInset: 8
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
+
+        //cleanup: reset the points when the popup is closed
+        onClosed: {
+            barcodeReaderRect.points = barcodeReaderRect.nullPoints
+            info.text = ""
+        }
+
+        Rectangle {
+            id: barcodeReaderRect
+            visible: true
+            width: parent.width
+            height: parent.height
+
+            property var nullPoints: [Qt.point(0,0), Qt.point(0,0), Qt.point(0,0), Qt.point(0,0)]
+            property var points: nullPoints
+
+            Timer {
+                id: resetInfo
+                interval: 1000
+            }
+
+            Rectangle {
+                id: barcodePopupCloseRect
+                width: 30
+                height: 30
+                radius: 4
+                color: "#EE4E4E"
+                anchors {
+                    right: parent.right
+                    rightMargin: 0
+                    top: parent.top
+                    topMargin: 0
+                }
+
+                Rectangle {
+                    id: barcodePopupCloseImageRect
+                    width: 15
+                    height: 15
+                    radius: 4
+                    anchors.centerIn: parent
+                    color: "transparent"
+
+                    Image {
+                        id: barcodePopupClose
+                        anchors.fill: parent
+                        fillMode: Image.PreserveAspectFit
+                        source: "assets/close.png"
+                    }
+                }
+
+                MouseArea {
+                    id: barcodePopupMA
+                    anchors.fill: parent
+                    hoverEnabled: true
+
+                    onEntered: {
+                        barcodePopupCloseRect.color = "#CB0707"
+                    }
+                    onExited: {
+                        barcodePopupCloseRect.color = "#EE4E4E"
+                    }
+
+                    onClicked: {
+                        barcodeReaderPopup.close()
+                    }
+                }
+            }
+
+            BarcodeReader {
+                id: barcodeReader
+                videoSink: videoOutput.videoSink
+
+                formats: (ZXing.LinearCodes) | ZXing.None
+                tryRotate: true
+                tryHarder: false
+                tryInvert: true
+                tryDownscale: true
+                textMode: ZXing.TextMode.HRI
+
+                onFoundBarcode: (barcode)=> {
+                    barcodeReaderRect.points = [barcode.position.topLeft, barcode.position.topRight, barcode.position.bottomRight, barcode.position.bottomLeft]
+                    info.text = qsTr("Format: \t %1 \nText: \t %2 \nType: \t %3 \nTime: \t %4 ms").arg(barcode.formatName).arg(barcode.text).arg(barcode.contentTypeName).arg(runTime)
+                    barcodeReaderPopup.close()
+                    bookReturn.searchByBarcode(barcode.text)
+                    resetInfo.restart()
+                }
+
+                onFailedRead: ()=> {
+                    barcodeReaderRect.points = barcodeReaderRect.nullPoints
+                    if (!resetInfo.running)
+                        info.text = "No barcode found (in %1 ms)".arg(runTime)
+                }
+            }
+
+            MediaDevices {
+                id: devices
+            }
+
+            Camera {
+                id: camera
+                cameraDevice: devices.videoInputs[camerasComboBox.currentIndex] ? devices.videoInputs[camerasComboBox.currentIndex] : devices.defaultVideoInput
+                focusMode: Camera.FocusModeAutoNear
+                onErrorOccurred: console.log("camera error:" + errorString)
+                active: barcodeReaderPopup.opened
+            }
+
+            CaptureSession {
+                id: captureSession
+                camera: camera
+                videoOutput: videoOutput
+            }
+
+            ColumnLayout {
+                anchors.fill: parent
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: false
+                    visible: devices.videoInputs.length > 1
+                    Label {
+                        text: qsTr("Camera: ")
+                        Layout.fillWidth: false
+                    }
+                    ComboBox {
+                        id: camerasComboBox
+                        Layout.fillWidth: true
+                        model: devices.videoInputs
+                        textRole: "description"
+                        currentIndex: 0
+                    }
+                }
+
+                VideoOutput {
+                    id: videoOutput
+                    Layout.fillHeight: true
+                    Layout.fillWidth: true
+
+                    function mapPointToItem(point)
+                    {
+                        if (videoOutput.sourceRect.width === 0 || videoOutput.sourceRect.height === 0)
+                            return Qt.point(0, 0);
+
+                        let dx = point.x;
+                        let dy = point.y;
+
+                        if ((videoOutput.orientation % 180) == 0)
+                        {
+                            dx = dx * videoOutput.contentRect.width / videoOutput.sourceRect.width;
+                            dy = dy * videoOutput.contentRect.height / videoOutput.sourceRect.height;
+                        }
+                        else
+                        {
+                            dx = dx * videoOutput.contentRect.height / videoOutput.sourceRect.height;
+                            dy = dx * videoOutput.contentRect.width / videoOutput.sourceRect.width;
+                        }
+
+                        switch ((videoOutput.orientation + 360) % 360)
+                        {
+                            case 0:
+                            default:
+                                return Qt.point(videoOutput.contentRect.x + dx, videoOutput.contentRect.y + dy);
+                            case 90:
+                                return Qt.point(videoOutput.contentRect.x + dy, videoOutput.contentRect.y + videoOutput.contentRect.height - dx);
+                            case 180:
+                                return Qt.point(videoOutput.contentRect.x + videoOutput.contentRect.width - dx, videoOutput.contentRect.y + videoOutput.contentRect.height -dy);
+                            case 270:
+                                return Qt.point(videoOutput.contentRect.x + videoOutput.contentRect.width - dy, videoOutput.contentRect.y + dx);
+                        }
+                    }
+
+                    Shape {
+                        id: polygon
+                        anchors.fill: parent
+                        visible: barcodeReaderRect.points.length === 4
+
+                        ShapePath {
+                            strokeWidth: 3
+                            strokeColor: "red"
+                            strokeStyle: ShapePath.SolidLine
+                            fillColor: "transparent"
+                            startX: videoOutput.mapPointToItem(barcodeReaderRect.points[3]).x
+                            startY: videoOutput.mapPointToItem(barcodeReaderRect.points[3]).y
+
+                            PathLine {
+                                x: videoOutput.mapPointToItem(barcodeReaderRect.points[0]).x
+                                y: videoOutput.mapPointToItem(barcodeReaderRect.points[0]).y
+                            }
+                            PathLine {
+                                x: videoOutput.mapPointToItem(barcodeReaderRect.points[1]).x
+                                y: videoOutput.mapPointToItem(barcodeReaderRect.points[1]).y
+                            }
+                            PathLine {
+                                x: videoOutput.mapPointToItem(barcodeReaderRect.points[2]).x
+                                y: videoOutput.mapPointToItem(barcodeReaderRect.points[2]).y
+                            }
+                            PathLine {
+                                x: videoOutput.mapPointToItem(barcodeReaderRect.points[3]).x
+                                y: videoOutput.mapPointToItem(barcodeReaderRect.points[3]).y
+                            }
+                        }
+                    }
+
+                    Label {
+                        id: info
+                        color: "white"
+                        padding: 10
+                        background: Rectangle { color: "#80808080" }
+                    }
+
+                    ColumnLayout {
+                        anchors{
+                            right: parent.right
+                            bottom: parent.bottom
+                        }
+
+                        CustomButton {
+                            id: barcodeReaderCancelBtn
+                            text: "Cancel"
+                            defaultColor: "#E0E0E0"
+                            anchors{
+                                bottom: parent.bottom
+                                right: parent.right
+                            }
+
+                            onClicked: {
+                                barcodeReaderPopup.close()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Dialog {
+        id: errorDialog
+        title: "Error"
+        property alias text: errorLabel.text
+        modal: true
+        standardButtons: Dialog.Ok
+        anchors.centerIn: parent
+
+        Text {
+            id: errorLabel
+            color: "#8E8E8E"
+        }
+    }
+
+    Dialog {
+        id: confirmDialog
+        title: "Confirm"
+        property alias text: confirmLabel.text
+        modal: true
+        standardButtons: Dialog.Yes | Dialog.No
+        anchors.centerIn: parent
+
+        Text {
+            id: confirmLabel
+            color: "#8E8E8E"
+            text: "Are you sure you want to return book: " +bookReturn.callNumber + "?"
+        }
+
+        onAccepted:{
+            bookReturn.returnCurrentBook()
+        }
+        onRejected: {
+            close()
+        }
+    }
+
+    Connections{
+        target: bookReturn
+
+        function onBookNotFound(searchTerm){
+            errorDialog.title = "Not Found!"
+            errorDialog.text = "Couldn't find book: " + searchTerm
+            errorDialog.open()
+            // Ensure input is visible when book not found
+            showBookInput = true
+            showBookDetails = false
+        }
+
+        function onBookFound(){
+            // Clean state transition when book is found
+            showBookInput = false
+            showBookDetails = true
+            console.log(bookReturn.dueDate)
+        }
+
+        function onOperationSuccessful(successMsg){
+            errorDialog.title = "Success!"
+            errorDialog.text = successMsg
+            errorDialog.open()
+            returnTimer.start()
+        }
+    }
+
+    Timer{
+        id: returnTimer
+        interval: 3000
+        repeat: false
+        onTriggered: {
+            errorDialog.close()
+            // Reset to initial state after successful operation
+            showBookDetails = false
+            showBookInput = true
+            bookNumberTxtField.clear()
+            bookNumberTxtField.focus = true
+        }
+    }
+
     Component.onCompleted: {
-        CustomComponentLoader.customCreateComponent(returnBookNumberRect,"ReturnBookNumberRect", returnBook)
+        // Set initial state
+        showBookInput = true
+        showBookDetails = false
+        bookNumberTxtField.focus = true
     }
 }
-
-
-
-
-
-
-
-

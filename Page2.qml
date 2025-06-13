@@ -16,7 +16,7 @@ Rectangle {
     visible: true
     color: "#f4f4f4"
 
-    property string toolBarAdminProfilePic: "qrc:Libro1/assets/userImage.png"
+    property string toolBarAdminProfilePic: "assets/userImage.png"
     property var moreTools: null
 
     ToolBar {
@@ -128,7 +128,10 @@ Rectangle {
                 MouseArea {
                     anchors.fill: sourceItem
                     cursorShape: "PointingHandCursor"
-                    onClicked: fileDialog.open()
+                    onClicked: {
+                        mainDrawer.open()
+                        // fileDialog.open()
+                    }
                     hoverEnabled: true
                 }
             }
@@ -294,6 +297,57 @@ Rectangle {
             }
             Component.onCompleted: {
                 console.log("Width: ", width, "Height: ", height)
+            }
+        }
+    }
+
+    Drawer{
+        id: mainDrawer
+        edge: Qt.RightEdge
+        width: parent.width* .25
+        height: parent.height //* .88
+
+        Rectangle{
+            id: rightPane
+            anchors.fill: parent
+            radius: 8
+            color: "#DBE0E7"
+            clip: true
+
+            Image {
+                id: notificationIcon
+                source: "assets/bell.png"
+                width: 24
+                height: 24
+                anchors{
+                    top: parent.top
+                    topMargin: 20
+                    left: parent.left
+                    leftMargin: 20
+                }
+                fillMode: Image.PreserveAspectFit
+                MouseArea{
+                    anchors.fill: parent
+                    cursorShape: "PointingHandCursor"
+                }
+            }
+
+            Image {
+                id: settingsIcon
+                source: "assets/settings.png"
+                width: 24
+                height: 24
+                anchors{
+                    top: parent.top
+                    topMargin: 20
+                    right: parent.right
+                    rightMargin: 20
+                }
+                fillMode: Image.PreserveAspectFit
+                MouseArea{
+                    anchors.fill: parent
+                    cursorShape: "PointingHandCursor"
+                }
             }
         }
     }

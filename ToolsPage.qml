@@ -11,7 +11,9 @@ Rectangle {
     color: "#FBFBFB"
     property double calculatedHeight: 0
     property double flowItemHeight: flowItem.calculateFlowHeight()
+
     property var reportsPage: null
+    property var inventoryTracking: null
 
     Rectangle{
         id: navSearchBox
@@ -155,7 +157,9 @@ Rectangle {
             id: inventoryItem
             icon: "assets/inventory2.png"
             description: "Inventory tracking"
-//            instruction1:
+            instruction1: function() {
+                CustomComponentLoader.customCreateComponent(inventoryTracking,"InventoryTracking", mainContainer)
+            }
 //            instruction2:
         }
 
