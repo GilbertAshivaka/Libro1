@@ -14,6 +14,7 @@ Rectangle {
 
     property var reportsPage: null
     property var inventoryTracking: null
+    property var backupPage: null
 
     Rectangle{
         id: navSearchBox
@@ -169,7 +170,7 @@ Rectangle {
             icon: "assets/cloudBackuprestore.png"
             description: "Backup and restore"
             instruction1: function() {
-                console.log("Instruction 1")
+                CustomComponentLoader.customCreateComponent(backupPage,"BackupPage", mainPageContainer)
             }
 
             instruction2: function() {

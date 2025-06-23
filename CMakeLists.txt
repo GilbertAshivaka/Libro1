@@ -177,6 +177,10 @@ qt_add_qml_module(appLibro1
     QML_FILES InventoryTracking.qml
     SOURCES inventorymanager.h inventorymanager.cpp
     RESOURCES assets/bell.png assets/settings.png
+    QML_FILES CustomButtonWithIcon.qml
+    QML_FILES BackupPage.qml
+    SOURCES backupmanager.h backupmanager.cpp
+    QML_FILES BackupManager2.qml
 )
 
 # Include directories for ZXing

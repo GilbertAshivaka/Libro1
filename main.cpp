@@ -24,6 +24,8 @@
 #include "issuedbookslist.h"
 #include "issuedbookslistmodel.h"
 
+#include "backupmanager.h"
+
 //for the barcode
 #include "barcodereader.h"
 #include "barcodewriter.h"
@@ -55,6 +57,8 @@ int main(int argc, char *argv[])
 
     qmlRegisterType<SingleBookReturn>("com.singleBookReturn", 1, 0, "SingleBookReturn");
     qmlRegisterType<InventoryManager>("com.inventoryManager", 1, 0, "InventoryManager");
+
+    qmlRegisterType<BackupManager>("com.backupManager", 1, 0, "BackupManager");
 
 
     qmlRegisterUncreatableType<AllBooksList>("AllBooksList", 1, 0, "AllBooksList",

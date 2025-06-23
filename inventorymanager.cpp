@@ -142,7 +142,7 @@ double InventoryManager::getTotalOverdueFees()
 
 double InventoryManager::getTotalReplacementCost()
 {
-    if (db.open()){
+    if (!db.open()){
         emit errorOccured("Failed to open the database for getting the total replacement cost:" + db.lastError().text());
         return 0.0;
     }
@@ -328,6 +328,11 @@ void InventoryManager::getCountByCategory(const QString &category, const QString
         qDebug() << item["category"] << item["count"];
     }
 
+    if (results.isEmpty()){
+        emit categoryNotFound("No items in that category");
+        return;
+    }
+
     m_categoryCount = results;
     emit categoryCountChanged();
 }
@@ -365,6 +370,11 @@ void InventoryManager::getItemsNeedingAttention()
         results.append(book);
     }
 
+    if (results.isEmpty()){
+        emit attentionItemsNotFound("No items that need attention.");
+        return;
+    }
+
     m_attentionItems = results;
     emit attentionItemsChanged();
 }
@@ -393,6 +403,11 @@ void InventoryManager::getBooksUnderMaintenance()
         results.append(book);
     }
 
+    if (results.isEmpty()){
+        emit underMaintenanceNotFound("No items under maintenance.");
+        return;
+    }
+
     m_underMaintenance = results;
     emit underMaintenanceChanged();
 }
@@ -419,8 +434,6 @@ void InventoryManager::getNumberOfCopies()
         return;
     }
 
-    qDebug() << "Control reaches this: 2";
-
     while (query.next()) {
         QVariantMap book;
         book["title"] = query.value("title").toString();
@@ -429,7 +442,10 @@ void InventoryManager::getNumberOfCopies()
         results.append(book);
     }
 
-    qDebug() << "Control reaches this: 3";
+    if (results.isEmpty()){
+        emit noCopiesFound("No multiple copies detected, this may mean: \n  • There is exactly one copy of each book \n  • The system has no books added yet.");
+        return;
+    }
 
     m_copies = results;
     emit copiesChanged();
@@ -477,6 +493,11 @@ void InventoryManager::updateRecentAcquisitions(const QDate &fromDate)
     }
 
     m_recentAcquisitions = getRecentAcquisitions(fromDate);
+
+    if (m_recentAcquisitions.isEmpty()){
+        emit noRecentAquisitions(QString("No reccent aquisitions found from date :%1 " ).arg(fromDate.toString()));
+        return;
+    }
 
     emit recentAcquisitionsChanged();
 }
@@ -540,6 +561,11 @@ void InventoryManager::getBooksByShelf()
         shelf["shelfNumber"] = query.value("shelfNumber").toString();
         shelf["count"] = query.value("count").toInt();
         results.append(shelf);
+    }
+
+    if (results.isEmpty()){
+        emit shelfListEmpty("Looks like there are no books on shelves!");
+        return;
     }
 
     m_shelfList = results;

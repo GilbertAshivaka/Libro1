@@ -4,6 +4,7 @@ import QtQuick.Controls
 import Qt5Compat.GraphicalEffects
 import QtQuick.Effects
 import QtQuick.Dialogs
+import QtCharts
 import "ui"
 import "DynamicComponentLoader.js" as CustomComponentLoader
 
@@ -349,7 +350,274 @@ Rectangle {
                     cursorShape: "PointingHandCursor"
                 }
             }
+
+            Rectangle {
+                id: userProfileRect
+                width: parent.width* 0.50
+                height: width
+                radius: width/2
+                clip: true
+                border.width: 2
+                border.color: "white"
+                anchors{
+                    top: parent.top
+                    topMargin: 10
+                    horizontalCenter: parent.horizontalCenter
+                }
+
+                color: "transparent"
+
+                Image {
+                    id: sourceItem2
+                    source: toolBarAdminProfilePic
+                    anchors.centerIn: parent
+                    width: parent.width //* 0.4688
+                    height: width
+                    visible: false
+                    fillMode: Image.PreserveAspectCrop
+                }
+
+                MultiEffect {
+                    source: sourceItem2
+                    anchors.fill: sourceItem2
+                    maskEnabled: true
+                    maskSource: mask2
+                }
+
+                Item {
+                    id: mask2
+                    width: sourceItem2.width
+                    height: sourceItem2.height
+                    layer.enabled: true
+                    visible: false
+
+                    Rectangle {
+                        width: sourceItem2.width
+                        height: sourceItem2.height
+                        radius: width / 2
+                        color: "black"
+                    }
+                }
+
+                FileDialog {
+                    id: fileDialog2
+                    title: "Select Profile Picture"
+                    nameFilters: ["Image files (*.png *.jpg *.jpeg *.gif)"]
+                    onAccepted: {
+                        if (fileDialog2.currentFile) {
+                            var fileUrl = fileDialog2.currentFile
+                            console.log("Selected file:", fileUrl)
+                            toolBarAdminProfilePic = fileUrl
+                        }
+                    }
+                    onRejected: {
+                        console.log("Canceled")
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: sourceItem2
+                    cursorShape: "PointingHandCursor"
+                    onClicked: fileDialog2.open()
+                    hoverEnabled: true
+                }
+            }
+
+            Text {
+                id:adminLabel
+                text: "Admin: " + "Noel Nonstein" //the name should be dynamically fetched from the database
+                color: "#1E293B"
+                font.pixelSize: 12
+                font.weight: Font.Bold
+                font.italic: true
+                anchors{
+                    top: userProfileRect.bottom
+                    topMargin: 20
+                    horizontalCenter: userProfileRect.horizontalCenter
+                }
+            }
+
+            RoundButton{
+                id: helpButton
+                text: "Help and Documentation"
+                width: parent.width * .90
+                anchors{
+                    left: parent.left
+                    leftMargin: 10
+                    top: adminLabel.bottom
+                    topMargin: 10
+                }
+
+                onClicked: {
+
+                }
+            }
+
+            RoundButton{
+                id: logoutButton
+                text: "Logout"
+                width: parent.width * .90
+                anchors{
+                    left: parent.left
+                    leftMargin: 10
+                    top: helpButton.bottom
+                    topMargin: 10
+                }
+
+                onClicked: {
+                    mainDrawer.close()
+                    mainLoader.source = "Login.qml"
+                }
+            }
+
+            Rectangle {
+                id: graphRect
+                width: parent.width * 0.95
+                height: parent.height* 0.40
+                color: "transparent"
+                anchors {
+                    top: logoutButton.bottom
+                    topMargin: 10
+                    horizontalCenter: parent.horizontalCenter
+                }
+
+                ChartView {
+                    id: usageChart
+                    anchors.fill: parent
+                    title: "Today's Activity"
+                    antialiasing: true
+
+                    LineSeries {
+                        name: "Books issued and returned per hour"
+                        color: "red"
+                        XYPoint { x: 0; y: 5.0 }
+                        XYPoint { x: 1; y: 7.5 }
+                        XYPoint { x: 2; y: 6.0 }
+                        XYPoint { x: 3; y: 8.5 }
+                        XYPoint { x: 4; y: 10.0 }
+                        XYPoint { x: 5; y: 9.0 }
+                        XYPoint { x: 6; y: 11.0 }
+                        XYPoint { x: 7; y: 12.5 }
+                        XYPoint { x: 8; y: 10.5 }
+                        XYPoint { x: 9; y: 8.0 }
+                        XYPoint { x: 10; y: 7.0 }
+                        XYPoint { x: 11; y: 6.5 }
+                    }
+                }
+
+                Rectangle {
+                    id: refreshButton
+                    width: 36
+                    height: 36
+                    radius: 18
+                    color: "#F1F5F9"
+                    border.color: "#E2E8F0"
+                    border.width: 1
+                    anchors {
+                        top: parent.top
+                        right: parent.right
+                        margins: 12
+                    }
+
+                    Text {
+                        text: "↻"
+                        color: "#475569"
+                        font.pixelSize: 16
+                        font.weight: Font.Bold
+                        anchors.centerIn: parent
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: "PointingHandCursor"
+                        hoverEnabled: true
+
+                        onEntered: {
+                            refreshButton.color = "#E2E8F0"
+                            refreshButton.scale = 1.1
+                        }
+                        onExited: {
+                            refreshButton.color = "#F1F5F9"
+                            refreshButton.scale = 1.0
+                        }
+                        onClicked: {
+                            // updateChartData()
+                            refreshButton.rotation += 360
+                        }
+                    }
+
+                    Behavior on scale { NumberAnimation { duration: 150 } }
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    Behavior on rotation { NumberAnimation { duration: 500; easing.type: Easing.OutCubic } }
+                }
+            }
+
+            // Footer with copyright
+            Rectangle {
+                id: footerSection
+                width: parent.width * 0.9
+                height: 50
+                radius: 8
+                color: "transparent"
+                // border.color: "#E2E8F0"
+                // border.width: 1
+                anchors {
+                    bottom: parent.bottom
+                    bottomMargin: 10
+                    // right: parent.right
+                    // rightMargin: 10
+                    horizontalCenter: parent.horizontalCenter
+                }
+
+                Item {
+                    height: 32
+                    width: parent.width
+                    anchors{
+                        bottom: parent.bottom
+                        horizontalCenter: parent.horizontalCenter
+                    }
+
+                    Text {
+                        id: version
+                        text: "Libro ILMS 1.0.0"
+                        color: "#1E293B"
+                        font.pixelSize: 12
+                        font.weight: Font.Bold
+                        font.italic: true
+                        anchors{
+                            bottom: copyright.top
+                            bottomMargin: 2
+                            horizontalCenter: parent.horizontalCenter
+                        }
+                    }
+
+                    Text {
+                        id: copyright
+                        text: "© Libro 2025"
+                        color: "#64748B"
+                        font.pixelSize: 10
+                        font.italic: true
+                        anchors{
+                            bottom: parent.bottom
+                            horizontalCenter: parent.horizontalCenter
+                        }
+                    }
+                }
+            }
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -39,6 +39,48 @@ Rectangle {
                                  errorDialog.text = successMsg
                                  errorDialog.open()
                              }
+
+        onCategoryNotFound: (message)=> {
+            errorDialog.title = "No Results"
+                                errorDialog.text = message
+                                errorText.text = message
+                                errorDialog.open()
+        }
+
+        onNoRecentAquisitions: (message) =>{
+                                   errorDialog.title = "Notice."
+                                   errorDialog.text = message
+                                   errorText.text = message
+                                   errorDialog.open()
+                               }
+
+        onAttentionItemsNotFound: (message) => {
+                                      errorDialog.title = "Notice"
+                                      errorDialog.text = message
+                                      errorText.text = message
+                                      errorDialog.open()
+                                  }
+
+        onUnderMaintenanceNotFound: (message) => {
+                                        errorDialog.title = "Notice"
+                                        errorDialog.text = message
+                                        errorText.text = message
+                                        errorDialog.open()
+                                    }
+
+        onShelfListEmpty: (message) =>{
+                              errorDialog.title = "Notice"
+                              errorDialog.text = message
+                              errorText.text = message
+                              errorDialog.open()
+                          }
+
+        onNoCopiesFound: (message) =>{
+                             errorDialog.title = "Notice"
+                             errorDialog.text = message
+                             errorText.text = message
+                             errorDialog.open()
+                         }
     }
 
     // Page Title

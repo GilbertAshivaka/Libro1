@@ -73,6 +73,13 @@ signals:
     void shelfListChanged();
     void copiesChanged();
 
+    void noRecentAquisitions(const QString &message);
+    void categoryNotFound(const QString &messase);
+    void attentionItemsNotFound(const QString &message);
+    void underMaintenanceNotFound(const QString &message);
+    void shelfListEmpty(const QString &message);
+    void noCopiesFound(const QString &message);
+
 private:
     QSqlDatabase db;
 
