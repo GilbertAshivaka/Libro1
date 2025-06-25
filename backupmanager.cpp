@@ -46,8 +46,8 @@ BackupManager::~BackupManager()
         backupDb.close();
     }
 
-    delete backupWatcher;
-    delete restoreWatcher;
+    // delete backupWatcher;
+    // delete restoreWatcher;
 }
 
 bool BackupManager::createBackup(const BackupConfig &config)
@@ -126,7 +126,8 @@ void BackupManager::openCloudDialog(CloudProvider provider, const QString &local
             emit backupFailed("Failed to open cloud provider in the browser.");
         }else {
             qDebug() << "Opened cloud provider: " << url;
-            qDebug() << "Please open this file: " << localBackupPath;
+            qDebug() << "Please backup this file on the cloud provider platform: " << localBackupPath;
+            emit operationSuccessful("Please backup this file on the cloud provider platform: " + localBackupPath);
         }
     }else{
         emit errorOccured("Unsupported cloud provider.");
@@ -203,7 +204,7 @@ quint64 BackupManager::getAvailableSpace(const QString &path) const
     return storage.bytesAvailable();
 }
 
-BackupManager::configureBackup(const QVariantMap &configMap)
+void BackupManager::configureBackup(const QVariantMap &configMap)
 {
     BackupConfig config;
     config.type = static_cast<BackupType>(configMap.value("type").toInt());
@@ -489,7 +490,12 @@ QString BackupManager::generateBackupFileName(BackupType type, CloudProvider pro
 
 bool BackupManager::isDatabaseFile(const QString &file) const
 {
-    QSqlDatabase testDb = QSqlDatabase::addDatabase("QSQLITE", "testConnection");
+    QSqlDatabase testDb;
+    if (QSqlDatabase::contains("testConnection")) {
+        testDb = QSqlDatabase::database("testConnection");
+    } else {
+        testDb = QSqlDatabase::addDatabase("QSQLITE", "testConnection");
+    }
     testDb.setDatabaseName(file);
 
     bool isValid = testDb.open();
@@ -569,8 +575,7 @@ QString BackupManager::performLocalBackup(const BackupConfig &config)
         QString backupFileName = generateBackupFileName(config.type, config.provider);
         QString fullBackupPath = backupPath + "/" + backupFileName;
 
-        // ✅ Create only the directory, not the full file path
-        QDir().mkpath(backupPath);  // Changed from fullBackupPath to backupPath
+        QDir().mkpath(backupPath);
 
         updateProgress(20, "Copying database file...");
 
@@ -663,7 +668,7 @@ QString BackupManager::performLocalBackup(const BackupConfig &config)
                 openCloudDialog(config.provider, fullBackupPath);
             }, Qt::QueuedConnection);
         }
-
+        emit backupCompleted(currentBackupId, fullBackupPath);
         return fullBackupPath;
 
     }catch(std::exception &e){
@@ -694,7 +699,7 @@ bool BackupManager::performDatabaseRestore(const QString &backupFilePath, const 
         QString tempPath;
 
         //check if it's a compressed file
-        if (backupFilePath.endsWith(",zip", Qt::CaseInsensitive)){
+        if (backupFilePath.endsWith(".zip", Qt::CaseInsensitive)){
             updateProgress(20, "Decompressing backup....");
             tempPath = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/restore_temp.db";
 
@@ -708,87 +713,73 @@ bool BackupManager::performDatabaseRestore(const QString &backupFilePath, const 
                 return false;
             }
             workingPath = tempPath;
+        }
 
-            if (cancelRequested){
-                if (!tempPath.isEmpty()){
-                    QFile::remove(tempPath);
-                }
-
-                return false;
+        if (cancelRequested){
+            if (!tempPath.isEmpty()){
+                QFile::remove(tempPath);
             }
+            return false;
+        }
 
-            updateProgress(50, "Validating database integrity....");
+        updateProgress(50, "Validating database integrity....");
 
-            //validate that it's a proper SQLite database file
-            if(!isDatabaseFile(workingPath)){
-                emit errorOccured("Invalid database file: " + workingPath);
-                if (!tempPath.isEmpty()){
-                    QFile::remove(tempPath);
-                }
-
-                return false;
+        //validate that it's a proper SQLite database file
+        if(!isDatabaseFile(workingPath)){
+            emit errorOccured("Invalid database file: " + workingPath);
+            if (!tempPath.isEmpty()){
+                QFile::remove(tempPath);
             }
+            return false;
+        }
 
-            updateProgress(70, "Backing up current database....");
+        updateProgress(70, "Backing up current database....");
 
-            QString currentBackupPath = databasePath + ".backup." + QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
-            if (QFile::exists(databasePath)){
-                QFile::copy(databasePath, currentBackupPath);
-            }
+        QString currentBackupPath = databasePath + ".backup." + QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
+        if (QFile::exists(databasePath)){
+            QFile::copy(databasePath, currentBackupPath);
+        }
 
-            updateProgress(80, "Restoring backup....");
+        updateProgress(80, "Restoring backup....");
 
-            //close any existing database connections
-            if (QSqlDatabase::contains("libraryConnection")){
-                QSqlDatabase::database("libraryConnection").close();
-            }
+        //close any existing database connections
+        if (QSqlDatabase::contains("libraryConnection")){
+            QSqlDatabase::database("libraryConnection").close();
+        }
 
-            //Replace the current database
-            if (QFile::exists(databasePath)){
-                QFile::remove(databasePath);
-            }
+        //Replace the current database
+        if (QFile::exists(databasePath)){
+            QFile::remove(databasePath);
+        }
 
-            bool success = QFile::copy(workingPath, databasePath);
+        bool success = QFile::copy(workingPath, databasePath);
 
-            if (!success){
-                emit errorOccured("Failed to copy the database to target location.");
+        if (!success){
+            emit errorOccured("Failed to copy the database to target location.");
 
-                //restore the current database if the copying failed
-                if (QFile::exists(currentBackupPath)){
-                    QFile::copy(currentBackupPath, databasePath);
-                    QFile::remove(currentBackupPath);
-                }
-
-                if (!tempPath.isEmpty()){
-                    QFile::remove(tempPath);
-                }
-                return false;
-            }
-
-            updateProgress(90, "Reopenning database connections....");
-
-            // test the restored database
-            QSqlDatabase testDb = DatabaseManager::getConnection();
-            if (!testDb.open()){
-                emit errorOccured("Restored database is invalid.");
-                //restore the backup if the new database is invalid
-
-                QFile::remove(databasePath);
-                if(QFile::exists(currentBackupPath)){
-                    QFile::copy(currentBackupPath, databasePath);
-                    QFile::remove(currentBackupPath);
-                }
-
-                if (!tempPath.isEmpty()){
-                    QFile::remove(tempPath);
-                }
-
-                return false;
-            }
-
-            //cleanup
-
+            //restore the current database if the copying failed
             if (QFile::exists(currentBackupPath)){
+                QFile::copy(currentBackupPath, databasePath);
+                QFile::remove(currentBackupPath);
+            }
+
+            if (!tempPath.isEmpty()){
+                QFile::remove(tempPath);
+            }
+            return false;
+        }
+
+        updateProgress(90, "Reopening database connections....");
+
+        // test the restored database
+        QSqlDatabase testDb = DatabaseManager::getConnection();
+        if (!testDb.open()){
+            emit errorOccured("Restored database is invalid.");
+            //restore the backup if the new database is invalid
+
+            QFile::remove(databasePath);
+            if(QFile::exists(currentBackupPath)){
+                QFile::copy(currentBackupPath, databasePath);
                 QFile::remove(currentBackupPath);
             }
 
@@ -796,10 +787,22 @@ bool BackupManager::performDatabaseRestore(const QString &backupFilePath, const 
                 QFile::remove(tempPath);
             }
 
-            emit operationSuccessful("Database restored successfully from: " + backupFilePath);
-
-            return true;
+            return false;
         }
+
+        //cleanup
+        if (QFile::exists(currentBackupPath)){
+            QFile::remove(currentBackupPath);
+        }
+
+        if (!tempPath.isEmpty()){
+            QFile::remove(tempPath);
+        }
+
+        emit operationSuccessful("Database restored successfully from: " + backupFilePath);
+
+        return true;
+
     }catch(const std::exception& e){
         emit errorOccured("Error in performDatabaseRestore: " + QString(e.what()));
         return false;

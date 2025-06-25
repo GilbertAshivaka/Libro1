@@ -104,7 +104,7 @@ public:
     Q_INVOKABLE quint64 estimateBackupSize() const;
     Q_INVOKABLE quint64 getAvailableSpace(const QString &path) const;
 
-    Q_INVOKABLE configureBackup(const QVariantMap &configMap);
+    Q_INVOKABLE void configureBackup(const QVariantMap &configMap);
 
     //getter for the properties
     BackupStatus getCurrentStatus(){return currentStatus;}

@@ -665,6 +665,10 @@ Rectangle {
                             color: "#212529"
                         }
 
+                        ButtonGroup{
+                            id: providerCheckButtons
+                        }
+
                         Column {
                             width: parent.width
                             spacing: 8
@@ -672,10 +676,11 @@ Rectangle {
                             Row {
                                 spacing: 10
                                 CheckBox {
-                                    id: fullSystemCheck
+                                    id: googleDriveCheck
                                     checked: true
                                     text: "Google Drive"
                                     enabled: cloudBackupCard.isSelected
+                                    ButtonGroup.group: providerCheckButtons
                                 }
                                 Text {
                                     text: "• Sync and store files with your Google account."
@@ -688,9 +693,10 @@ Rectangle {
                             Row {
                                 spacing: 10
                                 CheckBox {
-                                    id: databaseOnlyCheck
+                                    id: amazonS3Check
                                     text: "Amazon S3"
                                     enabled: cloudBackupCard.isSelected
+                                    ButtonGroup.group: providerCheckButtons
                                 }
                                 Text {
                                     text: "• Scalable, reliable cloud storage from AWS."
@@ -703,9 +709,10 @@ Rectangle {
                             Row {
                                 spacing: 10
                                 CheckBox {
-                                    id: mediaFilesCheck
+                                    id: dropBoxCheck
                                     text: "Drop Box"
                                     enabled: cloudBackupCard.isSelected
+                                    ButtonGroup.group: providerCheckButtons
                                 }
                                 Text {
                                     text: "• Simple file storage and sharing with auto-sync."
@@ -718,9 +725,10 @@ Rectangle {
                             Row {
                                 spacing: 10
                                 CheckBox {
-                                    id: configOnlyCheck
+                                    id: oneDriveCheck
                                     text: "One Drive"
                                     enabled: cloudBackupCard.isSelected
+                                    ButtonGroup.group: providerCheckButtons
                                 }
                                 Text {
                                     text: "• Microsoft's cloud storage linked to your Microsoft account."
@@ -736,6 +744,7 @@ Rectangle {
                                     id: genericCheck
                                     text: "Generic Provider"
                                     enabled: cloudBackupCard.isSelected
+                                    ButtonGroup.group: providerCheckButtons
                                 }
                                 Text {
                                     text: "• Use any other custom or self-hosted cloud service."
@@ -1245,7 +1254,7 @@ Rectangle {
         }
 
         onAccepted: {
-            backupManager.restoreDatabase(backupFilePath)
+            backupManager.restoreBackup(backupFilePath)
         }
     }
 
@@ -1634,6 +1643,18 @@ Rectangle {
             errorDialog.title = "Error!"
             errorDialog.text = error
             errorDialog.open()
+        }
+
+        function onGearingUp(message){
+            successDialog.title = "Gearing up"
+            successDialog.text = message
+            successDialog.open()
+        }
+
+        function onOperationSuccessful(message){
+            successDialog.title = "Operation successful"
+            successDialog.text = message
+            successDialog.open()
         }
     }
 }
