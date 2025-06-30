@@ -1,6 +1,7 @@
 #include "allbookslist.h"
 #include "databasemanager.h"
 #include "barcodewriter.h"
+#include "backupmanager.h"
 
 AllBooksList::AllBooksList(QObject *parent)
     : QObject{parent}
@@ -12,11 +13,23 @@ AllBooksList::AllBooksList(QObject *parent)
         qWarning() << "Failed to open database: " + db.lastError().text();
     }
 
+    // //connect to the
+    // connect(backupManager, &BackupManager::databaseRestored, this, [this]() {
+    //     // Refresh database connection after restore
+    //     db = DatabaseManager::getConnection();
+    //     if (!db.open()) {
+    //         qWarning() << "Failed to reopen database after restore: " + db.lastError().text();
+    //     } else {
+    //         // Optionally refresh your book list
+    //         fetchBooks(0, 100);
+    //     }
+    // });
+
     //    fetchBooks(0, 100);
 }
 
 AllBooksList::~AllBooksList(){
-    db.close(); // Close the connection when the object is destroyed
+    // db.close(); // Close the connection when the object is destroyed
 }
 
 QVector<Book> AllBooksList::getBooks() const
@@ -27,6 +40,10 @@ QVector<Book> AllBooksList::getBooks() const
 
 int AllBooksList::getTotalBooksCount(const QString &category)
 {
+    if (!db.open()) {
+        qWarning() << "Failed to open database: " + db.lastError().text();
+    }
+
     QSqlQuery query(db);
     QString queryString;
 
@@ -52,6 +69,11 @@ int AllBooksList::getTotalBooksCount(const QString &category)
 bool AllBooksList::fetchBooks(int page, int pageSize, const QString &category = "all")
 {
     int offset = (page - 1) * pageSize;
+
+    if (!db.open()) {
+        qWarning() << "Failed to open database: " + db.lastError().text();
+    }
+
     QSqlQuery query(db);
     QString queryString;
 
@@ -132,7 +154,7 @@ bool AllBooksList::addBook(const QString &title,
                            const QString &method)
 {
 
-    if (!db.isOpen()) {
+    if (!db.open()) {
         emit errorOccured("Database connection is not open.");
         return false;
     }
@@ -204,6 +226,10 @@ bool AllBooksList::addBook(const QString &title,
 
 void AllBooksList::removeBook(const QString &callNumber)
 {
+    if (!db.open()) {
+        qWarning() << "Failed to open database: " + db.lastError().text();
+    }
+
     QSqlQuery query(db);
     query.prepare("DELETE FROM books WHERE callNumber = ?");
     query.addBindValue(callNumber);

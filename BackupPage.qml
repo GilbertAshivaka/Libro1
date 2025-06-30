@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Dialogs
 import com.backupManager
+import Qt.labs.settings
 
 Rectangle {
     id: backupScreen
@@ -23,6 +24,20 @@ Rectangle {
     MouseArea {
         id: backupScreenMA
         anchors.fill: parent
+    }
+
+    //Settings
+    Settings {
+        id: backupSettings
+
+        category: "BackupPreferences"
+        property bool preferLocalBackup: true
+        property int cloudProvider: 0 // Default to Google Drive
+        property string backupPath: backupManager.defaultBackupPath
+        property bool enableEncryption: true
+        property bool enableScheduledBackup: false
+        property int backupFrequencyIndex: 2 // Default to Daily
+
     }
 
     // Back button
@@ -58,6 +73,7 @@ Rectangle {
         MouseArea {
             id: backMA
             anchors.fill: parent
+            enabled: !(backupManager.currentStatus === BackupManager.InProgress)
             hoverEnabled: true
 
             onEntered: {
@@ -207,6 +223,8 @@ Rectangle {
                     cloudBackupCard.isSelected = false
                     localBackupCard.color = "#E3F2FD"
                     cloudBackupCard.color = "#F8F9FA"
+                    backupSettings.preferLocalBackup = true
+                    updateBackupPath()
                 }
             }
         }
@@ -295,6 +313,8 @@ Rectangle {
                     localBackupCard.isSelected = false
                     cloudBackupCard.color = "#E3F2FD"
                     localBackupCard.color = "#F8F9FA"
+                    backupSettings.preferLocalBackup = false
+                    updateBackupPath()
                 }
             }
         }
@@ -486,7 +506,8 @@ Rectangle {
                         font.pixelSize: 12
                         color: "#6C757D"
                         font.bold: true
-                    }                    Text {
+                    }
+                    Text {
                         id: lastBackupTime
                         text: getLastBackupText()
                         font.pixelSize: 14
@@ -567,7 +588,8 @@ Rectangle {
                         rightMargin: 15
                         bottom: parent.bottom
                         bottomMargin: 15
-                    }                    Rectangle {
+                    }
+                    Rectangle {
                         width: parent.width * (getAvailableSpace() / getTotalSpace())
                         height: parent.height
                         color: "#007BFF"
@@ -681,6 +703,9 @@ Rectangle {
                                     text: "Google Drive"
                                     enabled: cloudBackupCard.isSelected
                                     ButtonGroup.group: providerCheckButtons
+                                    onClicked: {
+                                        cloudProviderDialog.provider = 0
+                                    }
                                 }
                                 Text {
                                     text: "• Sync and store files with your Google account."
@@ -697,6 +722,9 @@ Rectangle {
                                     text: "Amazon S3"
                                     enabled: cloudBackupCard.isSelected
                                     ButtonGroup.group: providerCheckButtons
+                                    onClicked: {
+                                        cloudProviderDialog.provider = 1
+                                    }
                                 }
                                 Text {
                                     text: "• Scalable, reliable cloud storage from AWS."
@@ -713,6 +741,9 @@ Rectangle {
                                     text: "Drop Box"
                                     enabled: cloudBackupCard.isSelected
                                     ButtonGroup.group: providerCheckButtons
+                                    onClicked: {
+                                        cloudProviderDialog.provider = 2
+                                    }
                                 }
                                 Text {
                                     text: "• Simple file storage and sharing with auto-sync."
@@ -729,6 +760,9 @@ Rectangle {
                                     text: "One Drive"
                                     enabled: cloudBackupCard.isSelected
                                     ButtonGroup.group: providerCheckButtons
+                                    onClicked: {
+                                        cloudProviderDialog.provider = 3
+                                    }
                                 }
                                 Text {
                                     text: "• Microsoft's cloud storage linked to your Microsoft account."
@@ -745,6 +779,9 @@ Rectangle {
                                     text: "Generic Provider"
                                     enabled: cloudBackupCard.isSelected
                                     ButtonGroup.group: providerCheckButtons
+                                    onClicked: {
+                                        cloudProviderDialog.provider = 4
+                                    }
                                 }
                                 Text {
                                     text: "• Use any other custom or self-hosted cloud service."
@@ -788,7 +825,8 @@ Rectangle {
                                     source: localBackupCard.isSelected ? "assets/folder.png" : "assets/cloud.png"
                                     width: 20
                                     height: 20
-                                }                                Text {
+                                }
+                                Text {
                                     id: locationPathText
                                     text: currentBackupPath
                                     font.pixelSize: 12
@@ -977,44 +1015,104 @@ Rectangle {
                     onExited: {
                         parent.color = "transparent"
                         parent.children[0].color = "#6C757D"
-                    }                    onClicked: {
+                    }
+                    onClicked: {
                         historyDialog.open()
                     }
                 }
             }
         }
-    }    Component.onCompleted: {
-        // Initialize backup screen
-        localBackupCard.color = "#E3F2FD"
-        updateBackupPath()
+    }
+
+
+    Rectangle {
+        id: navigationRect
+        width: parent.width *0.90
+        height: 80
+        radius: 8
+        border.color: "lightgray"
+        color: "white"
+        opacity: 0.9
+        visible: backupManager.currentStatus === BackupManager.InProgress
+
+        anchors{
+            bottom: parent.bottom
+            bottomMargin: 10
+            horizontalCenter: parent.horizontalCenter
+        }
+
+        // Progress Bar for backup/restore operations
+        ProgressBar {
+            id: backupProgress
+            width: parent.width * 0.8
+            height: 6
+            anchors {
+                // bottom: parent.bottom
+                // bottomMargin: 20
+                verticalCenter: parent.verticalCenter
+                horizontalCenter: parent.horizontalCenter
+            }
+            value: backupManager.progressPercentage
+            from: 0
+            to: 100
+            visible: backupManager.currentStatus === BackupManager.InProgress
+
+            Text {
+                anchors {
+                    bottom: parent.top
+                    bottomMargin: 5
+                    horizontalCenter: parent.horizontalCenter
+                }
+                text: Math.round(backupProgress.value) + "% - " + backupManager.currentOperation
+                color: "#8E8E8E"
+                visible: backupProgress.visible
+            }
+        }
+
+        RoundButton{
+            id: backupCancelButton
+            anchors {
+                right: parent.right
+                rightMargin: 10
+                bottom: parent.bottom
+                bottomMargin: 10
+            }
+
+            text: "Cancel"
+
+            onClicked: {
+                backupManagerInstance.cancelCurrentBackup()
+                backupManagerInstance.cancelCurrentBackup()
+            }
+        }
     }
 
     // Progress Bar for backup/restore operations
-    ProgressBar {
-        id: backupProgress
-        width: parent.width * 0.8
-        height: 6
-        anchors {
-            bottom: parent.bottom
-            bottomMargin: 20
-            horizontalCenter: parent.horizontalCenter
-        }
-        value: backupManager.progressPercentage
-        from: 0
-        to: 100
-        visible: backupManager.currentStatus === BackupManager.InProgress
+    // ProgressBar {
+    //     id: backupProgress
+    //     width: parent.width * 0.8
+    //     height: 6
+    //     anchors {
+    //         bottom: parent.bottom
+    //         bottomMargin: 20
+    //         horizontalCenter: parent.horizontalCenter
+    //     }
+    //     value: backupManager.progressPercentage
+    //     from: 0
+    //     to: 100
+    //     visible: backupManager.currentStatus === BackupManager.InProgress
 
-        Text {
-            anchors {
-                bottom: parent.top
-                bottomMargin: 5
-                horizontalCenter: parent.horizontalCenter
-            }
-            text: Math.round(backupProgress.value) + "% - " + backupManager.currentOperation
-            color: "#8E8E8E"
-            visible: backupProgress.visible
-        }
-    }
+    //     Text {
+    //         anchors {
+    //             bottom: parent.top
+    //             bottomMargin: 5
+    //             horizontalCenter: parent.horizontalCenter
+    //         }
+    //         text: Math.round(backupProgress.value) + "% - " + backupManager.currentOperation
+    //         color: "#8E8E8E"
+    //         visible: backupProgress.visible
+    //     }
+    // }
 
     // Error Dialog
     Dialog {
@@ -1055,6 +1153,7 @@ Rectangle {
         onAccepted: {
             currentBackupPath = selectedFolder.toString().replace("file:///", "")
             backupManager.setDefaultBackupPath(currentBackupPath)
+            backupSettings.backupPath = currentBackupPath
             updateBackupPath()
         }
     }
@@ -1156,6 +1255,7 @@ Rectangle {
             //     selectedProvider = backupManagerInstance.Generic
 
             console.log("Provider: ", cloudProviderDialog.provider)
+            backupSettings.cloudProvider = cloudProviderDialog.provider
             backupManagerInstance.openCloudDialog(cloudProviderDialog.provider, backupManagerInstance.defaultBackupPath)
             currentBackupPath = getCloudProviderName(cloudProviderDialog.provider)
             updateBackupPath()
@@ -1214,6 +1314,8 @@ Rectangle {
 
         onAccepted: {
             backupManager.setScheduledBackupEnabled(enableScheduleSwitch.checked)
+            backupSettings.enableScheduledBackup = enableScheduleSwitch.checked
+            backupSettings.backupFrequencyIndex = frequencyCombo.currentIndex
         }
     }
 
@@ -1315,7 +1417,7 @@ Rectangle {
                                 anchors.verticalCenter: parent.verticalCenter
 
                                 Text {
-                                    text: Qt.formatDateTime(modelData.timestamp, "MMM dd, yyyy hh:mm AP")
+                                    text: Qt.formatDateTime(modelData.timeStamp, "MMM dd, yyyy hh:mm AP")
                                     font.bold: true
                                     color: "#212529"
                                 }
@@ -1418,7 +1520,7 @@ Rectangle {
 
     function testBackup() {
         var estimatedSize = backupManager.estimateBackupSize()
-        var availableSpace = backupManager.getAvailableSpace(currentBackupPath)
+        var availableSpace = backupManager.getAvailableSpace(backupManager.defaultBackupPath)
 
         if (estimatedSize > availableSpace) {
             errorDialog.title = "Insufficient Space"
@@ -1487,7 +1589,14 @@ Rectangle {
 
         var lastBackup = history[0]
         var now = new Date()
-        var backupTime = lastBackup.timestamp
+        // var backupTime = lastBackup.timestamp
+        var backupTime = new Date(lastBackup.timeStamp)
+
+        console.log("Backup Time: ", backupTime)
+        console.log("Now: ", now)
+        console.log("Backup Time valid: ", !isNaN(backupTime.getTime()))
+        console.log("Backup Time: ", backupTime)
+
         var diffMs = now - backupTime
         var diffHours = Math.floor(diffMs / (1000 * 60 * 60))
 
@@ -1523,7 +1632,7 @@ Rectangle {
     }
 
     function getAvailableSpace() {
-        return backupManager.getAvailableSpace(currentBackupPath)
+        return backupManager.getAvailableSpace(backupManager.defaultBackupPath) //using the currentBackupPath returns gibberish
     }
 
     function getTotalSpace() {
@@ -1537,12 +1646,21 @@ Rectangle {
         var now = new Date()
         var nextBackup = new Date(now.getTime() + (hours * 60 * 60 * 1000))
 
-        if (hours === 24) {
-            return "Today " + Qt.formatTime(nextBackup, "hh:mm AP")
-        } else if (hours < 24) {
+        if (hours < 24) {
             return "In " + hours + " hours"
+        } else if (hours === 24) {
+            return "Tomorrow " + Qt.formatTime(nextBackup, "hh:mm AP")
         } else {
-            return Qt.formatDateTime(nextBackup, "MMM dd hh:mm AP")
+            // For more than 24 hours, show the actual date
+            var diffDays = Math.floor(hours / 24)
+            if (diffDays === 1) {
+                return "Tomorrow " + Qt.formatTime(nextBackup, "hh:mm AP")
+            } else if (diffDays < 7) {
+                // For within a week, you might want to show day name
+                return Qt.formatDateTime(nextBackup, "dddd hh:mm AP")
+            } else {
+                return Qt.formatDateTime(nextBackup, "MMM dd hh:mm AP")
+            }
         }
     }
 
@@ -1656,5 +1774,52 @@ Rectangle {
             successDialog.text = message
             successDialog.open()
         }
+
+        function onApplicationRestarting(message){  //applicationRestarting
+            successDialog.title = "Success!"
+            successDialog.text = message
+            successDialog.open()
+        }
+    }
+
+    Component.onCompleted: {
+        // Initialize backup screen
+        localBackupCard.color = "#E3F2FD"
+        updateBackupPath()
+
+        localBackupCard.isSelected = backupSettings.preferLocalBackup
+        cloudBackupCard.isSelected = !backupSettings.preferLocalBackup
+        localBackupCard.color = backupSettings.preferLocalBackup ? "#E3F2FD" : "#F8F9FA"
+        cloudBackupCard.color = !backupSettings.preferLocalBackup ? "#E3F2FD" : "#F8F9FA"
+
+        // Set cloud provider
+        cloudProviderDialog.provider = backupSettings.cloudProvider
+        if (!backupSettings.preferLocalBackup) {
+            currentBackupPath = getCloudProviderName(backupSettings.cloudProvider)
+        } else {
+            currentBackupPath = backupSettings.backupPath
+        }
+
+        // Set schedule
+        enableScheduleSwitch.checked = backupSettings.enableScheduledBackup
+        frequencyCombo.currentIndex = backupSettings.backupFrequencyIndex
+        backupManager.setScheduledBackupEnabled(backupSettings.enableScheduledBackup)
+        var hours = [6, 12, 24, 48, 168][backupSettings.backupFrequencyIndex]
+        backupManager.setBackupFrequencyHours(hours)
+
+        updateBackupPath()
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

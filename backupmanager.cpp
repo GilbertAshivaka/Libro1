@@ -37,6 +37,33 @@ BackupManager::BackupManager(QObject *parent)
     //connect timer for scheduled backups
     connect(scheduledBackupTimer, &QTimer::timeout, this, &BackupManager::performScheduledBackup);
 
+    //connect to the close database connection signall to close all the connections before trying to remove the database
+    connect(this, &BackupManager::aboutToRestoreDatabase, this, [this]() {
+        // Close all database connections in the main thread
+        const auto connectionNames = QSqlDatabase::connectionNames();
+        for (const QString &connectionName : connectionNames) {
+            QSqlDatabase::database(connectionName).close();
+            QSqlDatabase::removeDatabase(connectionName);
+        }
+        qDebug() << "Database connections closed.";
+    });
+
+    //connection to refresh the database connection when the restore is finished
+    connect (this, BackupManager::databaseRestored, this, [this] (){
+        DatabaseManager dbManager;
+        dbManager.createDatabase();
+        if(dbManager.isdbInitialized()){
+            qDebug() << "Database has been initialized successfully.";
+        }else{
+            qDebug() <<"Database re-initialization failed.";
+        }
+    });
+
+    //restart the application
+    connect(this, BackupManager::databaseRestored, this, [this](){
+        restart();
+    });
+
     qDebug() << "BackupManager initialized succesfully with default path: " << defaultBackupPath;
 }
 
@@ -67,15 +94,19 @@ bool BackupManager::createBackup(const BackupConfig &config)
     record.backupID = currentBackupId;
     record.timeStamp = QDateTime::currentDateTime();
     record.type = config.type;
-    record.filePath = QString(); //will be set after backup creation
+    record.filePath = databasePath; //QString(); //will be set after backup creation
     record.compressed = config.compressBackup;
     record.encrypted = config.encryptBackup;
     record.status = InProgress;
+
+    qDebug() << "Record created, sending to save function";
 
     if (!saveBackupRecords(record)){
         emit backupFailed("Failed to save the database backup.");
         return false;
     }
+
+    qDebug() << "Record saved successfully.";
 
     setStatus(InProgress);
     cancelRequested = false;
@@ -160,12 +191,12 @@ void BackupManager::cancelCurrentBackup()
     updateProgress(progressPercentage, "Cancelling operation...");
 
     //cancel the future if it is running
-    if (backupWatcher->isRunning()){
-        backupWatcher->cancel();
-    }
-    if (restoreWatcher->isRunning()){
-        restoreWatcher->cancel();
-    }
+    // if (backupWatcher->isRunning()){
+    //     backupWatcher->cancel();
+    // }
+    // if (restoreWatcher->isRunning()){
+    //     restoreWatcher->cancel();
+    // }
 }
 
 bool BackupManager::deleteBackupRecord(const QString &backupId)
@@ -208,14 +239,16 @@ void BackupManager::configureBackup(const QVariantMap &configMap)
 {
     BackupConfig config;
     config.type = static_cast<BackupType>(configMap.value("type").toInt());
-    config.destinationPath = configMap.value("destinationPath").toString();
+    config.destinationPath = configMap.value(""
+                                             "destinationPath").toString();
     config.provider = static_cast<CloudProvider>(configMap.value("provider").toInt());
     config.compressBackup = configMap.value("compressBackup").toBool();
     config.encryptBackup = configMap.value("encryptBackup").toBool();
     config.encryptionPassword = configMap.value("encryptionPassword").toString();
 
     // Now use the original function
-    performLocalBackup(config);
+    createBackup(config);
+    // performLocalBackup(config);
 }
 
 void BackupManager::setDefaultBackupPath(const QString &path)
@@ -254,6 +287,27 @@ void BackupManager::setScheduledBackupEnabled(bool enabled)
         qDebug() << "Backup frequency timer stopped.";
     }
     emit scheduledBackupEnabledChanged();
+}
+
+void BackupManager::restart()
+{
+    emit applicationRestarting("Database successfully restored, the application will restart.");
+
+    // Give the UI time to display the message
+    QTimer::singleShot(3000, this, [this]() {
+        // Prepare the restart
+        QString program = QApplication::applicationFilePath();
+        QStringList arguments = QApplication::arguments();
+        arguments.removeFirst(); // Remove program name
+
+        // Schedule restart
+        QMetaObject::invokeMethod(qApp, [program, arguments]() {
+            QProcess::startDetached(program, arguments);
+            QApplication::quit();
+        }, Qt::QueuedConnection);
+
+        qDebug() << "Restarting the application.";
+    });
 }
 
 void BackupManager::onBackupFinished()
@@ -398,10 +452,14 @@ bool BackupManager::initializeBackupDatabase()
 
 bool BackupManager::saveBackupRecords(const BackupRecord &record)
 {
+    qDebug() << "Getting ready to save the database record";
     if (!backupDb.open()){
         emit errorOccured("Failed to open the backup database to record database backup.");
+        qDebug() << "Failed to open the backup database to record database backup.";
         return false;
     }
+
+    qDebug() << "Database opened for saving the backup record.";
 
     QSqlQuery query(backupDb);
     query.prepare(
@@ -421,11 +479,15 @@ bool BackupManager::saveBackupRecords(const BackupRecord &record)
     query.addBindValue(static_cast<int>(record.status));
     query.addBindValue(record.errorMessage);
 
+    qDebug() << "Database record query prepared.";
 
     if (!query.exec()){
         emit errorOccured("Failed to save backup record: " + query.lastError().text());
+        qDebug() << "Failed to save backup record: " + query.lastError().text();
         return false;
     }
+
+    qDebug() << "Database record query executed.";
 
     return true;
 }
@@ -515,8 +577,8 @@ bool BackupManager::isDatabaseFile(const QString &file) const
         }
     }
 
-    testDb.close();
-    QSqlDatabase::removeDatabase("testConnection");
+    // testDb.close();
+    // QSqlDatabase::removeDatabase("testConnection");
 
     return isValid;
 }
@@ -612,6 +674,7 @@ QString BackupManager::performLocalBackup(const BackupConfig &config)
 
         if (cancelRequested){
             QFile::remove(fullBackupPath);
+            cancelCurrentBackup();
             return QString();
         }
 
@@ -634,6 +697,7 @@ QString BackupManager::performLocalBackup(const BackupConfig &config)
 
         if (cancelRequested){
             QFile::remove(fullBackupPath);
+            cancelCurrentBackup();
             return QString();
         }
 
@@ -719,6 +783,7 @@ bool BackupManager::performDatabaseRestore(const QString &backupFilePath, const 
             if (!tempPath.isEmpty()){
                 QFile::remove(tempPath);
             }
+            cancelCurrentBackup();
             return false;
         }
 
@@ -737,25 +802,96 @@ bool BackupManager::performDatabaseRestore(const QString &backupFilePath, const 
 
         QString currentBackupPath = databasePath + ".backup." + QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss");
         if (QFile::exists(databasePath)){
-            QFile::copy(databasePath, currentBackupPath);
+            if (!QFile::copy(databasePath, currentBackupPath)) {
+                emit errorOccured("Failed to create backup of current database.");
+                if (!tempPath.isEmpty()){
+                    QFile::remove(tempPath);
+                }
+                return false;
+            }
         }
 
         updateProgress(80, "Restoring backup....");
 
-        //close any existing database connections
-        if (QSqlDatabase::contains("libraryConnection")){
-            QSqlDatabase::database("libraryConnection").close();
-        }
+        // Signal main thread to close database connections before file operations
+        QMetaObject::invokeMethod(this, [this]() {
+            emit aboutToRestoreDatabase();
+        }, Qt::BlockingQueuedConnection);
 
-        //Replace the current database
+        // Give system time to release file handles after connections are closed
+        QThread::msleep(1000);
+
+
+        // Replace the current database
         if (QFile::exists(databasePath)){
-            QFile::remove(databasePath);
+            if (!QFile::remove(databasePath)) {
+                emit errorOccured("Failed to remove existing database file. File may be in use.");
+                qDebug() << "Failed to remove existing database file. File may be in use. " << databasePath;
+
+                // Restore the current database backup
+                if (QFile::exists(currentBackupPath)){
+                    QFile::remove(currentBackupPath);
+                }
+
+                if (!tempPath.isEmpty()){
+                    QFile::remove(tempPath);
+                }
+
+                qDebug() << "Failed to remove existing database file. File may be in use. " << databasePath;
+                return false;
+            }
         }
 
-        bool success = QFile::copy(workingPath, databasePath);
+        qDebug() << "Successfully removed the database.";
+
+        // Add detailed debugging for the copy operation
+        QFileInfo sourceInfo(workingPath);
+        QFileInfo targetDirInfo(QFileInfo(databasePath).absolutePath());
+
+        qDebug() << "Source file size:" << sourceInfo.size() << "bytes";
+        qDebug() << "Source readable:" << sourceInfo.isReadable();
+        qDebug() << "Target directory writable:" << targetDirInfo.isWritable();
+        qDebug() << "Attempting to copy from:" << workingPath << "to:" << databasePath;
+
+        bool success = false;
+
+        // Try standard Qt copy first
+        success = QFile::copy(workingPath, databasePath);
+
+        if (!success) {
+            qDebug() << "Standard QFile::copy failed, attempting manual copy...";
+
+            // Try manual copy as fallback
+            QFile sourceFile(workingPath);
+            QFile targetFile(databasePath);
+
+            if (sourceFile.open(QIODevice::ReadOnly)) {
+                if (targetFile.open(QIODevice::WriteOnly)) {
+                    QByteArray data = sourceFile.readAll();
+                    qint64 bytesWritten = targetFile.write(data);
+                    success = (bytesWritten == data.size() && bytesWritten > 0);
+                    targetFile.close();
+
+                    if (success) {
+                        qDebug() << "Manual copy succeeded, wrote" << bytesWritten << "bytes";
+                    } else {
+                        qDebug() << "Manual copy failed - bytes written:" << bytesWritten << "expected:" << data.size();
+                        qDebug() << "Target file error:" << targetFile.errorString();
+                    }
+                } else {
+                    qDebug() << "Failed to open target file for writing:" << targetFile.errorString();
+                }
+                sourceFile.close();
+            } else {
+                qDebug() << "Failed to open source file for reading:" << sourceFile.errorString();
+            }
+        } else {
+            qDebug() << "Standard copy succeeded";
+        }
 
         if (!success){
             emit errorOccured("Failed to copy the database to target location.");
+            qDebug() << "Failed to copy the database to target location.";
 
             //restore the current database if the copying failed
             if (QFile::exists(currentBackupPath)){
@@ -769,13 +905,50 @@ bool BackupManager::performDatabaseRestore(const QString &backupFilePath, const 
             return false;
         }
 
-        updateProgress(90, "Reopening database connections....");
+        updateProgress(90, "Validating restored database....");
 
-        // test the restored database
-        QSqlDatabase testDb = DatabaseManager::getConnection();
+        // Create a new database connection specifically for this thread
+        QString connectionName = QString("restore_test_%1").arg(reinterpret_cast<quintptr>(QThread::currentThread()));
+        QSqlDatabase testDb;
+
+        // Clean up any existing connection with this name first
+        if (QSqlDatabase::contains(connectionName)) {
+            QSqlDatabase::removeDatabase(connectionName);
+        }
+
+        testDb = QSqlDatabase::addDatabase("QSQLITE", connectionName);
+        testDb.setDatabaseName(databasePath);
+
         if (!testDb.open()){
-            emit errorOccured("Restored database is invalid.");
+            emit errorOccured("Restored database is invalid: " + testDb.lastError().text());
             //restore the backup if the new database is invalid
+
+            QFile::remove(databasePath);
+            if(QFile::exists(currentBackupPath)){
+                QFile::copy(currentBackupPath, databasePath);
+                QFile::remove(currentBackupPath);
+            }
+
+            if (!tempPath.isEmpty()){
+                QFile::remove(tempPath);
+            }
+
+            // Clean up the test connection
+            QSqlDatabase::removeDatabase(connectionName);
+
+            return false;
+        }
+
+        // Additional validation: check if essential tables exist
+        QSqlQuery query(testDb);
+        bool hasValidTables = query.exec("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('users', 'books', 'students', 'staff')");
+
+        if (!hasValidTables || !query.next()) {
+            emit errorOccured("Restored database does not contain expected tables.");
+
+            // Clean up and restore backup
+            testDb.close();
+            QSqlDatabase::removeDatabase(connectionName);
 
             QFile::remove(databasePath);
             if(QFile::exists(currentBackupPath)){
@@ -790,6 +963,10 @@ bool BackupManager::performDatabaseRestore(const QString &backupFilePath, const 
             return false;
         }
 
+        // Close and remove the test connection
+        testDb.close();
+        QSqlDatabase::removeDatabase(connectionName);
+
         //cleanup
         if (QFile::exists(currentBackupPath)){
             QFile::remove(currentBackupPath);
@@ -799,7 +976,13 @@ bool BackupManager::performDatabaseRestore(const QString &backupFilePath, const 
             QFile::remove(tempPath);
         }
 
+        updateProgress(100, "Database restore completed successfully.");
         emit operationSuccessful("Database restored successfully from: " + backupFilePath);
+
+        //notify for the database connections to be refreshed
+        QMetaObject::invokeMethod(this, [this]() {
+            emit databaseRestored();
+        }, Qt::QueuedConnection);
 
         return true;
 
@@ -811,7 +994,6 @@ bool BackupManager::performDatabaseRestore(const QString &backupFilePath, const 
         return false;
     }
 }
-
 QString BackupManager::calculateFileChecksum(const QString &filePath)
 {
     QFile file(filePath);
@@ -984,13 +1166,16 @@ bool BackupManager::decompressFile(const QString &sourcePath, const QString &tar
     return QFile::exists(targetPath);
 }
 
-QList<BackupManager::BackupRecord> BackupManager::getBackupHistory()
+QVariantList BackupManager::getBackupHistory()
 {
-    QList<BackupRecord> records;
+    qDebug() << "Getting ready to fetch backup history.";
+    QVariantList records;
 
     if (!backupDb.open()){
         return records;
     }
+
+    qDebug() << "Database opened successfully to get backup history.";
 
     QSqlQuery query(backupDb);
 
@@ -999,21 +1184,28 @@ QList<BackupManager::BackupRecord> BackupManager::getBackupHistory()
         return records;
     }
 
+    qDebug() << "Query executes.";
+
     while (query.next()){
-        BackupRecord record;
-        record.backupID = query.value("backup_id").toString();
-        record.timeStamp = query.value("timestamp").toDateTime();
-        record.type = static_cast<BackupType>(query.value("type").toInt());
-        record.provider  = static_cast<CloudProvider>(query.value("provider").toInt());
-        record.filePath = query.value("file_path").toString();
-        record.fileSize = query.value("file_size").toLongLong();
-        record.compressed = query.value("compressed").toBool();
-        record.encrypted = query.value("encrypted").toBool();
-        record.checkSum = query.value("checksum").toString();
-        record.status = static_cast<BackupStatus>(query.value("status").toInt());
-        record.errorMessage = query.value("error_message").toString();
+        QVariantMap record;
+        record["backupId"] = query.value("backup_id").toString();
+        record["timeStamp"] = query.value("timestamp").toDateTime();
+        record["type"] = static_cast<BackupType>(query.value("type").toInt());
+        record["provider"]  = static_cast<CloudProvider>(query.value("provider").toInt());
+        record["filePath"] = query.value("file_path").toString();
+        record["fileSize"] = query.value("file_size").toLongLong();
+        record["compressed"] = query.value("compressed").toBool();
+        record["encrypted"] = query.value("encrypted").toBool();
+        record["checkSum"] = query.value("checksum").toString();
+        record["status"] = static_cast<BackupStatus>(query.value("status").toInt());
+        record["errorMessage"] = query.value("error_message").toString();
 
         records.append(record);
+    }
+
+    qDebug() << "Records fetched.";
+    for (const auto &record: records){
+        qDebug() << "Record: " << record.toMap()["backupId"].toString();
     }
 
     return records;

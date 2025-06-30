@@ -34,6 +34,10 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
+    app.setOrganizationName("Libro");
+    app.setOrganizationDomain("libroILMS.com");
+    app.setApplicationName("LIbroILMS");
+
     QQuickStyle::setStyle("Material");
     DatabaseManager dbManager;
     if (!dbManager.isdbInitialized()){

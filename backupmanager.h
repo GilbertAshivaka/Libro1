@@ -99,7 +99,7 @@ public:
 
     //Backup managers
     Q_INVOKABLE void cancelCurrentBackup();
-    Q_INVOKABLE QList<BackupRecord> getBackupHistory();
+    Q_INVOKABLE QVariantList getBackupHistory();
     Q_INVOKABLE bool deleteBackupRecord(const QString &backupId);
     Q_INVOKABLE quint64 estimateBackupSize() const;
     Q_INVOKABLE quint64 getAvailableSpace(const QString &path) const;
@@ -116,9 +116,11 @@ public:
 
     //scheduled backup properties
     int getBackupFrequencyHours() const{return backupFrequencyHours;}
-    void setBackupFrequencyHours(int hours);
+    Q_INVOKABLE void setBackupFrequencyHours(int hours);
     bool isScheduledBackupEnabled() const{return scheduledBackupEnabled;}
-    void setScheduledBackupEnabled(bool enabled);
+    Q_INVOKABLE void setScheduledBackupEnabled(bool enabled);
+
+    void restart();
 
 
 public slots:
@@ -149,6 +151,11 @@ signals:
     void errorOccured(const QString &errorMessage);
     void gearingUp(const QString &message);
     void operationSuccessful(const QString &message);
+
+    void databaseRestored();
+    void aboutToRestoreDatabase();
+
+    void applicationRestarting(const QString &message);
 
 private slots:
     void onBackupFinished();

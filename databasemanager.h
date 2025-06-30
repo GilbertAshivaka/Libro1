@@ -22,6 +22,8 @@ public:
     // static method to obtain a thread-safe database connection
     static QSqlDatabase getConnection();
 
+    bool createDatabase();
+
 
 public slots:
     void deleteTables();
@@ -30,7 +32,6 @@ signals:
     void errorOccured(const QString &error);
 
 private:
-    bool createDatabase();
     bool dbInitalized = false;
 
     QSqlDatabase db;
