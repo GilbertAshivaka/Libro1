@@ -1,0 +1,21 @@
+# Build directories
+build/
+CMakeFiles/
+
+# Qt build artifacts
+*_autogen/
+*.qmltypes
+*_qmltyperegistrations.cpp
+*.ninja_log
+
+# Compiled files
+*.obj
+*.exe
+*.dll
+*.lib
+*.so
+*.dylib
+
+# IDE files
+*.pro.user
+*.vcxproj.user

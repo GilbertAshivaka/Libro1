@@ -112,7 +112,7 @@ public:
     QString getCurrentOperation(){return currentOperation;}
     QString getDefaultBackupPath(){return defaultBackupPath;}
 
-    void setDefaultBackupPath(const QString &path);
+    Q_INVOKABLE void setDefaultBackupPath(const QString &path);
 
     //scheduled backup properties
     int getBackupFrequencyHours() const{return backupFrequencyHours;}

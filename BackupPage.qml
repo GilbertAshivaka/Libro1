@@ -224,6 +224,7 @@ Rectangle {
                     localBackupCard.color = "#E3F2FD"
                     cloudBackupCard.color = "#F8F9FA"
                     backupSettings.preferLocalBackup = true
+                    currentBackupPath = backupManager.defaultBackupPath //reset the backupPath text to the local path
                     updateBackupPath()
                 }
             }
@@ -314,6 +315,7 @@ Rectangle {
                     cloudBackupCard.color = "#E3F2FD"
                     localBackupCard.color = "#F8F9FA"
                     backupSettings.preferLocalBackup = false
+                    currentBackupPath = getCloudProviderName(cloudProviderDialog.provider)
                     updateBackupPath()
                 }
             }
@@ -1537,6 +1539,7 @@ Rectangle {
         }
     }
 
+
     function updateBackupPath() {
         if (localBackupCard.isSelected) {
             locationPathText.text = currentBackupPath
@@ -1797,7 +1800,7 @@ Rectangle {
         if (!backupSettings.preferLocalBackup) {
             currentBackupPath = getCloudProviderName(backupSettings.cloudProvider)
         } else {
-            currentBackupPath = backupSettings.backupPath
+            currentBackupPath = backupManager.defaultBackupPath
         }
 
         // Set schedule

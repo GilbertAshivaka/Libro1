@@ -9,7 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(Qt6 6.4 REQUIRED COMPONENTS Quick)
 find_package(Qt6 6.4 REQUIRED COMPONENTS Core Gui Qml Widgets Sql Concurrent)
-find_package(Qt6 6.4 REQUIRED COMPONENTS QuickControls2 Multimedia)
+find_package(Qt6 6.4 REQUIRED COMPONENTS QuickControls2 Multimedia Pdf WebEngineQuick WebView)
 
 
 qt_standard_project_setup()
@@ -181,6 +181,17 @@ qt_add_qml_module(appLibro1
     QML_FILES BackupPage.qml
     SOURCES backupmanager.h backupmanager.cpp
     QML_FILES BackupManager2.qml
+    SOURCES activitylogs.h activitylogs.cpp
+    QML_FILES ActivityLogs.qml
+    QML_FILES PDFReaderScreen.qml
+    QML_FILES PDFReaderScreen2.qml
+    RESOURCES assets/genAI.png
+    RESOURCES assets/copySymbol.png assets/openFolder.png assets/selection.png assets/zoomIn.png assets/zoomOut.png
+    QML_FILES LibroAIPage.qml
+    RESOURCES webPages/LibroAI.html
+    QML_FILES BookshopScreen.qml
+    SOURCES bookshopmanager.h bookshopmanager.cpp
+    RESOURCES .gitignore
 )
 
 # Include directories for ZXing
@@ -229,6 +240,9 @@ target_link_libraries(appLibro1
     PRIVATE Qt6::Gui
     PRIVATE Qt6::Qml
     PRIVATE Qt6::Multimedia
+    PRIVATE Qt6::Pdf
+    PRIVATE Qt6::WebEngineQuick
+    PRIVATE Qt6::WebView
 )
 
 

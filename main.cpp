@@ -3,6 +3,7 @@
 #include <QtWidgets/QApplication>
 #include <QQuickStyle>
 #include <QQmlContext>
+#include <QtWebEngineQuick/qtwebenginequickglobal.h>
 
 #include "databasemanager.h"
 #include "usermanager.h"
@@ -25,6 +26,8 @@
 #include "issuedbookslistmodel.h"
 
 #include "backupmanager.h"
+#include "activitylogs.h"
+#include "bookshopmanager.h"
 
 //for the barcode
 #include "barcodereader.h"
@@ -32,6 +35,9 @@
 
 int main(int argc, char *argv[])
 {
+    QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+    QtWebEngineQuick::initialize(); //initialize the webEngine before creating the application
+
     QApplication app(argc, argv);
 
     app.setOrganizationName("Libro");
@@ -63,6 +69,7 @@ int main(int argc, char *argv[])
     qmlRegisterType<InventoryManager>("com.inventoryManager", 1, 0, "InventoryManager");
 
     qmlRegisterType<BackupManager>("com.backupManager", 1, 0, "BackupManager");
+    qmlRegisterType<BookshopManager>("com.bookshopManager", 1, 0, "BookshopManager");
 
 
     qmlRegisterUncreatableType<AllBooksList>("AllBooksList", 1, 0, "AllBooksList",
@@ -85,6 +92,8 @@ int main(int argc, char *argv[])
     IssueBooksList issueBooksList;
     IssuedBooksList issuedBooksList;
 
+    ActivityLogs activityLogsClass;
+
 
     QQmlApplicationEngine engine;
 
@@ -92,6 +101,8 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("allUsersList"), &allUsersList);
     engine.rootContext()->setContextProperty(QStringLiteral("issueBooksList"), &issueBooksList);
     engine.rootContext()->setContextProperty(QStringLiteral("issuedBooksList"), &issuedBooksList);
+    engine.rootContext()->setContextProperty(QStringLiteral("activityLogsClass"), &activityLogsClass);
+
 
 
     const QUrl url(u"qrc:/Libro1/Main.qml"_qs);

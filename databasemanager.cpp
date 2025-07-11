@@ -224,6 +224,42 @@ bool DatabaseManager::createDatabase()
         return false;
     }
 
+    //Create the logs table
+    if (!query.exec("CREATE TABLE IF NOT EXISTS system_logs ("
+                    "log_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    "log_level TEXT NOT NULL CHECK (log_level IN ('INFO', 'WARNING', 'ERROR', 'DEBUG', 'CRITICAL')),"
+                    "log_category TEXT NOT NULL,"
+                    "log_message TEXT NOT NULL,"
+                    "details TEXT,"
+                    "user_id INTEGER,"
+                    "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,"
+                    "FOREIGN KEY (user_id) REFERENCES users(user_id)"
+                    ")")){
+        emit errorOccured("Failed to create the logs table: " + query.lastError().text());
+        qDebug() << "Failed to create the logs table: " << query.lastError().text();
+        return false;
+    }
+
+    //create index on the logs table for better performance
+    query.exec("CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON system_logs(timestamp)");
+    query.exec("CREATE INDEX IF NOT EXISTS idx_logs_level ON system_logs(log_level)");
+    query.exec("CREATE INDEX IF NOT EXISTS idx_logs_category ON system_logs(log_category)");
+    query.exec("CREATE INDEX IF NOT EXISTS idx_logs_user_id ON system_logs(user_id)");
+
+    // Create the bookshops table
+    if (!query.exec("CREATE TABLE IF NOT EXISTS bookshops ("
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    "name TEXT NOT NULL,"
+                    "url TEXT NOT NULL,"
+                    "created_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
+                    "updated_at DATETIME DEFAULT CURRENT_TIMESTAMP"
+                    ")")){
+        emit errorOccured("Error creating bookshops table: " + query.lastError().text());
+        qDebug() << "Error creating bookshops table: " + query.lastError().text();
+        return false;
+    }
+
+
     qDebug() << "Tables created successfully";
     return true;
 }

@@ -49,7 +49,7 @@ BackupManager::BackupManager(QObject *parent)
     });
 
     //connection to refresh the database connection when the restore is finished
-    connect (this, BackupManager::databaseRestored, this, [this] (){
+    connect (this, &BackupManager::databaseRestored, this, [this] (){
         DatabaseManager dbManager;
         dbManager.createDatabase();
         if(dbManager.isdbInitialized()){
@@ -60,7 +60,7 @@ BackupManager::BackupManager(QObject *parent)
     });
 
     //restart the application
-    connect(this, BackupManager::databaseRestored, this, [this](){
+    connect(this, &BackupManager::databaseRestored, this, [this](){
         restart();
     });
 

@@ -1,20 +1,42 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
+import QtQuick
+import QtQuick.Controls.Material
+import QtQuick.Layouts
+import QtQuick.Pdf
+import QtQuick.Dialogs
+import Qt.labs.settings
+import QtQuick.Effects
+import QtWebEngine
+import QtWebView
+import QtWebChannel
 import "DynamicComponents"
 import "DynamicComponentLoader.js" as CustomComponentLoader
 
 
+
 Rectangle {
     id: toolsPage
-    width: 800
-    height: 600
+    width: parent.width
+    height: parent.width
     color: "#FBFBFB"
     property double calculatedHeight: 0
     property double flowItemHeight: flowItem.calculateFlowHeight()
 
+
+    // Color scheme from welcome page
+    readonly property color lightGrey: "#f8f9fa"
+    readonly property color toolbarGrey: "#6c757d"
+    readonly property color textGrey: "#343a40"
+    readonly property color white: "#ffffff"
+
     property var reportsPage: null
     property var inventoryTracking: null
     property var backupPage: null
+    property var activityLogs: null
+    property var bookshopScreen: null
+    property var pdfRoot: null
+    property var libroAIPage: null
+
+    // property var root
 
     Rectangle{
         id: navSearchBox
@@ -184,7 +206,7 @@ Rectangle {
             icon: "assets/logging.png"
             description: "Activity logger"
             instruction1: function() {
-                console.log("Instruction 1")
+                CustomComponentLoader.customCreateComponent(activityLogs,"ActivityLogs", mainPageContainer)
             }
 
             instruction2: function() {
@@ -193,12 +215,33 @@ Rectangle {
         }
 
         ToolsTemplate{
+            id: genAI1
+            icon: "assets/genAI.png"
+            description: "Libro AI"
+
+            instruction1: function(){
+                CustomComponentLoader.customCreateComponent(libroAIPage,"LibroAIPage", mainPageContainer)
+            }
+
+           instruction2:{
+               console.log("Instruction 2")
+           }
+        }
+
+        ToolsTemplate{
             id: pdfReader
             icon: "assets/pdf.png"
             description: "Ebook reader"
-//            instruction1:
-//            instruction2:
+           instruction1: function() {
+               // root.show()
+               CustomComponentLoader.customCreateComponent(pdfRoot,"PDFReaderScreen", mainPageContainer)
+            }
+
+           instruction2:{
+               console.log("Instruction 2")
+           }
         }
+
 
         ToolsTemplate{
             id: digitalMaterial
@@ -211,8 +254,10 @@ Rectangle {
         ToolsTemplate{
             id: bookStore
             icon: "assets/bookstore.png"
-            description: "Online Bookshop"
-//            instruction1:
+            description: "Online Bookshops"
+           instruction1: function() {
+               CustomComponentLoader.customCreateComponent(bookshopScreen,"BookshopScreen", mainPageContainer)
+           }
 //            instruction2:
         }
 
@@ -238,7 +283,6 @@ Rectangle {
             description: "Help and documentation"
 //            instruction1:
 //            instruction2:
-        }
+        }   
     }
-
 }

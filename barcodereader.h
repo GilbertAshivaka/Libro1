@@ -370,7 +370,7 @@ public:
         }
     }
 
-    Q_SIGNAL formatsChanged();
+    Q_SIGNAL void formatsChanged();
 
     Q_PROPERTY(TextMode textMode READ textMode WRITE setTextMode NOTIFY textModeChanged)
     TextMode textMode() const noexcept { return static_cast<TextMode>(ReaderOptions::textMode()); }

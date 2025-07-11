@@ -1,14 +1,18 @@
 import QtQuick
-import QtQuick.Controls
+import QtQuick.Effects
+import QtWebEngine
+import QtWebView
+import QtWebChannel
+import QtQuick.Dialogs
 
 Rectangle{
-    id: moreTools
+    id: libroAIPage
     anchors.fill: parent
-    color: "#FBFBFB"
+
     signal closeClicked()
 
     Rectangle {
-        id: toolsTitleRect
+        id: titleRect
         width: parent.width
         height: 50
         color: "white"
@@ -26,7 +30,7 @@ Rectangle{
                 verticalCenter: parent.verticalCenter
             }
 
-            text: "More Tools"
+            text: "Libro AI"
 
             font.pointSize: 12
             color: "#878585"
@@ -77,21 +81,21 @@ Rectangle{
         }
     }
 
-    ScrollView{
-        id: moreToolsPageSV
+
+    WebEngineView{
+        id: aiView
         anchors{
-            top: toolsTitleRect.bottom
-            left: parent.left
+            top: titleRect.bottom
             right: parent.right
+            left: parent.left
             bottom: parent.bottom
         }
 
-        contentHeight: toolsPage.flowItemHeight + 120
-
-        ToolsPage{
-            id: toolsPage
-            width: moreToolsPageSV.width
-            height: flowItemHeight + 170
+        url: Qt.resolvedUrl("webPages/LibroAI.html")
+        onLoadingChanged: {
+            if(loadProgress === 100){
+                console.log("Loaded the AI page.")
+            }
         }
     }
 }
