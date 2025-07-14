@@ -4,7 +4,7 @@ ActivityLogs::ActivityLogs(QObject *parent)
     : QObject{parent}
 {
     db = DatabaseManager::getConnection();
-    executeSystemLogsInsert();
+    // executeSystemLogsInsert();
 }
 
 ActivityLogs::~ActivityLogs()

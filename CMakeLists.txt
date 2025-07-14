@@ -192,6 +192,8 @@ qt_add_qml_module(appLibro1
     QML_FILES BookshopScreen.qml
     SOURCES bookshopmanager.h bookshopmanager.cpp
     RESOURCES .gitignore
+    SOURCES storagemanager.h storagemanager.cpp
+    QML_FILES StorageManager.qml
 )
 
 # Include directories for ZXing

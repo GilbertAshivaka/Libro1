@@ -35,7 +35,7 @@ Rectangle {
     property var bookshopScreen: null
     property var pdfRoot: null
     property var libroAIPage: null
-
+    property var storageManagerScreen: null
     // property var root
 
     Rectangle{
@@ -265,8 +265,11 @@ Rectangle {
             id: storageItem
             icon: "assets/storage.png"
             description: "Storage manager"
-//            instruction1:
-//            instruction2:
+            instruction1:function(){
+                CustomComponentLoader.customCreateComponent(storageManagerScreen,"StorageManager", mainPageContainer)
+            }
+
+            //            instruction2:
         }
 
         ToolsTemplate{

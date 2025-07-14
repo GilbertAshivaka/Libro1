@@ -28,6 +28,7 @@
 #include "backupmanager.h"
 #include "activitylogs.h"
 #include "bookshopmanager.h"
+#include "storagemanager.h"
 
 //for the barcode
 #include "barcodereader.h"
@@ -70,6 +71,7 @@ int main(int argc, char *argv[])
 
     qmlRegisterType<BackupManager>("com.backupManager", 1, 0, "BackupManager");
     qmlRegisterType<BookshopManager>("com.bookshopManager", 1, 0, "BookshopManager");
+    qmlRegisterType<StorageManager>("com.storageManager", 1, 0, "StorageManager");
 
 
     qmlRegisterUncreatableType<AllBooksList>("AllBooksList", 1, 0, "AllBooksList",
