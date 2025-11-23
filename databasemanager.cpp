@@ -120,12 +120,6 @@ bool DatabaseManager::createDatabase()
         return false;
     }
 
-    // // Drop and recreate issued_books with correct foreign key
-    // if (!query.exec("DROP TABLE IF EXISTS issued_books")) {
-    //     emit errorOccured("Error dropping issued_books table: " + query.lastError().text());
-    //     return false;
-    // }
-
     //Creating the issued_books table
     if(!query.exec("CREATE TABLE IF NOT EXISTS issued_books ("
             "issue_id INTEGER PRIMARY KEY AUTOINCREMENT,"
@@ -256,6 +250,118 @@ bool DatabaseManager::createDatabase()
                     ")")){
         emit errorOccured("Error creating bookshops table: " + query.lastError().text());
         qDebug() << "Error creating bookshops table: " + query.lastError().text();
+        return false;
+    }
+
+    // Create digital_materials table
+    if (!query.exec("CREATE TABLE IF NOT EXISTS digital_materials ("
+                    "ItemID INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    "ItemName TEXT NOT NULL,"
+                    "ItemType TEXT NOT NULL,"
+                    "quantity INTEGER NOT NULL DEFAULT 0,"
+                    "quantityBorrowed INTEGER NOT NULL DEFAULT 0,"
+                    "holder TEXT,"
+                    "dateAdded DATETIME DEFAULT CURRENT_TIMESTAMP,"
+                    "dateBorrowed DATETIME,"
+                    "location TEXT,"
+                    "condition TEXT,"
+                    "value REAL DEFAULT 0.0,"
+                    "status TEXT DEFAULT 'Available',"
+                    "details TEXT"
+                    ")")) {
+        emit errorOccured("Error creating digital_materials table: " + query.lastError().text());
+        qDebug() << "Error creating digital_materials table: " + query.lastError().text();
+        return false;
+    }
+
+    // Create digital_materials_loans table for history
+    if (!query.exec("CREATE TABLE IF NOT EXISTS digital_materials_loans ("
+                    "loan_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    "item_id INTEGER NOT NULL,"
+                    "item_name TEXT NOT NULL,"
+                    "user_id INTEGER,"
+                    "user_number TEXT NOT NULL,"
+                    "quantity_borrowed INTEGER NOT NULL,"
+                    "issue_date DATETIME DEFAULT CURRENT_TIMESTAMP,"
+                    "return_date DATETIME,"
+                    "status TEXT DEFAULT 'Borrowed',"
+                    "FOREIGN KEY (item_id) REFERENCES digital_materials(ItemID) ON DELETE CASCADE"
+                    ")")) {
+        emit errorOccured("Error creating digital_materials_loans table: " + query.lastError().text());
+        qDebug() << "Error creating digital_materials_loans table: " + query.lastError().text();
+        return false;
+    }
+
+    if (!query.exec(
+            "CREATE TABLE IF NOT EXISTS reserved_books ("
+            "reservation_id INTEGER PRIMARY KEY,"
+            "book_id INTEGER NOT NULL,"
+            "user_id INTEGER NOT NULL,"
+            "user_email TEXT NOT NULL,"
+            "user_name TEXT NOT NULL,"
+            "reservation_date DATETIME NOT NULL,"
+            "notification_sent_date DATETIME,"
+            "pickup_deadline DATETIME,"
+            "status TEXT DEFAULT 'pending',"
+            "expiry_date DATETIME NOT NULL,"
+            "created_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
+            "updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
+            "source TEXT DEFAULT 'online',"
+            "notes TEXT,"
+            "FOREIGN KEY (book_id) REFERENCES books(bookID) ON DELETE CASCADE,"
+            "FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE)")) {
+        qWarning() << "Error creating reserved_books table:" << query.lastError().text();
+        emit errorOccured("Failed to create reserved_books table: " + query.lastError().text());
+        return false;
+    }
+
+    // Create indexes for reserved_books
+    query.exec("CREATE INDEX IF NOT EXISTS idx_reserved_status ON reserved_books(status)");
+    query.exec("CREATE INDEX IF NOT EXISTS idx_reserved_book_id ON reserved_books(book_id)");
+    query.exec("CREATE INDEX IF NOT EXISTS idx_reserved_user_id ON reserved_books(user_id)");
+
+
+    // Create opac_sync_log table
+    if (!query.exec(
+            "CREATE TABLE IF NOT EXISTS opac_sync_log ("
+            "sync_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "sync_type TEXT NOT NULL,"
+            "sync_direction TEXT NOT NULL,"
+            "records_affected INTEGER DEFAULT 0,"
+            "status TEXT NOT NULL,"
+            "error_message TEXT,"
+            "started_at DATETIME NOT NULL,"
+            "completed_at DATETIME,"
+            "last_sync_timestamp DATETIME,"
+            "triggered_by TEXT NOT NULL)")) {
+        qWarning() << "Error creating opac_sync_log table:" << query.lastError().text();
+        emit errorOccured("Failed to create opac_sync_log table: " + query.lastError().text());
+        return false;
+    }
+
+    // Create indexes for opac_sync_log
+    query.exec("CREATE INDEX IF NOT EXISTS idx_sync_type ON opac_sync_log(sync_type)");
+    query.exec("CREATE INDEX IF NOT EXISTS idx_sync_started ON opac_sync_log(started_at)");
+
+
+    // Create opac_configuration table
+    if (!query.exec(
+            "CREATE TABLE IF NOT EXISTS opac_configuration ("
+            "config_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "opac_url TEXT NOT NULL,"
+            "api_key TEXT NOT NULL,"
+            "sync_interval_minutes INTEGER DEFAULT 60,"
+            "last_books_sync DATETIME,"
+            "last_users_sync DATETIME,"
+            "last_reservations_sync DATETIME,"
+            "auto_sync_enabled INTEGER DEFAULT 0,"
+            "notification_pickup_days INTEGER DEFAULT 3,"
+            "reservation_expiry_days INTEGER DEFAULT 7,"
+            "is_active INTEGER DEFAULT 1,"
+            "created_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
+            "updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)")) {
+        qWarning() << "Error creating opac_configuration table:" << query.lastError().text();
+        emit errorOccured("Failed to create opac_configuration table: " + query.lastError().text());
         return false;
     }
 

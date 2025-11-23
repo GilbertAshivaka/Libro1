@@ -1384,10 +1384,31 @@ Rectangle {
                 anchors.margins: 10
                 clip: true
 
+
+                ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+
                 ListView {
                     id: historyListView
                     model: backupManager.getBackupHistory()
                     spacing: 5
+
+                    ScrollBar.vertical: ScrollBar {
+                        id: vbar
+                        active: true
+                        policy: ScrollBar.AsNeeded
+                        width: 10
+
+                        contentItem: Rectangle {
+                            implicitWidth: 10
+                            radius: width / 2
+                            color: vbar.pressed ? "#818181" : "#c2c2c2"  // Darker when pressed
+                        }
+                        background: Rectangle {
+                            implicitWidth: 10
+                            radius: width / 2
+                            color: "#f0f0f0"  // Light background color
+                        }
+                    }
 
                     delegate: Rectangle {
                         width: historyListView.width
@@ -1639,7 +1660,7 @@ Rectangle {
     }
 
     function getTotalSpace() {
-        return getAvailableSpace() * 2 // Placeholder calculation
+        return backupManager.getDeviceStorage()
     }
 
     function getNextScheduledText() {

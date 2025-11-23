@@ -17,6 +17,8 @@
 #include "categorylist.h" //for the class to populate a model for the categories of the books
 #include "singlebookreturn.h"
 #include "inventorymanager.h"
+#include "emailnotificationcontroller.h"
+#include "opacmanager.h"
 
 
 #include "issuebookslist.h"// for issuing books
@@ -29,6 +31,7 @@
 #include "activitylogs.h"
 #include "bookshopmanager.h"
 #include "storagemanager.h"
+#include "digitalmaterialsmanager.h"
 
 //for the barcode
 #include "barcodereader.h"
@@ -72,6 +75,7 @@ int main(int argc, char *argv[])
     qmlRegisterType<BackupManager>("com.backupManager", 1, 0, "BackupManager");
     qmlRegisterType<BookshopManager>("com.bookshopManager", 1, 0, "BookshopManager");
     qmlRegisterType<StorageManager>("com.storageManager", 1, 0, "StorageManager");
+    qmlRegisterType<DigitalMaterialsManager>("com.digitalMaterialsManager", 1, 0, "DigitalMaterialsManager");
 
 
     qmlRegisterUncreatableType<AllBooksList>("AllBooksList", 1, 0, "AllBooksList",
@@ -95,6 +99,8 @@ int main(int argc, char *argv[])
     IssuedBooksList issuedBooksList;
 
     ActivityLogs activityLogsClass;
+    EmailNotificationController emailNotificationController; //for email notifications
+    OpacManager opacManager;
 
 
     QQmlApplicationEngine engine;
@@ -104,7 +110,8 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("issueBooksList"), &issueBooksList);
     engine.rootContext()->setContextProperty(QStringLiteral("issuedBooksList"), &issuedBooksList);
     engine.rootContext()->setContextProperty(QStringLiteral("activityLogsClass"), &activityLogsClass);
-
+    engine.rootContext()->setContextProperty(QStringLiteral("emailNotificationController"), &emailNotificationController);
+    engine.rootContext()->setContextProperty(QStringLiteral("opacManager"), &opacManager);
 
 
     const QUrl url(u"qrc:/Libro1/Main.qml"_qs);

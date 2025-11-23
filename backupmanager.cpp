@@ -235,6 +235,19 @@ quint64 BackupManager::getAvailableSpace(const QString &path) const
     return storage.bytesAvailable();
 }
 
+qint64 BackupManager::getDeviceStorage()
+{
+    QString appPath = QApplication::applicationDirPath();
+    QStorageInfo storage(appPath);
+
+    if (storage.isValid()){
+        return storage.bytesTotal();
+    }
+
+    qDebug() << "Could not determine devide storage size";
+    return 0;
+}
+
 void BackupManager::configureBackup(const QVariantMap &configMap)
 {
     BackupConfig config;

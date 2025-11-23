@@ -103,6 +103,7 @@ public:
     Q_INVOKABLE bool deleteBackupRecord(const QString &backupId);
     Q_INVOKABLE quint64 estimateBackupSize() const;
     Q_INVOKABLE quint64 getAvailableSpace(const QString &path) const;
+    Q_INVOKABLE qint64 getDeviceStorage();
 
     Q_INVOKABLE void configureBackup(const QVariantMap &configMap);
 

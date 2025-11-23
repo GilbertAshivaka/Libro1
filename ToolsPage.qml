@@ -36,6 +36,10 @@ Rectangle {
     property var pdfRoot: null
     property var libroAIPage: null
     property var storageManagerScreen: null
+    property var digitalMaterialPage: null
+    property var emailNotifications: null
+    property var opacConfigurationView: null
+
     // property var root
 
     Rectangle{
@@ -247,8 +251,11 @@ Rectangle {
             id: digitalMaterial
             icon: "assets/digitalContent.png"
             description: "Digital material"
-//            instruction1:
-//            instruction2:
+            instruction1:function(){
+                CustomComponentLoader.customCreateComponent(digitalMaterialPage,"DigitalMaterials", mainPageContainer)
+            }
+
+            //            instruction2:
         }
 
         ToolsTemplate{
@@ -276,7 +283,21 @@ Rectangle {
             id: notifications
             icon: "assets/emailNotification.png"
             description: "Send Notifications"
-//            instruction1:
+           instruction1:function(){
+               CustomComponentLoader.customCreateComponent(emailNotifications,"EmailNotifications", mainPageContainer)
+           }
+
+//            instruction2:
+        }
+
+        ToolsTemplate{
+            id: opac
+            icon: "assets/opac.png"
+            description: "Opac Configuration"
+           instruction1:function(){
+               CustomComponentLoader.customCreateComponent(opacConfigurationView,"OpacConfigurationView", mainPageContainer)
+           }
+
 //            instruction2:
         }
 

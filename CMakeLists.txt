@@ -194,6 +194,14 @@ qt_add_qml_module(appLibro1
     RESOURCES .gitignore
     SOURCES storagemanager.h storagemanager.cpp
     QML_FILES StorageManager.qml
+    QML_FILES DigitalMaterials.qml
+    RESOURCES assets/cloud.png assets/folder.png
+    SOURCES digitalmaterialsmanager.h digitalmaterialsmanager.cpp
+    SOURCES emailnotificationcontroller.h emailnotificationcontroller.cpp
+    QML_FILES EmailNotifications.qml
+    SOURCES opacmanager.h opacmanager.cpp
+    QML_FILES OpacConfigurationView.qml
+    RESOURCES assets/opac.png
 )
 
 # Include directories for ZXing

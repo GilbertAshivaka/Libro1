@@ -16,6 +16,14 @@ Rectangle {
     property string selectedLevel: ""
     property string selectedCategory: ""
 
+    property int itemsPerPage: 100
+    property string category: "all"
+    property int totalPages: Math.ceil(activityLogsClass.getTotalLogsCount() / itemsPerPage)
+    property int previousPage: 0
+    property int currentPage: 1
+    property int nextPage: 2
+
+
     // Signals for backend communication
     signal refreshLogs()
     signal filterChanged(string level, string category)
@@ -128,7 +136,9 @@ Rectangle {
                 onCurrentTextChanged: {
                     selectedLevel = currentIndex === 0 ? "" : currentText
                     filterChanged(selectedLevel, selectedCategory)
-                    logsListView.model = activityLogsClass.getLogs(selectedLevel, "")
+                    resetPagination()
+                    fetchCurrentPageData()
+                    // logsListView.model = activityLogsClass.getLogs(selectedLevel, "")
                 }
             }
 
@@ -139,14 +149,18 @@ Rectangle {
                 onCurrentTextChanged: {
                     selectedCategory = currentIndex === 0 ? "" : currentText
                     filterChanged(selectedLevel, selectedCategory)
-                    logsListView.model = activityLogsClass.getLogs("", selectedCategory)
+                    resetPagination()
+                    fetchCurrentPageData()
+                    // logsListView.model = activityLogsClass.getLogs("", selectedCategory)
                 }
             }
 
             Button {
                 text: "Refresh"
                 onClicked: {
-                    logsListView.model = activityLogsClass.getLogs()
+                    selectedLevel = ""
+                    selectedCategory = ""
+                    fetchCurrentPageData()
                 }
             }
 
@@ -352,30 +366,6 @@ Rectangle {
             }
 
             Item { Layout.fillWidth: true }
-
-            Button {
-                text: "Previous"
-                enabled: false // Implement pagination logic
-            }
-
-            Text {
-                text: "1"
-                font.pixelSize: 14
-                color: "#fff"
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-                width: 30
-                height: 30
-                // background: Rectangle {
-                //     color: "#ff5722"
-                //     radius: 4
-                // }
-            }
-
-            Button {
-                text: "Next"
-                // Implement pagination logic
-            }
         }
     }
 
@@ -443,5 +433,175 @@ Rectangle {
                 }
             }
         }
+    }
+
+    Rectangle {
+        id: navigationRect
+        width: 200
+        height: 50
+        radius: 8
+        border.color: "lightgray"
+        color: "white"
+        opacity: 0.9
+
+        // Initial position
+        x: Math.min(Math.max(0, parent.width - 230), parent.width - width)
+        y: Math.min(Math.max(0, parent.height - 80), parent.height - height)
+
+        // Ensure the rectangle stays within parent bounds when parent is resized
+        onXChanged: {
+            if (x < 0) x = 0
+            if (x > parent.width - width) x = parent.width - width
+        }
+        onYChanged: {
+            if (y < 0) y = 0
+            if (y > parent.height - height) y = parent.height - height
+        }
+
+        MouseArea {
+            id: navigationRectMA
+            anchors.fill: parent
+            drag {
+                target: parent
+                minimumX: 0
+                minimumY: 0
+                maximumX: parent.parent.width - parent.width
+                maximumY: parent.parent.height - parent.height
+                smoothed: true
+            }
+            onReleased: console.log("Rectangle moved to x:", parent.x, "y:", parent.y)
+        }
+
+        Image {
+            id: previousNavigator
+            width: 32
+            height: 32
+            source: enabled ? "assets/leftArrow.png" : "assets/leftChevron.png"
+            enabled: previousPage >0
+            anchors{
+                left: parent.left
+                leftMargin: 8
+                verticalCenter: parent.verticalCenter
+            }
+
+            MouseArea{
+                id: previousPageMA
+                anchors.fill: parent
+                onClicked: {
+                    if (currentPage > 1) {
+                        --currentPage
+                        --previousPage
+                        --nextPage
+                        fetchCurrentPageData()
+                    }
+                }
+            }
+        }
+
+        Text {
+            id: previousPageText
+            text: previousPage == 0 ? "" : previousPage
+            color: "gray"
+            font.pointSize: 11
+            anchors{
+                left: previousNavigator.right
+                leftMargin: 5
+                verticalCenter: parent.verticalCenter
+            }
+            verticalAlignment: Text.AlignVCenter
+        }
+
+        Image {
+            id: nextNavigator
+            width: 32
+            height: 32
+            source: enabled ? "assets/rightArrow.png" : "assets/rightChevron.png"
+            enabled: currentPage < totalPages
+            anchors{
+                right: parent.right
+                rightMargin: 8
+                verticalCenter: parent.verticalCenter
+            }
+
+            MouseArea{
+                id: nextPageMA
+                anchors.fill: parent
+                onClicked: {
+                    if (currentPage < totalPages) {
+                        ++currentPage
+                        ++previousPage
+                        ++nextPage
+                        fetchCurrentPageData()
+                    }
+                }
+            }
+        }
+
+        Text {
+            id: nextPageText
+            text: nextPage <= totalPages ? nextPage : ""
+            color: "gray"
+            font.pointSize: 11
+            anchors{
+                right: nextNavigator.left
+                rightMargin: 5
+                verticalCenter: parent.verticalCenter
+            }
+            verticalAlignment: Text.AlignVCenter
+        }
+
+        TextField {
+            id: pageInput
+            height: parent.height * 0.8
+            font.pointSize: 11
+            color: "red"
+            validator: IntValidator { bottom: 1; top: totalPages }
+            anchors {
+                left: previousPageText.right
+                leftMargin: 5
+                right: nextPageText.left
+                rightMargin: 5
+                verticalCenter: parent.verticalCenter
+            }
+            text: currentPage
+            horizontalAlignment: TextField.AlignHCenter
+            verticalAlignment: TextField.AlignVCenter
+
+            onAccepted: {
+                let newPage = parseInt(text)
+                if (newPage >= 1 && newPage <= totalPages) {
+                    currentPage = newPage
+                    previousPage = Math.max(0, newPage - 1)
+                    nextPage = Math.min(totalPages, newPage + 1)
+                    fetchCurrentPageData()
+                } else {
+                    text = currentPage  // Reset to valid value
+                }
+            }
+        }
+    }
+
+
+    function resetPagination() {
+        currentPage = 1
+        previousPage = 0
+        nextPage = 2
+    }
+
+    function fetchCurrentPageData() {
+        const offset = (currentPage -1) * itemsPerPage //we set currentPage at 1 so we subtract to get the offset to be 0
+        const newData = activityLogsClass.getLogs(selectedLevel, selectedCategory, 100, offset)
+        logsListView.model = newData
+
+        totalPages = Math.ceil(activityLogsClass.getTotalLogsCount(selectedLevel, selectedCategory) / itemsPerPage)
+    }
+
+
+
+    Component.onCompleted: {
+        resetPagination()
+        fetchCurrentPageData()
+        totalPages = Math.ceil(activityLogsClass.getTotalLogsCount() / itemsPerPage)
+        console.log("Activity Logs Pages: ", totalPages)
     }
 }
