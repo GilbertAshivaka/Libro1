@@ -19,6 +19,7 @@
 #include "inventorymanager.h"
 #include "emailnotificationcontroller.h"
 #include "opacmanager.h"
+#include "reportsmanager.h"
 
 
 #include "issuebookslist.h"// for issuing books
@@ -101,6 +102,8 @@ int main(int argc, char *argv[])
     ActivityLogs activityLogsClass;
     EmailNotificationController emailNotificationController; //for email notifications
     OpacManager opacManager;
+    ReportsManager reportsManager;
+
 
 
     QQmlApplicationEngine engine;
@@ -112,6 +115,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("activityLogsClass"), &activityLogsClass);
     engine.rootContext()->setContextProperty(QStringLiteral("emailNotificationController"), &emailNotificationController);
     engine.rootContext()->setContextProperty(QStringLiteral("opacManager"), &opacManager);
+    engine.rootContext()->setContextProperty(QStringLiteral("reportsManager"), &reportsManager);
 
 
     const QUrl url(u"qrc:/Libro1/Main.qml"_qs);

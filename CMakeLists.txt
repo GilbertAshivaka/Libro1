@@ -202,6 +202,12 @@ qt_add_qml_module(appLibro1
     SOURCES opacmanager.h opacmanager.cpp
     QML_FILES OpacConfigurationView.qml
     RESOURCES assets/opac.png
+    SOURCES reportsmanager.h reportsmanager.cpp
+    QML_FILES Reports/ReportsMainPage.qml
+    QML_FILES Reports/ChartContainer.qml Reports/DateRangePicker.qml Reports/ExportButton.qml Reports/FilterPanel.qml Reports/LoadingIndicator.qml Reports/StatCard.qml
+    QML_FILES Reports/CirculationReportsPage.qml Reports/CollectionReportsPage.qml Reports/DigitalMaterialsPage.qml Reports/FinancialReportsPage.qml Reports/LostDamagedReportsPage.qml Reports/OverdueReportsPage.qml Reports/ReservationReportsPage.qml Reports/SystemPerformancePage.qml Reports/TrendsInsightsPage.qml Reports/UserEngagementPage.qml
+    QML_FILES ScreenshotTest.qml
+    QML_FILES Reports/ReportComponentsContainer.qml
 )
 
 # Include directories for ZXing

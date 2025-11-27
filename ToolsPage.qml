@@ -40,6 +40,8 @@ Rectangle {
     property var emailNotifications: null
     property var opacConfigurationView: null
 
+    property var reportsMainPage: null
+
     // property var root
 
     Rectangle{
