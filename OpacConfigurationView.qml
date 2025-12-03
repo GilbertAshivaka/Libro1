@@ -691,7 +691,6 @@ Page {
             color: "#8E8E8E"
             text: ""
         }
-
     }
 
     // Reservation Details Dialog

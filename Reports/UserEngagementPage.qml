@@ -150,6 +150,11 @@ Page {
                 Layout.fillWidth: true
                 Layout.margins: 20
                 title: "Key Metrics"
+                background: Rectangle {
+                    color: "transparent"
+                    border.color: "transparent"
+                    radius: 5
+                }
                 
                 GridLayout {
                     width: parent.width
@@ -256,8 +261,10 @@ Page {
                             id: borrowingActivitySeries
                             axisX: BarCategoryAxis { id: categoryAxis }
                             axisY: ValuesAxis {
+                                id: borrowingActivityValueAxis
                                 titleText: "Number of Users"
                                 min: 0
+                                max: 100
                             }
                             
                             BarSet {
@@ -299,8 +306,10 @@ Page {
                         id: topBorrowersSeries
                         axisY: BarCategoryAxis { id: borrowerAxis }
                         axisX: ValuesAxis {
+                            id: borrowerValueAxis
                             titleText: "Number of Borrows"
                             min: 0
+                            max: 20
                         }
                         
                         BarSet {
@@ -341,11 +350,14 @@ Page {
                             id: registrationsDateAxis
                             format: "MMM yyyy"
                             titleText: "Month"
+                            min: new Date(new Date().getFullYear() , 0,1)
+                            max: new Date()
                         }
                         axisY: ValuesAxis {
                             id: registrationsValueAxis
                             titleText: "New Registrations"
                             min: 0
+                            max: 10
                         }
                     }
                 }
@@ -408,23 +420,25 @@ Page {
     
     function loadUserDistribution() {
         userDistributionSeries.clear()
-        
+
         var data = reportsManager.getUserDistributionByType()
         var colors = ["#2196F3", "#4CAF50", "#FF9800", "#9C27B0", "#F44336"]
-        
+
         for (var i = 0; i < data.length; i++) {
             var slice = userDistributionSeries.append(data[i].label, data[i].value)
             slice.color = colors[i % colors.length]
             slice.labelVisible = true
         }
+        // Pie chart - no axis adjustments needed
     }
-    
+
     function loadTopBorrowers() {
         borrowerBarSet.remove(0, borrowerBarSet.count)
-        
+
         var data = reportsManager.getTopActiveBorrowers(20, getUserTypeFilter())
         var categories = []
-        
+        var maxValue = 0
+
         for (var i = data.length - 1; i >= 0; i--) {
             var name = data[i].label
             if (name.length > 25) {
@@ -432,35 +446,85 @@ Page {
             }
             categories.push(name)
             borrowerBarSet.append(data[i].value)
+
+            if (data[i].value > maxValue) {
+                maxValue = data[i].value
+            }
         }
-        
+
         borrowerAxis.categories = categories
+
+        // Set X-axis max dynamically with 10% padding
+        borrowerValueAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
     }
-    
+
     function loadNewRegistrations() {
         registrationsSeries.clear()
-        
+
         var data = reportsManager.getNewUserRegistrations(getDateRangeValue())
-        
+        var minDate = null
+        var maxDate = null
+        var maxValue = 0
+
         for (var i = 0; i < data.length; i++) {
             var date = new Date(data[i].xValue + "-01") // Add day for valid date
-            registrationsSeries.append(date.getTime(), data[i].yValue)
+            var timestamp = date.getTime()
+            registrationsSeries.append(timestamp, data[i].yValue)
+
+            // Track min/max dates and values
+            if (minDate === null || timestamp < minDate) {
+                minDate = timestamp
+            }
+            if (maxDate === null || timestamp > maxDate) {
+                maxDate = timestamp
+            }
+            if (data[i].yValue > maxValue) {
+                maxValue = data[i].yValue
+            }
+        }
+
+        // Set Y-axis max with 10% padding
+        registrationsValueAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
+
+        // Set X-axis to actual data range with 1 month padding on each side
+        if (minDate !== null && maxDate !== null) {
+            var minDateObj = new Date(minDate)
+            var maxDateObj = new Date(maxDate)
+
+            // Add 1 month padding on each side
+            minDateObj.setMonth(minDateObj.getMonth() - 1)
+            maxDateObj.setMonth(maxDateObj.getMonth() + 1)
+
+            registrationsDateAxis.min = minDateObj
+            registrationsDateAxis.max = maxDateObj
         }
     }
-    
+
     function loadBorrowingActivity() {
         totalUsersSet.remove(0, totalUsersSet.count)
         activeUsersSet.remove(0, activeUsersSet.count)
-        
+
         var data = reportsManager.getBorrowingActivityByUserCategory()
         var categories = []
-        
+        var maxValue = 0
+
         for (var i = 0; i < data.length; i++) {
             categories.push(data[i].user_role)
             totalUsersSet.append(data[i].total_users)
             activeUsersSet.append(data[i].active_users)
+
+            // Track the maximum between both values
+            if (data[i].total_users > maxValue) {
+                maxValue = data[i].total_users
+            }
+            if (data[i].active_users > maxValue) {
+                maxValue = data[i].active_users
+            }
         }
-        
+
         categoryAxis.categories = categories
+
+        // Set Y-axis max dynamically with 10% padding
+        borrowingActivityValueAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
     }
 }

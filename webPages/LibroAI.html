@@ -293,31 +293,31 @@
             .chat-container {
                 border-radius: 0;
             }
-            
+
             .chat-header {
                 padding: 15px;
             }
-            
+
             .chat-header h1 {
                 font-size: 20px;
             }
-            
+
             .chat-messages {
                 padding: 15px;
             }
-            
+
             .message-content {
                 max-width: 85%;
             }
-            
+
             .chat-input-container {
                 padding: 15px;
             }
-            
+
             .suggestions {
                 flex-direction: column;
             }
-            
+
             .suggestion-chip {
                 text-align: center;
             }
@@ -327,15 +327,15 @@
             .message-content {
                 max-width: 90%;
             }
-            
+
             .chat-input {
                 font-size: 14px;
             }
-            
+
             .welcome-message {
                 padding: 20px 15px;
             }
-            
+
             .welcome-message h2 {
                 font-size: 20px;
             }
@@ -390,9 +390,9 @@
 
         <div class="chat-input-container">
             <div class="chat-input-wrapper">
-                <textarea 
-                    class="chat-input" 
-                    id="messageInput" 
+                <textarea
+                    class="chat-input"
+                    id="messageInput"
                     placeholder="Ask me anything about the library system..."
                     rows="1"
                 ></textarea>
@@ -407,11 +407,12 @@
 
     <script>
         // Configuration
-        const GEMINI_API_KEY = "AIzaSyARSh3HFFuwsPCf5sP_TLUBh2fougaVCUA"; // Replace with your actual API key
-        const GEMINI_API_URL ="https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
-        //  'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
-        // "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
-        
+        const GEMINI_API_KEY = "AIzaSyA3kJTrv28KhI4z8Dq6lcs1URKjH7tZp_U"; // Replace with your actual API key
+        const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+        // Alternative models if rate limited:
+        // "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+        // "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent"
+
         // Global variables
         let conversationHistory = [];
         let isTyping = false;
@@ -461,9 +462,9 @@
         function addMessage(content, sender) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${sender}`;
-            
+
             const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            
+
             messageDiv.innerHTML = `
                 <div class="message-avatar">${sender === 'user' ? 'U' : 'AI'}</div>
                 <div class="message-content">
@@ -471,10 +472,10 @@
                     <div class="message-time">${time}</div>
                 </div>
             `;
-            
+
             chatMessages.appendChild(messageDiv);
             scrollToBottom();
-            
+
             // Save to session storage
             const messageData = {
                 content: content,
@@ -526,7 +527,7 @@
 
         async function processMessage(userMessage) {
             showTypingIndicator();
-            
+
             try {
                 const response = await callGeminiAPI(userMessage);
                 hideTypingIndicator();
@@ -534,13 +535,16 @@
             } catch (error) {
                 hideTypingIndicator();
                 console.error('Error calling Gemini API:', error);
-                addMessage('Sorry, I encountered an error while processing your request. Please try again.', 'assistant');
+                const errorMsg = error.message.includes('Rate limit')
+                    ? 'Rate limit reached. Please wait a few seconds and try again.'
+                    : 'Sorry, I encountered an error while processing your request. Please try again.';
+                addMessage(errorMsg, 'assistant');
             }
         }
 
         async function callGeminiAPI(message) {
             // Create context for library management system
-            const systemContext = `You are Libro AI, an intelligent assistant for an Integrated Library Management System (ILMS). 
+            const systemContext = `You are Libro AI, an intelligent assistant for an Integrated Library Management System (ILMS).
             You help users with library-related tasks including:
             - Book search and recommendations
             - Library policies and procedures
@@ -548,10 +552,10 @@
             - Reservation and checkout processes
             - Library hours and contact information
             - General library system navigation
-            
-            Be helpful, professional, and knowledgeable about library operations. 
+
+            Be helpful, professional, and knowledgeable about library operations.
             Provide clear, concise answers and ask for clarification when needed.
-            
+
             User message: ${message}`;
 
             const requestBody = {
@@ -562,16 +566,21 @@
                 }]
             };
 
-            const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+            const response = await fetch(GEMINI_API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'x-goog-api-key': GEMINI_API_KEY
                 },
                 body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json().catch(() => ({}));
+                if (response.status === 429) {
+                    throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+                }
+                throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
@@ -600,9 +609,9 @@
                 conversationHistory.forEach(msg => {
                     const messageDiv = document.createElement('div');
                     messageDiv.className = `message ${msg.sender}`;
-                    
+
                     const time = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    
+
                     messageDiv.innerHTML = `
                         <div class="message-avatar">${msg.sender === 'user' ? 'U' : 'AI'}</div>
                         <div class="message-content">
@@ -610,7 +619,7 @@
                             <div class="message-time">${time}</div>
                         </div>
                     `;
-                    
+
                     chatMessages.appendChild(messageDiv);
                 });
                 scrollToBottom();

@@ -150,6 +150,11 @@ Page {
                 Layout.fillWidth: true
                 Layout.margins: 20
                 title: "Key Metrics"
+                background: Rectangle {
+                    color: "transparent"
+                    border.color: "transparent"
+                    radius: 5
+                }
                 
                 GridLayout {
                     width: parent.width
@@ -258,8 +263,10 @@ Page {
                             id: availableVsBorrowedSeries
                             axisX: BarCategoryAxis { id: itemTypeAxis }
                             axisY: ValuesAxis {
+                                id: availableVsBorrowedAxis
                                 titleText: "Quantity"
                                 min: 0
+                                max: 100
                             }
                             
                             BarSet {
@@ -307,11 +314,14 @@ Page {
                             id: loansDateAxis
                             format: "MMM yyyy"
                             titleText: "Month"
+                            min: new Date( new Date().getFullYear() , 0, 1)
+                            max:  new Date()
                         }
                         axisY: ValuesAxis {
                             id: loansValueAxis
                             titleText: "Loans"
                             min: 0
+                            max: 100
                         }
                     }
                 }
@@ -340,8 +350,10 @@ Page {
                         id: mostBorrowedSeries
                         axisY: BarCategoryAxis { id: digitalItemAxis }
                         axisX: ValuesAxis {
+                            id: digitalBorrowedAxis
                             titleText: "Loan Count"
                             min: 0
+                            max: 100
                         }
                         
                         BarSet {
@@ -394,23 +406,24 @@ Page {
     
     function loadMaterialsByType() {
         materialsByTypeSeries.clear()
-        
+
         var data = reportsManager.getDigitalMaterialsByType()
         var colors = ["#3F51B5", "#2196F3", "#00BCD4", "#009688", "#4CAF50"]
-        
+
         for (var i = 0; i < data.length; i++) {
             var slice = materialsByTypeSeries.append(data[i].label, data[i].value)
             slice.color = colors[i % colors.length]
             slice.labelVisible = true
         }
     }
-    
+
     function loadMostBorrowedDigital() {
         digitalBorrowedSet.remove(0, digitalBorrowedSet.count)
-        
+
         var data = reportsManager.getMostBorrowedDigitalItems(15)
         var categories = []
-        
+        var maxValue = 0
+
         for (var i = data.length - 1; i >= 0; i--) {
             var name = data[i].label
             if (name.length > 25) {
@@ -418,35 +431,89 @@ Page {
             }
             categories.push(name)
             digitalBorrowedSet.append(data[i].value)
+
+            if (data[i].value > maxValue) {
+                maxValue = data[i].value
+            }
         }
-        
+
         digitalItemAxis.categories = categories
+
+        // Set X-axis max dynamically with 10% padding
+        digitalBorrowedAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
     }
-    
+
     function loadLoansOverTime() {
         loansTimeSeries.clear()
-        
+
         var data = reportsManager.getDigitalMaterialLoansOverTime(getDateRangeValue())
-        
+        var minDate = null
+        var maxDate = null
+        var maxValue = 0
+
         for (var i = 0; i < data.length; i++) {
             var date = new Date(data[i].xValue + "-01")
-            loansTimeSeries.append(date.getTime(), data[i].yValue)
+            var timestamp = date.getTime()
+            loansTimeSeries.append(timestamp, data[i].yValue)
+
+            // Track min/max dates and values
+            if (minDate === null || timestamp < minDate) {
+                minDate = timestamp
+            }
+            if (maxDate === null || timestamp > maxDate) {
+                maxDate = timestamp
+            }
+            if (data[i].yValue > maxValue) {
+                maxValue = data[i].yValue
+            }
+        }
+
+        // Set Y-axis max with 10% padding
+        loansValueAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
+
+        // Set X-axis to actual data range with 1 month padding on each side
+        if (minDate !== null && maxDate !== null) {
+            var minDateObj = new Date(minDate)
+            var maxDateObj = new Date(maxDate)
+
+            // Add 1 month padding on each side
+            minDateObj.setMonth(minDateObj.getMonth() - 1)
+            maxDateObj.setMonth(maxDateObj.getMonth() + 1)
+
+            loansDateAxis.min = minDateObj
+            loansDateAxis.max = maxDateObj
         }
     }
-    
+
     function loadAvailableVsBorrowed() {
         totalSet.remove(0, totalSet.count)
         borrowedSet.remove(0, borrowedSet.count)
-        
+
         var data = reportsManager.getDigitalMaterialsAvailableVsBorrowed()
         var categories = []
-        
+        var maxValue = 0
+
         for (var i = 0; i < data.length; i++) {
             categories.push(data[i].ItemType)
-            totalSet.append(data[i].total || 0)
-            borrowedSet.append(data[i].borrowed || 0)
+
+            var totalVal = data[i].total || 0
+            var borrowedVal = data[i].borrowed || 0
+
+            totalSet.append(totalVal)
+            borrowedSet.append(borrowedVal)
+
+            // Track the maximum between both values
+            if (totalVal > maxValue) {
+                maxValue = totalVal
+            }
+            if (borrowedVal > maxValue) {
+                maxValue = borrowedVal
+            }
         }
-        
+
         itemTypeAxis.categories = categories
+
+        // Set Y-axis max dynamically with 10% padding
+        availableVsBorrowedAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
     }
 }

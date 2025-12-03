@@ -843,6 +843,8 @@ QVariantList ReportsManager::getBorrowingByDayOfWeek(const QString &dateRange)
     }
 
     setCacheValue(cacheKey, result);
+
+    qDebug() << "Result: " << result;
     return result;
 }
 
@@ -1830,6 +1832,40 @@ QVariantMap ReportsManager::getReservationStats()
     return stats;
 }
 
+// QVariantList ReportsManager::getReservationsOverTime(const QString &dateRange)
+// {
+//     QString cacheKey = QString("reservations_time_%1").arg(dateRange);
+//     if (isCacheValid(cacheKey)) {
+//         return getCacheValue(cacheKey).toList();
+//     }
+
+//     QString query =
+//         "SELECT strftime('%Y-%m', reservation_date) as month, COUNT(*) as count "
+//         "FROM reserved_books WHERE 1=1";
+
+//     QString dateFilter = getDateRangeSQL(dateRange, "reservation_date");
+//     if (!dateFilter.isEmpty()) {
+//         query += " AND " + dateFilter;
+//     }
+
+//     query += " GROUP BY month ORDER BY month";
+
+//     QVariantList rawData = executeQueryToList(query);
+//     QVariantList result;
+
+//     for (const QVariant &item : rawData) {
+//         QVariantMap row = item.toMap();
+
+//         QVariantMap chartData;
+//         chartData["xValue"] = row["month"];
+//         chartData["yValue"] = row["count"];
+//         result.append(chartData);
+//     }
+
+//     setCacheValue(cacheKey, result);
+//     return result;
+// }
+
 QVariantList ReportsManager::getReservationsOverTime(const QString &dateRange)
 {
     QString cacheKey = QString("reservations_time_%1").arg(dateRange);
@@ -1838,7 +1874,7 @@ QVariantList ReportsManager::getReservationsOverTime(const QString &dateRange)
     }
 
     QString query =
-        "SELECT strftime('%Y-%m', reservation_date) as month, COUNT(*) as count "
+        "SELECT strftime('%Y-%m-%d', reservation_date) as date, COUNT(*) as count "
         "FROM reserved_books WHERE 1=1";
 
     QString dateFilter = getDateRangeSQL(dateRange, "reservation_date");
@@ -1846,7 +1882,16 @@ QVariantList ReportsManager::getReservationsOverTime(const QString &dateRange)
         query += " AND " + dateFilter;
     }
 
-    query += " GROUP BY month ORDER BY month";
+    // Group by first day of month
+    query =
+        "SELECT date(reservation_date, 'start of month') as date, COUNT(*) as count "
+        "FROM reserved_books WHERE 1=1";
+
+    if (!dateFilter.isEmpty()) {
+        query += " AND " + dateFilter;
+    }
+
+    query += " GROUP BY date ORDER BY date";
 
     QVariantList rawData = executeQueryToList(query);
     QVariantList result;
@@ -1854,7 +1899,7 @@ QVariantList ReportsManager::getReservationsOverTime(const QString &dateRange)
     for (const QVariant &item : rawData) {
         QVariantMap row = item.toMap();
         QVariantMap chartData;
-        chartData["xValue"] = row["month"];
+        chartData["xValue"] = row["date"];  // Now returns "2025-11-01" format
         chartData["yValue"] = row["count"];
         result.append(chartData);
     }
@@ -1862,6 +1907,7 @@ QVariantList ReportsManager::getReservationsOverTime(const QString &dateRange)
     setCacheValue(cacheKey, result);
     return result;
 }
+
 
 QVariantList ReportsManager::getMostReservedBooks(int topN)
 {

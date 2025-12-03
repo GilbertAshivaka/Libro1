@@ -3,6 +3,8 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtCharts 2.6
 import Qt5Compat.GraphicalEffects
+import QtCore
+import QtQuick.Dialogs
 
 
 Page {
@@ -15,6 +17,31 @@ Page {
     // Mouse area to prevent events leaking through
     MouseArea {
         anchors.fill: parent
+    }
+
+    Settings {
+        id: settings
+        property string exportFolder: "" // Stores the user's selected folder
+    }
+
+    // Add FileDialog for folder selection
+    FolderDialog {
+        id: folderDialog
+        title: "Select Export Folder"
+        // selectFolder: true
+        onAccepted: {
+            // Remove "file:///" prefix and store the path
+            var path = folderDialog.selectedFolder.toString()
+            path = path.replace(/^(file:\/{3})/,"")
+            // On Windows, remove the extra slash
+            if (Qt.platform.os === "windows") {
+                path = path.replace(/^\/(.:\/)/, "$1")
+            }
+            settings.exportFolder = path
+            messageDialog.title = "Foder set"
+            messageDialog.text = "Export folder set to: " + path
+            messageDialog.open()
+        }
     }
 
     // Back button
@@ -138,10 +165,23 @@ Page {
                             onClicked: loadCollectionData()
                         }
 
+
                         Button {
                             text: "⤓ Export"
                             highlighted: true
-                            onClicked: console.log("Export collection report")
+
+                            Timer{
+                                id: dialogTimer
+                                interval: 3000
+                                onTriggered: {
+                                    messageDialog.close()
+                                    folderDialog.open()
+                                }
+                            }
+
+                            onClicked: {
+                                exportImage(collectionStatsGroupBox, "ReservationStats")
+                            }
                         }
                     }
                 }
@@ -149,6 +189,7 @@ Page {
 
             // Key Metrics Cards
             GroupBox {
+                id: collectionStatsGroupBox
                 Layout.fillWidth: true
                 Layout.margins: 20
                 title: "Key Metrics"
@@ -227,7 +268,7 @@ Page {
                     isLoading: reportsManager.isLoading
 
                     onRefreshClicked: loadGenreDistribution()
-                    onExportClicked: console.log("Export genre chart")
+                    // onExportClicked: console.log("Export genre chart")
 
                     contentItem: ChartView {
                         id: genreChart
@@ -240,6 +281,10 @@ Page {
                             id: genreSeries
                         }
                     }
+
+                    onExportClicked: {
+                        exportImage(genreChart, "BooksGenreDistribution")
+                    }
                 }
 
                 // Availability Status Donut Chart
@@ -251,7 +296,7 @@ Page {
                     isLoading: reportsManager.isLoading
 
                     onRefreshClicked: loadAvailabilityStatus()
-                    onExportClicked: console.log("Export availability chart")
+                    onExportClicked: exportImage(availabilityChart, "AvailabilityStatus")
 
                     contentItem: ChartView {
                         id: availabilityChart
@@ -278,7 +323,9 @@ Page {
                 isLoading: reportsManager.isLoading
 
                 onRefreshClicked: loadPublicationYears()
-                onExportClicked: console.log("Export publication year chart")
+                onExportClicked: {
+                    exportImage(publicationYearChart, "BooksByPublicationYear")
+                }
 
                 contentItem: ChartView {
                     id: publicationYearChart
@@ -295,6 +342,7 @@ Page {
                         id: valueAxisY
                         titleText: "Number of Books"
                         min: 0
+                        max: 100
                     }
 
                     BarSeries {
@@ -324,7 +372,9 @@ Page {
                 isLoading: reportsManager.isLoading
 
                 onRefreshClicked: loadTopBorrowedBooks()
-                onExportClicked: console.log("Export top borrowed chart")
+                onExportClicked: {
+                    exportImage(topBorrowedChart, "TopBorrowedBooks")
+                }
 
                 contentItem: ChartView {
                     id: topBorrowedChart
@@ -341,6 +391,7 @@ Page {
                         id: borrowedValueAxis
                         titleText: "Times Borrowed"
                         min: 0
+                        max: 100
                     }
 
                     HorizontalBarSeries {
@@ -375,26 +426,26 @@ Page {
         ListElement { text: "All Languages" }
     }
 
+    //Message Dialog
+    Dialog {
+        id: messageDialog
+        property alias text: messageLabel.text
+        anchors.centerIn: parent
+        modal: true
+        standardButtons: Dialog.Ok
+
+        Text {
+            id: messageLabel
+            color: "#8E8E8E"
+            text: ""
+        }
+    }
+
     // Load data on component completion
     Component.onCompleted: {
         loadFilters()
         loadCollectionData()
     }
-
-    // Functions to load data
-    // function loadFilters() {
-    //     // Load available genres
-    //     var genres = reportsManager.getAvailableGenres()
-    //     for (var i = 0; i < genres.length; i++) {
-    //         genreModel.append({ text: genres[i] })
-    //     }
-
-    //     // Load available languages
-    //     var languages = reportsManager.getAvailableLanguages()
-    //     for (var j = 0; j < languages.length; j++) {
-    //         languageModel.append({ text: languages[j] })
-    //     }
-    // }
 
     function loadFilters() {
         var genres = reportsManager.getAvailableGenres()
@@ -458,16 +509,24 @@ Page {
 
     function loadPublicationYears() {
         yearBarSet.remove(0, yearBarSet.count)
-
         var data = reportsManager.getBooksByPublicationYear(10)
         var categories = []
+        var maxValue = 0
 
         for (var i = 0; i < data.length; i++) {
             categories.push(data[i].category)
             yearBarSet.append(data[i].value)
+
+            // Track the maximum value
+            if (data[i].value > maxValue) {
+                maxValue = data[i].value
+            }
         }
 
         yearAxis.categories = categories
+
+        // Set the Y-axis max to slightly above the max value (e.g., 10% padding)
+        valueAxisY.max = Math.ceil(maxValue * 1.1)
     }
 
     function loadAvailabilityStatus() {
@@ -496,6 +555,7 @@ Page {
 
         var data = reportsManager.getTopBorrowedBooks(10, getGenreFilter(), getLanguageFilter())
         var categories = []
+        var maxValue = 0
 
         for (var i = data.length - 1; i >= 0; i--) { // Reverse for better display
             var title = data[i].label
@@ -504,8 +564,48 @@ Page {
             }
             categories.push(title)
             borrowedBarSet.append(data[i].value)
+
+            // Track the maximum value
+            if (data[i].value > maxValue) {
+                maxValue = data[i].value
+            }
         }
 
         bookAxis.categories = categories
+
+        //set the max value on the axis
+        borrowedValueAxis.max = Math.ceil(maxValue * 1.1)
+    }
+
+    function exportImage(item, baseFilename) {
+        // Check if folder is set
+        if (settings.exportFolder === "") {
+            messageDialog.title = "No Folder Selected"
+            messageDialog.text = "Please select an export folder first in Settings."
+            messageDialog.open()
+            dialogTimer.start()
+            return
+        }
+
+        // Get current date
+        var today = new Date()
+        var dateString = today.getFullYear() +
+                String(today.getMonth() + 1).padStart(2, '0') +
+                String(today.getDate()).padStart(2, '0') +
+                "_" +
+                String(today.getHours()).padStart(2, '0') +
+                String(today.getMinutes()).padStart(2, '0') +
+                String(today.getSeconds()).padStart(2, '0')
+
+        // Create filename with date
+        var filename = baseFilename + "_" + dateString + ".png"
+        var fullPath = settings.exportFolder + "/" + filename
+
+        item.grabToImage(function(result) {
+            result.saveToFile(fullPath)
+            messageDialog.title = "Success"
+            messageDialog.text = "Saved: " + filename + "\nLocation: " + settings.exportFolder
+            messageDialog.open()
+        })
     }
 }

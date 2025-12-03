@@ -323,7 +323,7 @@ Rectangle {
                 }
                 Text {
                     id: mostActiveTxt
-                    text: qsTr("Most active category")
+                    text: qsTr("Active Users")
                     color: "#8C8989"
                     font.pixelSize: 12
                     verticalAlignment: Text.AlignVCenter
@@ -350,7 +350,7 @@ Rectangle {
 
                 Text {
                     id: totalBooks
-                    text: qsTr("20234")
+                    text: "0"//qsTr("20234")
                     anchors{
                         left: separator2.right
                         verticalCenter: totalBooksTxt.verticalCenter
@@ -360,7 +360,7 @@ Rectangle {
 
                 Text {
                     id: totalUsers
-                    text: qsTr("3046")
+                    text: "0" //qsTr("3046")
                     anchors{
                         left: separator2.right
                         verticalCenter: totalUsersTxt.verticalCenter
@@ -370,7 +370,7 @@ Rectangle {
 
                 Text {
                     id: mostActive
-                    text: qsTr("Form 4 East")
+                    text: "0" //qsTr("Form 4 East")
                     anchors{
                         left: separator2.right
                         verticalCenter: mostActiveTxt.verticalCenter
@@ -404,7 +404,7 @@ Rectangle {
                 }
                 Text {
                     id: issuedBooksTxt
-                    text: qsTr("Books issued today")
+                    text: qsTr("Books due today")
                     color: "#8C8989"
                     font.pixelSize: 12
                     verticalAlignment: Text.AlignVCenter
@@ -481,9 +481,10 @@ Rectangle {
                     }
                 }
 
+                //changed to show books issued today
                 Text {
                     id: issuedBooks
-                    text: qsTr("203")
+                    text: "0" //qsTr("203")
                     anchors{
                         left: separator3.right
                         verticalCenter: issuedBooksTxt.verticalCenter
@@ -493,7 +494,7 @@ Rectangle {
 
                 Text {
                     id: overdueBooks
-                    text: qsTr("23")
+                    text: "0" //qsTr("23")
                     anchors{
                         left: separator3.right
                         verticalCenter: overdueBooksTxt.verticalCenter
@@ -503,7 +504,7 @@ Rectangle {
 
                 Text {
                     id: lostBooks
-                    text: qsTr("5")
+                    text: "0" //qsTr("5")
                     anchors{
                         left: separator3.right
                         verticalCenter: lostBooksTxt.verticalCenter
@@ -546,19 +547,19 @@ Rectangle {
                 onClicked: reportLoader.source = "ReportsOverviewContainer.qml"
             }
 
-            Button {
-                text: "Books"
-                checkable: true
-                ButtonGroup.group: filterButtonGroup
-                onClicked: reportLoader.source = "ReportsBooksContainer.qml"
-            }
+            // Button {
+            //     text: "Books"
+            //     checkable: true
+            //     ButtonGroup.group: filterButtonGroup
+            //     onClicked: reportLoader.source = "ReportsBooksContainer.qml"
+            // }
 
-            Button {
-                text: "Users"
-                checkable: true
-                ButtonGroup.group: filterButtonGroup
-                onClicked: reportLoader.source = "ReportsUsersContainer.qml"
-            }
+            // Button {
+            //     text: "Users"
+            //     checkable: true
+            //     ButtonGroup.group: filterButtonGroup
+            //     onClicked: reportLoader.source = "ReportsUsersContainer.qml"
+            // }
 
             Button {
                 text: "Activity"
@@ -913,6 +914,61 @@ Rectangle {
             }
             source: "ReportsOverviewContainer.qml"
         }
+    }
+
+    //use the reportsManager module registered as a singleton to get the total number of books displayed on this page
+    function loadCollectionStats() {
+        var stats = reportsManager.getCollectionStats()
+        totalBooks.text = stats.totalBooks || "0"
+    }
+
+    function loadEngagementStats() {
+        var stats = reportsManager.getUserEngagementStats()
+
+        totalUsers.text = stats.totalUsers || "0"
+        mostActive.text = stats.activeUsers || "0"
+        // inactiveUsersCard.value = stats.inactiveUsers || "0"
+        // newUsersCard.value = stats.newUsersThisMonth || "0"
+        // avgBooksPerUserCard.value = (stats.averageBooksPerUser || 0).toFixed(1)
+    }
+
+    function loadCirculationStats() {
+        var stats = reportsManager.getCirculationStats(getDateRangeValue())
+
+        issuedBooks.text = stats.dueToday || "0"
+        // currentlyOnLoanCard.value = stats.currentlyOnLoan || "0"
+        // dueThisWeekCard.value = stats.dueThisWeek || "0"
+        // totalCirculationsCard.value = stats.totalCirculations || "0"
+        // avgLoanDurationCard.value = (stats.averageLoanDuration || 0).toFixed(1)
+    }
+
+    function loadOverdueStats() {
+        var stats = reportsManager.getOverdueStats()
+
+        overdueBooks.text = stats.totalOverdue || "0"
+        // longestOverdueCard.value = Math.floor(stats.longestOverdueDays || 0)
+        // avgDaysOverdueCard.value = (stats.averageDaysOverdue || 0).toFixed(1)
+        // critical30PlusCard.value = stats.overdue30Plus || "0"
+        // overdueRateCard.value = (stats.overdueRate || 0).toFixed(1)
+    }
+
+    function loadLostDamagedStats() {
+        var stats = reportsManager.getLostDamagedStats()
+
+        lostBooks.text = stats.totalLostBooks || "0"
+        // lostThisYearCard.value = stats.lostBooksThisYear || "0"
+        // replacementCostCard.value = "$" + (stats.replacementCostOutstanding || 0).toFixed(2)
+        // damagedBooksCard.value = stats.damagedBooks || "0"
+        // lossRateCard.value = (stats.lossRate || 0).toFixed(2)
+    }
+
+
+    Component.onCompleted:{
+        loadCollectionStats()
+        loadEngagementStats()
+        loadLostDamagedStats()
+        loadOverdueStats()
+        loadLostDamagedStats()
     }
 }
 

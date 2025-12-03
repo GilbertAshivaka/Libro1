@@ -44,84 +44,223 @@ Item {
 
         Component.onCompleted: calculateFlowHeight()
 
-
-        ChartView{
-            id: barChart
+        // System Logs by Severity Over Time
+        Rectangle{
+            id: logsBySeverityContainer
             width: 600
             height: 400
-            legend.alignment: Qt.AlignBottom
-            antialiasing: true
-            title: "Daily activity summary"
+            radius: 8
+            // border.color: "lightgray"
 
-            BarSeries{
-                id: barSeries
-                axisX: BarCategoryAxis{categories: ["Mon", "Tue", "Wed", "Thur", "Fri"]}
-                BarSet{
-                    label: "Issuing"; values: [32, 43, 20, 60, 50]
+
+            ChartView {
+                id: logsBySeverityChart
+                anchors.fill: parent
+                title: "System Logs by Severity Over Time"
+                antialiasing: true
+                legend.alignment: Qt.AlignBottom
+                backgroundColor: "transparent"
+
+                DateTimeAxis {
+                    id: logsDateAxis
+                    format: "MMM dd"
+                    titleText: "Date"
+                    min: new Date(new Date().getFullYear(), 0, 1)
+                    max: new Date()
                 }
-                BarSet{
-                    label: "Return"; values: [22, 28, 46, 50, 34]
+                ValuesAxis {
+                    id: logsValueAxis
+                    titleText: "Log Count"
+                    min: 0
+                    max: 500
                 }
-                BarSet{
-                    label: "Reservations"; values: [38, 56, 42, 69, 71]
+            }
+
+            Component.onCompleted: {
+                loadLogsBySeverity()
+            }
+
+            function loadLogsBySeverity() {
+                // Clear existing series
+                logsBySeverityChart.removeAllSeries()
+                var data = reportsManager.getSystemLogsBySeverity("all")
+                var seriesMap = {}
+                var colors = {
+                    "INFO": "#2196F3",
+                    "WARNING": "#FF9800",
+                    "ERROR": "#F44336",
+                    "CRITICAL": "#9C27B0"
                 }
-                BarSet{
-                    label: "Renewals"; values: [45, 65, 78, 59, 66]
+                var minDate = null
+                var maxDate = null
+                var maxValue = 0
+
+                // Group data by log level
+                for (var i = 0; i < data.length; i++) {
+                    var level = data[i].log_level
+                    if (!seriesMap[level]) {
+                        var series = logsBySeverityChart.createSeries(ChartView.SeriesTypeLine, level, logsDateAxis, logsValueAxis)
+                        series.color = colors[level] || "#9E9E9E"
+                        series.width = 2
+                        seriesMap[level] = series
+                    }
+                    var date = new Date(data[i].date)
+                    var timestamp = date.getTime()
+                    seriesMap[level].append(timestamp, data[i].count)
+
+                    // Track min/max dates and values
+                    if (minDate === null || timestamp < minDate) {
+                        minDate = timestamp
+                    }
+                    if (maxDate === null || timestamp > maxDate) {
+                        maxDate = timestamp
+                    }
+                    if (data[i].count > maxValue) {
+                        maxValue = data[i].count
+                    }
+                }
+
+                // Set Y-axis max with 10% padding
+                logsValueAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
+
+                // Set X-axis to actual data range with 1 day padding on each side
+                if (minDate !== null && maxDate !== null) {
+                    var minDateObj = new Date(minDate)
+                    var maxDateObj = new Date(maxDate)
+
+                    // Add 1 day padding on each side
+                    minDateObj.setDate(minDateObj.getDate() - 1)
+                    maxDateObj.setDate(maxDateObj.getDate() + 1)
+
+                    logsDateAxis.min = minDateObj
+                    logsDateAxis.max = maxDateObj
                 }
             }
         }
 
-        Item {
-            id: mostBooks
-            width: 400
+        // Log Categories Distribution
+        Rectangle{
+            id: logCategoriesContainer
+            width: 600
             height: 400
+            radius: 8
+            // border.color: "lightgray"
 
-            ChartView{
-                id: myChart
-                title: "Transaction propotions"
+            ChartView {
+                id: logCategoriesChart
                 anchors.fill: parent
+                title: "Log Categories Distribution"
                 antialiasing: true
-                legend.alignment: Qt.AlignLeft
-//                backgroundColor: "transparent"
-
-                property var otherSlice: null
+                legend.alignment: Qt.AlignRight
+                backgroundColor: "transparent"
 
                 PieSeries {
-                    id: pieSeries
-                    PieSlice { label: "Issuing"; value: 13.5 }
-                    PieSlice { label: "Return"; value: 10.9 }
-                    PieSlice { label: "Reservations"; value: 8.6 }
-                    PieSlice { label: "Renewals"; value: 8.2 }
+                    id: logCategoriesSeries
                 }
+            }
 
-                Component.onCompleted: {
-                    pieSeries.find("Issuing").exploded = true;
+            Component.onCompleted: {
+                loadLogCategories()
+            }
+
+            function loadLogCategories() {
+                logCategoriesSeries.clear()
+                var data = reportsManager.getLogCategoriesDistribution("all")
+                var colors = ["#2196F3", "#4CAF50", "#FF9800", "#9C27B0", "#F44336", "#00BCD4"]
+
+                for (var i = 0; i < data.length; i++) {
+                    var slice = logCategoriesSeries.append(data[i].label, data[i].value)
+                    slice.color = colors[i % colors.length]
+                    slice.labelVisible = data[i].percentage > 5
                 }
-
             }
         }
 
+        // Daily System Activity
         Rectangle{
-            id: lineChartRect
+            id: dailyActivityContainer
             width: 600
             height: 400
             radius: 8
             border.color: "lightgray"
 
-            ChartView{
-                id: usageChart
+            ChartView {
+                id: dailyActivityChart
                 anchors.fill: parent
-                title: "Total transactions over the past week"
-                LineSeries{
-                    name: "Transactions"
-                    color: "red"
-                    XYPoint { x: 0; y: 0 }
-                    XYPoint { x: 1.1; y: 2.1 }
-                    XYPoint { x: 1.9; y: 3.3 }
-                    XYPoint { x: 2.1; y: 2.1 }
-                    XYPoint { x: 2.9; y: 4.9 }
-                    XYPoint { x: 3.4; y: 3.0 }
-                    XYPoint { x: 4.1; y: 3.3 }
+                title: "Daily System Activity"
+                antialiasing: true
+                legend.visible: false
+                backgroundColor: "transparent"
+
+                AreaSeries {
+                    id: dailyActivitySeries
+                    name: "Activity"
+                    color: "#2196F3"
+                    borderColor: "#1976D2"
+                    borderWidth: 2
+
+                    axisX: DateTimeAxis {
+                        id: activityDateAxis
+                        format: "MMM dd"
+                        titleText: "Date"
+                        min: new Date(new Date().getFullYear(), 0, 1)
+                        max: new Date()
+                    }
+                    axisY: ValuesAxis {
+                        id: activityValueAxis
+                        titleText: "Operations"
+                        min: 0
+                        max: 2000
+                    }
+
+                    upperSeries: LineSeries {
+                        id: activityUpperSeries
+                    }
+                }
+            }
+
+            Component.onCompleted: {
+                loadDailyActivity()
+            }
+
+            function loadDailyActivity() {
+                activityUpperSeries.clear()
+                var data = reportsManager.getDailySystemActivity("all")
+                var minDate = null
+                var maxDate = null
+                var maxValue = 0
+
+                for (var i = 0; i < data.length; i++) {
+                    var date = new Date(data[i].xValue)
+                    var timestamp = date.getTime()
+                    activityUpperSeries.append(timestamp, data[i].yValue)
+
+                    // Track min/max dates and values
+                    if (minDate === null || timestamp < minDate) {
+                        minDate = timestamp
+                    }
+                    if (maxDate === null || timestamp > maxDate) {
+                        maxDate = timestamp
+                    }
+                    if (data[i].yValue > maxValue) {
+                        maxValue = data[i].yValue
+                    }
+                }
+
+                // Set Y-axis max with 10% padding
+                activityValueAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
+
+                // Set X-axis to actual data range with 1 day padding on each side
+                if (minDate !== null && maxDate !== null) {
+                    var minDateObj = new Date(minDate)
+                    var maxDateObj = new Date(maxDate)
+
+                    // Add 1 day padding on each side
+                    minDateObj.setDate(minDateObj.getDate() - 1)
+                    maxDateObj.setDate(maxDateObj.getDate() + 1)
+
+                    activityDateAxis.min = minDateObj
+                    activityDateAxis.max = maxDateObj
                 }
             }
         }

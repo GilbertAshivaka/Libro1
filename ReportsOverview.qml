@@ -1,6 +1,8 @@
 import QtQuick
 import QtQuick.Controls
 import QtCharts
+import "Reports"
+
 
 Item {
     id: reportsOverview
@@ -34,8 +36,6 @@ Item {
             }
 
             totalHeight += rowHeight; // Add the last row's height
-//            calculatedHeight = totalHeight;
-//            console.log("Calculated Height: ", totalHeight);
             return totalHeight;
         }
 
@@ -44,62 +44,206 @@ Item {
 
         Component.onCompleted: calculateFlowHeight()
 
-
-        ChartView{
-            id: barChart
+        // Genre Distribution Chart (copied from CollectionReports)
+        Item {
+            id: genreChartContainer
             width: 600
             height: 400
-            legend.alignment: Qt.AlignBottom
-            antialiasing: true
-            title: "Last week activity"
 
-            BarSeries{
-                id: barSeries
-                axisX: BarCategoryAxis{categories: ["Mon", "Tue", "Wed", "Thur", "Fri"]}
-                BarSet{
-                    label: "Form 1"; values: [32, 43, 20, 60, 50]
+            ChartView {
+                id: genreChart
+                anchors.fill: parent
+                title: "Books by Genre Distribution"
+                antialiasing: true
+                legend.alignment: Qt.AlignRight
+                backgroundColor: "transparent"
+
+                PieSeries {
+                    id: genreSeries
                 }
-                BarSet{
-                    label: "Form 2"; values: [22, 28, 46, 50, 34]
-                }
-                BarSet{
-                    label: "Form 3"; values: [38, 56, 42, 69, 71]
-                }
-                BarSet{
-                    label: "Form 4"; values: [45, 65, 78, 59, 66]
+            }
+
+            Component.onCompleted: {
+                loadGenreDistribution()
+            }
+
+            function loadGenreDistribution() {
+                genreSeries.clear()
+
+                var data = reportsManager.getBooksByGenreDistribution("all")
+
+                for (var i = 0; i < data.length; i++) {
+                    var slice = genreSeries.append(data[i].label, data[i].value)
+                    slice.labelVisible = data[i].percentage > 5 // Show label if > 5%
                 }
             }
         }
 
+        // Most Reserved Books Chart (copied from ReservationReports)
         Item {
-            id: mostBooks
-            width: 400
-            height: 400
+            id: mostReservedContainer
+            width: 600
+            height: 500
 
-            ChartView{
-                id: myChart
-                title: "Top five most borrowed books"
+            ChartView {
+                id: mostReservedChart
                 anchors.fill: parent
+                title: "Most Reserved Books"
                 antialiasing: true
-                legend.alignment: Qt.AlignLeft
-//                backgroundColor: "transparent"
+                legend.visible: false
+                backgroundColor: "transparent"
 
-                property var otherSlice: null
+                HorizontalBarSeries {
+                    id: mostReservedSeries
+                    axisY: BarCategoryAxis { id: bookAxis }
+                    axisX: ValuesAxis {
+                        id: mostReservedAxis
+                        titleText: "Reservation Count"
+                        min: 0
+                        max: 100
+                    }
 
-                PieSeries {
-                    id: pieSeries
-                    PieSlice { label: "Kidagaa"; value: 13.5 }
-                    PieSlice { label: "Government of Owls"; value: 10.9 }
-                    PieSlice { label: "Space Odessy"; value: 8.6 }
-                    PieSlice { label: "Foundation"; value: 8.2 }
-                    PieSlice { label: "Harry Potter"; value: 6.8 }
+                    BarSet {
+                        id: reservedBarSet
+                        label: "Reservations"
+                        color: "#00BCD4"
+                    }
+                }
+            }
+
+            Component.onCompleted: {
+                loadMostReservedBooks()
+            }
+
+            function loadMostReservedBooks() {
+                reservedBarSet.remove(0, reservedBarSet.count)
+
+                var data = reportsManager.getMostReservedBooks(20)
+                var categories = []
+                var maxValue = 0
+
+                for (var i = data.length - 1; i >= 0; i--) {
+                    var title = data[i].label
+                    if (title.length > 30) {
+                        title = title.substring(0, 27) + "..."
+                    }
+                    categories.push(title)
+                    reservedBarSet.append(data[i].value)
+
+                    if(data[i].value > maxValue){
+                        maxValue = data[i].value
+                    }
                 }
 
-                Component.onCompleted: {
-                    pieSeries.append("Others", 52);
-                    pieSeries.find("Kidagaa").exploded = true;
+                bookAxis.categories = categories
+
+                // Set the Y-axis max to slightly above the max value (e.g., 10% padding)
+                mostReservedAxis.max = Math.ceil(maxValue * 1.1)
+            }
+        }
+
+
+        // Genre Popularity Trends Over Time
+        Rectangle{
+            id: genreTrendsContainer
+            width: 600
+            height: 400
+            radius: 8
+            anchors.leftMargin: 20
+            border.color: "lightgray"
+
+
+            ChartView {
+                id: genreTrendsChart
+                anchors.fill: parent
+                title: "Genre Popularity Trends Over Time"
+                antialiasing: true
+                legend.alignment: Qt.AlignBottom
+                backgroundColor: "transparent"
+
+                DateTimeAxis {
+                    id: genreTrendsDateAxis
+                    format: "MMM yyyy"
+                    titleText: "Month"
+                    min: new Date(new Date().getFullYear(), 0, 1)  // Start of this year
+                    max: new Date()  // Today
+                }
+                ValuesAxis {
+                    id: genreTrendsValueAxis
+                    titleText: "Borrows"
+                    min: 0
+                    max: 10
+                }
+            }
+
+            Component.onCompleted: {
+                loadGenreTrends()
+            }
+
+            function loadGenreTrends() {
+                genreTrendsChart.removeAllSeries()
+                var data = reportsManager.getGenrePopularityTrends("last12months")
+                console.log("Total data points received:", data.length)
+
+                if (data.length === 0) {
+                    console.log("No data returned from getGenrePopularityTrends")
+                    return
                 }
 
+                var seriesMap = {}
+                var colors = ["#F44336", "#2196F3", "#4CAF50", "#FF9800", "#9C27B0", "#00BCD4", "#FF5722"]
+                var colorIndex = 0
+                var minDate = null
+                var maxDate = null
+                var maxValue = 0
+
+                // Group data by genre
+                for (var i = 0; i < data.length; i++) {
+                    console.log("Data point:", i, "Genre:", data[i].genre, "Month:", data[i].month, "Count:", data[i].count)
+
+                    var genre = data[i].genre
+                    if (!seriesMap[genre]) {
+                        var series = genreTrendsChart.createSeries(ChartView.SeriesTypeLine, genre, genreTrendsDateAxis, genreTrendsValueAxis)
+                        series.color = colors[colorIndex % colors.length]
+                        series.width = 2
+                        seriesMap[genre] = series
+                        console.log("Created series for genre:", genre)
+                        colorIndex++
+                    }
+
+                    var date = new Date(data[i].month + "-01")
+                    var timestamp = date.getTime()
+                    console.log("Parsed date:", date, "Timestamp:", timestamp)
+
+                    seriesMap[genre].append(timestamp, data[i].count)
+
+                    // Track min/max dates and values
+                    if (minDate === null || timestamp < minDate) {
+                        minDate = timestamp
+                    }
+                    if (maxDate === null || timestamp > maxDate) {
+                        maxDate = timestamp
+                    }
+                    if (data[i].count > maxValue) {
+                        maxValue = data[i].count
+                    }
+                }
+
+                // Set Y-axis max with 10% padding
+                genreTrendsValueAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
+
+                // Set X-axis to actual data range with 1 month padding on each side
+                if (minDate !== null && maxDate !== null) {
+                    var minDateObj = new Date(minDate)
+                    var maxDateObj = new Date(maxDate)
+
+                    // Add 1 month padding on each side
+                    minDateObj.setMonth(minDateObj.getMonth() - 1)
+                    maxDateObj.setMonth(maxDateObj.getMonth() + 1)
+
+                    genreTrendsDateAxis.min = minDateObj
+                    genreTrendsDateAxis.max = maxDateObj
+                }
             }
         }
 
@@ -128,7 +272,6 @@ Item {
 
                 LineSeries{
                     name: "Staff"
-//                    color: "red"
                     XYPoint { x: 0; y: 0 }
                     XYPoint { x: 1.0; y: 2.7 }
                     XYPoint { x: 1.4; y: 1.9 }
@@ -153,9 +296,3 @@ Item {
         }
     }
 }
-
-
-
-
-
-

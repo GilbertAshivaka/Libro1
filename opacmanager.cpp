@@ -581,14 +581,11 @@ bool OpacManager::loadConfiguration()
 {
     QMutexLocker locker(&m_mutex);
     QSqlQuery query(m_db);
-
     query.prepare("SELECT * FROM opac_configuration WHERE is_active = 1 ORDER BY config_id DESC LIMIT 1");
-
     if (!query.exec()){
         qWarning() << "Unable to load configuration: " << query.lastError().text();
         return false;
     }
-
     if (query.next()){
         m_opacUrl = query.value("opac_url").toString();
         m_apiKey = query.value("api_key").toString();
@@ -597,16 +594,20 @@ bool OpacManager::loadConfiguration()
         m_notificationPickupDays = query.value("notification_pickup_days").toInt();
         m_reservationExpiryDays = query.value("reservation_expiry_days").toInt();
 
-        //get last sync time
-        QDateTime lastSync = query.value("last_sync_time").toDateTime();
+        // Get the most recent sync time from the three available columns
+        QDateTime booksSync = query.value("last_books_sync").toDateTime();
+        QDateTime usersSync = query.value("last_users_sync").toDateTime();
+        QDateTime reservationsSync = query.value("last_reservations_sync").toDateTime();
+
+        QDateTime lastSync = qMax(booksSync, qMax(usersSync, reservationsSync));
+
         if (lastSync.isValid()){
             m_lastSyncTime = lastSync.toString("yyyy-MM-dd hh:mm:ss");
-        }else{
+        } else {
             m_lastSyncTime = "Never";
         }
         return true;
     }
-
     return false;
 }
 

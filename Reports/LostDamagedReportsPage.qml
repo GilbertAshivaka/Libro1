@@ -149,6 +149,11 @@ Page {
                 Layout.fillWidth: true
                 Layout.margins: 20
                 title: "Key Metrics"
+                background: Rectangle {
+                    color: "transparent"
+                    border.color: "transparent"
+                    radius: 5
+                }
                 
                 GridLayout {
                     width: parent.width
@@ -233,11 +238,14 @@ Page {
                             id: lostBooksDateAxis
                             format: "MMM yyyy"
                             titleText: "Month"
+                            min: new Date(new Date().getFullYear() , 0, 1) // start of this year
+                            max:  new Date()
                         }
                         axisY: ValuesAxis {
                             id: lostBooksValueAxis
                             titleText: "Lost Books"
                             min: 0
+                            max: 10
                         }
                     }
                 }
@@ -271,8 +279,10 @@ Page {
                             id: lostByGenreSeries
                             axisX: BarCategoryAxis { id: genreAxis }
                             axisY: ValuesAxis {
+                                id: genreValuesAxis
                                 titleText: "Lost Books"
                                 min: 0
+                                max: 10
                             }
                             
                             BarSet {
@@ -333,8 +343,10 @@ Page {
                         id: usersLostBooksSeries
                         axisY: BarCategoryAxis { id: userAxis }
                         axisX: ValuesAxis {
+                            id: lostBooksPerUserAxis
                             titleText: "Lost Books"
                             min: 0
+                            max: 10
                         }
                         
                         BarSet {
@@ -403,21 +415,53 @@ Page {
     
     function loadLostBooksOverTime() {
         lostBooksTimeSeries.clear()
-        
+
         var data = reportsManager.getLostBooksOverTime(getDateRangeValue())
-        
+        var minDate = null
+        var maxDate = null
+        var maxValue = 0
+
         for (var i = 0; i < data.length; i++) {
             var date = new Date(data[i].xValue + "-01")
-            lostBooksTimeSeries.append(date.getTime(), data[i].yValue)
+            var timestamp = date.getTime()
+            lostBooksTimeSeries.append(timestamp, data[i].yValue)
+
+            // Track min/max dates and values
+            if (minDate === null || timestamp < minDate) {
+                minDate = timestamp
+            }
+            if (maxDate === null || timestamp > maxDate) {
+                maxDate = timestamp
+            }
+            if (data[i].yValue > maxValue) {
+                maxValue = data[i].yValue
+            }
+        }
+
+        // Set Y-axis max with 10% padding
+        lostBooksValueAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
+
+        // Set X-axis to actual data range with 1 month padding on each side
+        if (minDate !== null && maxDate !== null) {
+            var minDateObj = new Date(minDate)
+            var maxDateObj = new Date(maxDate)
+
+            // Add 1 month padding on each side
+            minDateObj.setMonth(minDateObj.getMonth() - 1)
+            maxDateObj.setMonth(maxDateObj.getMonth() + 1)
+
+            lostBooksDateAxis.min = minDateObj
+            lostBooksDateAxis.max = maxDateObj
         }
     }
-    
+
     function loadLostBooksByGenre() {
         genreBarSet.remove(0, genreBarSet.count)
-        
+
         var data = reportsManager.getLostBooksByGenre()
         var categories = []
-        
+        var maxValue = 0
+
         for (var i = 0; i < Math.min(data.length, 10); i++) {
             var genre = data[i].category
             if (genre.length > 15) {
@@ -425,14 +469,21 @@ Page {
             }
             categories.push(genre)
             genreBarSet.append(data[i].value)
+
+            if (data[i].value > maxValue) {
+                maxValue = data[i].value
+            }
         }
-        
+
         genreAxis.categories = categories
+
+        // Set Y-axis max dynamically with 10% padding
+        genreValuesAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
     }
-    
+
     function loadResolutionStatus() {
         resolutionStatusSeries.clear()
-        
+
         var data = reportsManager.getLostBookResolutionStatus()
         var colors = {
             "Replaced": "#4CAF50",
@@ -440,7 +491,7 @@ Page {
             "Pending": "#FF9800",
             "Waived": "#9E9E9E"
         }
-        
+
         for (var i = 0; i < data.length; i++) {
             var slice = resolutionStatusSeries.append(data[i].label, data[i].value)
             if (colors[data[i].label]) {
@@ -449,13 +500,14 @@ Page {
             slice.labelVisible = true
         }
     }
-    
+
     function loadUsersWithLostBooks() {
         userLostBarSet.remove(0, userLostBarSet.count)
-        
+
         var data = reportsManager.getUsersWithLostBooks(15)
         var categories = []
-        
+        var maxValue = 0
+
         for (var i = data.length - 1; i >= 0; i--) {
             var name = data[i].label
             if (name.length > 25) {
@@ -463,8 +515,15 @@ Page {
             }
             categories.push(name)
             userLostBarSet.append(data[i].value)
+
+            if (data[i].value > maxValue) {
+                maxValue = data[i].value
+            }
         }
-        
+
         userAxis.categories = categories
+
+        // Set X-axis max dynamically with 10% padding
+        lostBooksPerUserAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
     }
 }

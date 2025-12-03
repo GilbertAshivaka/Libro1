@@ -150,6 +150,11 @@ Page {
                 Layout.fillWidth: true
                 Layout.margins: 20
                 title: "Key Metrics"
+                background: Rectangle {
+                    color: "transparent"
+                    border.color: "transparent"
+                    radius: 5
+                }
                 
                 GridLayout {
                     width: parent.width
@@ -243,11 +248,14 @@ Page {
                             id: fineCollectionDateAxis
                             format: "MMM yyyy"
                             titleText: "Month"
+                            min: new Date(new Date().getFullYear() , 0, 1) //start of the year
+                            max: new Date() //today
                         }
                         axisY: ValuesAxis {
                             id: fineCollectionValueAxis
                             titleText: "Amount ($)"
                             min: 0
+                            max: 10
                         }
                     }
                 }
@@ -281,8 +289,10 @@ Page {
                             id: amountVsPaidSeries
                             axisX: BarCategoryAxis { id: amountVsPaidMonthAxis }
                             axisY: ValuesAxis {
+                                id: amoutVsPaidMonthValuesAxis
                                 titleText: "Amount ($)"
                                 min: 0
+                                max: 10
                             }
                             
                             BarSet {
@@ -348,8 +358,10 @@ Page {
                         id: lostBookCostsSeries
                         axisX: BarCategoryAxis { id: lostBookMonthAxis }
                         axisY: ValuesAxis {
+                            id: replacementCostAxis
                             titleText: "Replacement Cost ($)"
                             min: 0
+                            max: 10
                         }
                         
                         BarSet {
@@ -419,34 +431,81 @@ Page {
     
     function loadFineCollectionOverTime() {
         fineCollectionSeries.clear()
-        
+
         var data = reportsManager.getFineCollectionOverTime(getDateRangeValue())
-        
+        var minDate = null
+        var maxDate = null
+        var maxValue = 0
+
         for (var i = 0; i < data.length; i++) {
             var date = new Date(data[i].xValue + "-01")
-            fineCollectionSeries.append(date.getTime(), data[i].yValue)
+            var timestamp = date.getTime()
+            fineCollectionSeries.append(timestamp, data[i].yValue)
+
+            // Track min/max dates and values
+            if (minDate === null || timestamp < minDate) {
+                minDate = timestamp
+            }
+            if (maxDate === null || timestamp > maxDate) {
+                maxDate = timestamp
+            }
+            if (data[i].yValue > maxValue) {
+                maxValue = data[i].yValue
+            }
+        }
+
+        // Set Y-axis max with 10% padding
+        fineCollectionValueAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
+
+        // Set X-axis to actual data range with 1 month padding on each side
+        if (minDate !== null && maxDate !== null) {
+            var minDateObj = new Date(minDate)
+            var maxDateObj = new Date(maxDate)
+
+            // Add 1 month padding on each side
+            minDateObj.setMonth(minDateObj.getMonth() - 1)
+            maxDateObj.setMonth(maxDateObj.getMonth() + 1)
+
+            fineCollectionDateAxis.min = minDateObj
+            fineCollectionDateAxis.max = maxDateObj
         }
     }
-    
+
     function loadFineAmountVsPaid() {
         generatedSet.remove(0, generatedSet.count)
         paidSet.remove(0, paidSet.count)
-        
+
         var data = reportsManager.getFineAmountVsPaid(getDateRangeValue())
         var categories = []
-        
+        var maxValue = 0
+
         for (var i = 0; i < data.length; i++) {
             categories.push(data[i].month)
-            generatedSet.append(data[i].generated || 0)
-            paidSet.append(data[i].paid || 0)
+
+            var generatedVal = data[i].generated || 0
+            var paidVal = data[i].paid || 0
+
+            generatedSet.append(generatedVal)
+            paidSet.append(paidVal)
+
+            // Track the maximum between both values
+            if (generatedVal > maxValue) {
+                maxValue = generatedVal
+            }
+            if (paidVal > maxValue) {
+                maxValue = paidVal
+            }
         }
-        
+
         amountVsPaidMonthAxis.categories = categories
+
+        // Set Y-axis max dynamically with 10% padding
+        amoutVsPaidMonthValuesAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
     }
-    
+
     function loadPaymentStatus() {
         paymentStatusSeries.clear()
-        
+
         var data = reportsManager.getFinePaymentStatus()
         var colors = {
             "No Fine": "#9E9E9E",
@@ -454,7 +513,7 @@ Page {
             "Partially Paid": "#FF9800",
             "Unpaid": "#F44336"
         }
-        
+
         for (var i = 0; i < data.length; i++) {
             var slice = paymentStatusSeries.append(data[i].label, data[i].value)
             if (colors[data[i].label]) {
@@ -463,18 +522,28 @@ Page {
             slice.labelVisible = true
         }
     }
-    
+
     function loadLostBookCosts() {
         lostBookCostsSet.remove(0, lostBookCostsSet.count)
-        
+
         var data = reportsManager.getLostBookCostsByMonth(getDateRangeValue())
         var categories = []
-        
+        var maxValue = 0
+
         for (var i = 0; i < data.length; i++) {
             categories.push(data[i].category)
-            lostBookCostsSet.append(data[i].value || 0)
+
+            var value = data[i].value || 0
+            lostBookCostsSet.append(value)
+
+            if (value > maxValue) {
+                maxValue = value
+            }
         }
-        
+
         lostBookMonthAxis.categories = categories
+
+        // Set Y-axis max dynamically with 10% padding
+        replacementCostAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
     }
 }

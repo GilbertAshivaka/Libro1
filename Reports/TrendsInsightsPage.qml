@@ -151,6 +151,11 @@ Page {
                 Layout.fillWidth: true
                 Layout.margins: 20
                 title: "Key Metrics"
+                background: Rectangle {
+                    color: "transparent"
+                    border.color: "transparent"
+                    radius: 5
+                }
                 
                 GridLayout {
                     width: parent.width
@@ -209,7 +214,7 @@ Page {
             ChartContainer {
                 Layout.fillWidth: true
                 Layout.margins: 20
-                Layout.preferredHeight: 400
+                Layout.preferredHeight: 500
                 title: "Popular Subjects/Genres"
                 subtitle: "Top 20 genres weighted by total borrows"
                 isLoading: reportsManager.isLoading
@@ -226,10 +231,15 @@ Page {
                     
                     HorizontalBarSeries {
                         id: popularSubjectsSeries
-                        axisY: BarCategoryAxis { id: subjectAxis }
-                        axisX: ValueAxis {
+                        axisY: BarCategoryAxis {
+                            id: subjectAxis
+                            labelsFont.pixelSize: 13
+                        }
+                        axisX: ValuesAxis {
+                            id: subjectValueAxis
                             titleText: "Total Borrows"
                             min: 0
+                            max: 25
                         }
                         
                         BarSet {
@@ -267,10 +277,15 @@ Page {
                         
                         HorizontalBarSeries {
                             id: topAuthorsSeries
-                            axisY: BarCategoryAxis { id: authorAxis }
-                            axisX: ValueAxis {
+                            axisY: BarCategoryAxis {
+                                id: authorAxis
+                                labelsFont.pixelSize: 12
+                            }
+                            axisX: ValuesAxis {
+                                id: authorValueAxis
                                 titleText: "Total Borrows"
                                 min: 0
+                                max: 20
                             }
                             
                             BarSet {
@@ -379,11 +394,14 @@ Page {
                         id: genreTrendsDateAxis
                         format: "MMM yyyy"
                         titleText: "Month"
+                        min: new Date(new Date().getFullYear() , 0, 1)  // Start of this year
+                        max: new Date()  // Today
                     }
-                    ValueAxis {
+                    ValuesAxis {
                         id: genreTrendsValueAxis
                         titleText: "Borrows"
                         min: 0
+                        max: 10
                     }
                 }
             }
@@ -406,7 +424,8 @@ Page {
     function loadGenres() {
         var genres = reportsManager.getAvailableGenres()
         for (var i = 0; i < genres.length; i++) {
-            genreModel.append({ text: genres[i] })
+            var genre = genres[i]
+            genreModel.append({ text: genre.genre || genre.label || genre.value || genre.toString() })
         }
     }
     
@@ -437,30 +456,41 @@ Page {
         neverBorrowedCard.value = stats.booksNeverBorrowed || "0"
     }
     
+
     function loadPopularSubjects() {
         subjectBarSet.remove(0, subjectBarSet.count)
-        
-        var data = reportsManager.getPopularSubjectsGenres(20)
+        var data = reportsManager.getPopularSubjectsGenres(10)
         var categories = []
-        
+        var maxValue = 0
+
         for (var i = data.length - 1; i >= 0; i--) {
-            var genre = data[i].label
+            var genre = data[i].label.trim()
             if (genre.length > 20) {
                 genre = genre.substring(0, 17) + "..."
             }
             categories.push(genre)
             subjectBarSet.append(data[i].value)
+
+            if (data[i].value > maxValue) {
+                maxValue = data[i].value
+            }
         }
-        
+
         subjectAxis.categories = categories
+
+        // Set the X-axis max dynamically with 10% padding
+        subjectValueAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
+
+        console.log(subjectAxis.count)
     }
-    
+
     function loadTopAuthors() {
         authorBarSet.remove(0, authorBarSet.count)
-        
-        var data = reportsManager.getTopAuthors(20)
+
+        var data = reportsManager.getTopAuthors(10)
         var categories = []
-        
+        var maxValue = 0
+
         for (var i = data.length - 1; i >= 0; i--) {
             var author = data[i].label
             if (author.length > 25) {
@@ -468,38 +498,93 @@ Page {
             }
             categories.push(author)
             authorBarSet.append(data[i].value)
+
+            if (data[i].value > maxValue) {
+                maxValue = data[i].value
+            }
         }
-        
+
         authorAxis.categories = categories
+
+        // Set the X-axis max dynamically with 10% padding
+        authorValueAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
     }
-    
+
     function loadPerformanceMatrix() {
         var data = reportsManager.getBooksPerformanceMatrix()
         performanceListView.model = data
     }
-    
+
     function loadGenreTrends() {
-        // Clear existing series
         genreTrendsChart.removeAllSeries()
-        
         var data = reportsManager.getGenrePopularityTrends(getDateRangeValue())
+        console.log("Total data points received:", data.length)
+
+        if (data.length === 0) {
+            console.log("No data returned from getGenrePopularityTrends")
+            return
+        }
+
         var seriesMap = {}
         var colors = ["#F44336", "#2196F3", "#4CAF50", "#FF9800", "#9C27B0", "#00BCD4", "#FF5722"]
         var colorIndex = 0
-        
+        var minDate = null
+        var maxDate = null
+        var maxValue = 0
+
         // Group data by genre
         for (var i = 0; i < data.length; i++) {
+            console.log("Data point:", i, "Genre:", data[i].genre, "Month:", data[i].month, "Count:", data[i].count)
+
             var genre = data[i].genre
             if (!seriesMap[genre]) {
                 var series = genreTrendsChart.createSeries(ChartView.SeriesTypeLine, genre, genreTrendsDateAxis, genreTrendsValueAxis)
                 series.color = colors[colorIndex % colors.length]
                 series.width = 2
                 seriesMap[genre] = series
+                console.log("Created series for genre:", genre)
                 colorIndex++
             }
-            
+
             var date = new Date(data[i].month + "-01")
-            seriesMap[genre].append(date.getTime(), data[i].count)
+            var timestamp = date.getTime()
+            console.log("Parsed date:", date, "Timestamp:", timestamp)
+
+            seriesMap[genre].append(timestamp, data[i].count)
+
+            // Track min/max dates and values
+            if (minDate === null || timestamp < minDate) {
+                minDate = timestamp
+            }
+            if (maxDate === null || timestamp > maxDate) {
+                maxDate = timestamp
+            }
+            if (data[i].count > maxValue) {
+                maxValue = data[i].count
+            }
         }
+
+        // Set Y-axis max with 10% padding
+        genreTrendsValueAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
+
+        // Set X-axis to actual data range with 1 month padding on each side
+        if (minDate !== null && maxDate !== null) {
+            var minDateObj = new Date(minDate)
+            var maxDateObj = new Date(maxDate)
+
+            // Add 1 month padding on each side
+            minDateObj.setMonth(minDateObj.getMonth() - 1)
+            maxDateObj.setMonth(maxDateObj.getMonth() + 1)
+
+            genreTrendsDateAxis.min = minDateObj
+            genreTrendsDateAxis.max = maxDateObj
+
+            // console.log("Date range set:", minDateObj.toString(), "to", maxDateObj.toString())
+        }
+
+        // Log final series point counts
+        // for (var g in seriesMap) {
+        //     console.log("Series", g, "has", seriesMap[g].count, "points")
+        // }
     }
 }

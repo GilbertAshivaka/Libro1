@@ -150,6 +150,11 @@ Page {
                 Layout.fillWidth: true
                 Layout.margins: 20
                 title: "Key Metrics"
+                background: Rectangle {
+                    color: "transparent"
+                    border.color: "transparent"
+                    radius: 5
+                }
                 
                 GridLayout {
                     width: parent.width
@@ -238,8 +243,10 @@ Page {
                                 categories: ["0-7 days", "8-14 days", "15-30 days", "30+ days"]
                             }
                             axisY: ValuesAxis {
+                                id: daysRangeValueAxis
                                 titleText: "Number of Books"
                                 min: 0
+                                max: 10
                             }
                             
                             BarSet {
@@ -305,11 +312,14 @@ Page {
                             id: overdueTrendDateAxis
                             format: "MMM yyyy"
                             titleText: "Month"
+                            min: new Date(new Date().getFullYear() , 0, 1)  // Start of this year
+                            max: new Date()  // Today
                         }
                         axisY: ValuesAxis {
                             id: overdueTrendValueAxis
                             titleText: "Overdue Books"
                             min: 0
+                            max: 10
                         }
                     }
                 }
@@ -338,8 +348,10 @@ Page {
                         id: topOverdueUsersSeries
                         axisY: BarCategoryAxis { id: overdueUserAxis }
                         axisX: ValuesAxis {
+                            id: overdueUserValueAxis
                             titleText: "Overdue Books"
                             min: 0
+                            max: 10
                         }
                         
                         BarSet {
@@ -421,31 +433,72 @@ Page {
     
     function loadOverdueByDaysRange() {
         daysRangeSet.remove(0, daysRangeSet.count)
-        
+
         var data = reportsManager.getOverdueBooksByDaysRange()
-        
+        var maxValue = 0
+
         for (var i = 0; i < data.length; i++) {
-            daysRangeSet.append(data[i].value || 0)
+            var value = data[i].value || 0
+            daysRangeSet.append(value)
+
+            if (value > maxValue) {
+                maxValue = value
+            }
         }
+
+        // Set Y-axis max dynamically with 10% padding
+        daysRangeValueAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
     }
-    
+
     function loadOverdueTrend() {
         overdueTrendSeries.clear()
-        
+
         var data = reportsManager.getOverdueTrendOverMonths(getDateRangeValue())
-        
+        var minDate = null
+        var maxDate = null
+        var maxValue = 0
+
         for (var i = 0; i < data.length; i++) {
             var date = new Date(data[i].xValue + "-01")
-            overdueTrendSeries.append(date.getTime(), data[i].yValue)
+            var timestamp = date.getTime()
+            overdueTrendSeries.append(timestamp, data[i].yValue)
+
+            // Track min/max dates and values
+            if (minDate === null || timestamp < minDate) {
+                minDate = timestamp
+            }
+            if (maxDate === null || timestamp > maxDate) {
+                maxDate = timestamp
+            }
+            if (data[i].yValue > maxValue) {
+                maxValue = data[i].yValue
+            }
+        }
+
+        // Set Y-axis max with 10% padding
+        overdueTrendValueAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
+
+        // Set X-axis to actual data range with 1 month padding on each side
+        if (minDate !== null && maxDate !== null) {
+            var minDateObj = new Date(minDate)
+            var maxDateObj = new Date(maxDate)
+
+            // Add 1 month padding on each side
+            minDateObj.setMonth(minDateObj.getMonth() - 1)
+            maxDateObj.setMonth(maxDateObj.getMonth() + 1)
+
+            overdueTrendDateAxis.min = minDateObj
+            overdueTrendDateAxis.max = maxDateObj
         }
     }
-    
+
     function loadUsersWithMostOverdue() {
         overdueUserBarSet.remove(0, overdueUserBarSet.count)
-        
+
         var data = reportsManager.getUsersWithMostOverdue(15, getUserTypeFilter())
         var categories = []
-        
+        var maxValue = 0
+
         for (var i = data.length - 1; i >= 0; i--) {
             var name = data[i].label
             if (name.length > 25) {
@@ -453,17 +506,24 @@ Page {
             }
             categories.push(name)
             overdueUserBarSet.append(data[i].value)
+
+            if (data[i].value > maxValue) {
+                maxValue = data[i].value
+            }
         }
-        
+
         overdueUserAxis.categories = categories
+
+        // Set X-axis max dynamically with 10% padding
+        overdueUserValueAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
     }
-    
+
     function loadOverdueByUserType() {
         overdueUserTypeSeries.clear()
-        
+
         var data = reportsManager.getOverdueBooksByUserType()
         var colors = ["#F44336", "#FF9800", "#9C27B0", "#E91E63", "#FF5722"]
-        
+
         for (var i = 0; i < data.length; i++) {
             var slice = overdueUserTypeSeries.append(data[i].label, data[i].value)
             slice.color = colors[i % colors.length]

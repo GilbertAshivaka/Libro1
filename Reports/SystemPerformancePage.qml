@@ -150,6 +150,11 @@ Page {
                 Layout.fillWidth: true
                 Layout.margins: 20
                 title: "Key Metrics"
+                background: Rectangle {
+                    color: "transparent"
+                    border.color: "transparent"
+                    radius: 5
+                }
                 
                 GridLayout {
                     width: parent.width
@@ -227,11 +232,14 @@ Page {
                         id: logsDateAxis
                         format: "MMM dd"
                         titleText: "Date"
+                        min: new Date(new Date().getFullYear() , 0, 1)
+                        max: new Date()
                     }
-                    ValueAxis {
+                    ValuesAxis {
                         id: logsValueAxis
                         titleText: "Log Count"
                         min: 0
+                        max: 500
                     }
                 }
             }
@@ -290,9 +298,11 @@ Page {
                                 id: syncStatusAxis
                                 categories: ["Success", "Failure", "Pending"]
                             }
-                            axisY: ValueAxis {
+                            axisY: ValuesAxis {
+                                id: syncOpsAxis
                                 titleText: "Count"
                                 min: 0
+                                max: 500
                             }
                             
                             BarSet {
@@ -335,11 +345,14 @@ Page {
                             id: activityDateAxis
                             format: "MMM dd"
                             titleText: "Date"
+                            min: new Date(new Date().getFullYear() , 0, 1)
+                            max: new Date()
                         }
-                        axisY: ValueAxis {
+                        axisY: ValuesAxis {
                             id: activityValueAxis
                             titleText: "Operations"
                             min: 0
+                            max: 2000
                         }
                         
                         upperSeries: LineSeries {
@@ -398,7 +411,7 @@ Page {
     function loadLogsBySeverity() {
         // Clear existing series
         logsBySeverityChart.removeAllSeries()
-        
+
         var data = reportsManager.getSystemLogsBySeverity(getDateRangeValue())
         var seriesMap = {}
         var colors = {
@@ -407,7 +420,10 @@ Page {
             "ERROR": "#F44336",
             "CRITICAL": "#9C27B0"
         }
-        
+        var minDate = null
+        var maxDate = null
+        var maxValue = 0
+
         // Group data by log level
         for (var i = 0; i < data.length; i++) {
             var level = data[i].log_level
@@ -417,54 +433,119 @@ Page {
                 series.width = 2
                 seriesMap[level] = series
             }
-            
+
             var date = new Date(data[i].date)
-            seriesMap[level].append(date.getTime(), data[i].count)
+            var timestamp = date.getTime()
+            seriesMap[level].append(timestamp, data[i].count)
+
+            // Track min/max dates and values
+            if (minDate === null || timestamp < minDate) {
+                minDate = timestamp
+            }
+            if (maxDate === null || timestamp > maxDate) {
+                maxDate = timestamp
+            }
+            if (data[i].count > maxValue) {
+                maxValue = data[i].count
+            }
+        }
+
+        // Set Y-axis max with 10% padding
+        logsValueAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
+
+        // Set X-axis to actual data range with 1 day padding on each side
+        if (minDate !== null && maxDate !== null) {
+            var minDateObj = new Date(minDate)
+            var maxDateObj = new Date(maxDate)
+
+            // Add 1 day padding on each side
+            minDateObj.setDate(minDateObj.getDate() - 1)
+            maxDateObj.setDate(maxDateObj.getDate() + 1)
+
+            logsDateAxis.min = minDateObj
+            logsDateAxis.max = maxDateObj
         }
     }
-    
+
     function loadLogCategories() {
         logCategoriesSeries.clear()
-        
+
         var data = reportsManager.getLogCategoriesDistribution(getDateRangeValue())
         var colors = ["#2196F3", "#4CAF50", "#FF9800", "#9C27B0", "#F44336", "#00BCD4"]
-        
+
         for (var i = 0; i < data.length; i++) {
             var slice = logCategoriesSeries.append(data[i].label, data[i].value)
             slice.color = colors[i % colors.length]
             slice.labelVisible = data[i].percentage > 5
         }
     }
-    
+
     function loadOpacSyncOps() {
         syncBarSet.remove(0, syncBarSet.count)
-        
+
         var data = reportsManager.getOpacSyncOperations(getDateRangeValue())
         var statusMap = { "success": 0, "failure": 0, "pending": 0 }
-        
+
         for (var i = 0; i < data.length; i++) {
             var status = data[i].category.toLowerCase()
             if (statusMap.hasOwnProperty(status)) {
                 statusMap[status] = data[i].value
             }
         }
-        
+
         syncBarSet.append(statusMap["success"])
         syncBarSet.append(statusMap["failure"])
         syncBarSet.append(statusMap["pending"])
-        
+
+        // Find max value from the three statuses
+        var maxValue = Math.max(statusMap["success"], statusMap["failure"], statusMap["pending"])
+
+        // Set Y-axis max dynamically with 10% padding
+        syncOpsAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
+
         // Color code the bars
         syncBarSet.color = statusMap["failure"] > statusMap["success"] ? "#F44336" : "#4CAF50"
     }
-    
+
     function loadDailyActivity() {
         activityUpperSeries.clear()
-        
+
         var data = reportsManager.getDailySystemActivity(getDateRangeValue())
-        
+        var minDate = null
+        var maxDate = null
+        var maxValue = 0
+
         for (var i = 0; i < data.length; i++) {
             var date = new Date(data[i].xValue)
-            activityUpperSeries.append(date.getTime(), data[i].yValue)
+            var timestamp = date.getTime()
+            activityUpperSeries.append(timestamp, data[i].yValue)
+
+            // Track min/max dates and values
+            if (minDate === null || timestamp < minDate) {
+                minDate = timestamp
+            }
+            if (maxDate === null || timestamp > maxDate) {
+                maxDate = timestamp
+            }
+            if (data[i].yValue > maxValue) {
+                maxValue = data[i].yValue
+            }
+        }
+
+        // Set Y-axis max with 10% padding
+        activityValueAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
+
+        // Set X-axis to actual data range with 1 day padding on each side
+        if (minDate !== null && maxDate !== null) {
+            var minDateObj = new Date(minDate)
+            var maxDateObj = new Date(maxDate)
+
+            // Add 1 day padding on each side
+            minDateObj.setDate(minDateObj.getDate() - 1)
+            maxDateObj.setDate(maxDateObj.getDate() + 1)
+
+            activityDateAxis.min = minDateObj
+            activityDateAxis.max = maxDateObj
         }
     }
 }
