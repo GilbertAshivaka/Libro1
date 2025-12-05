@@ -8,13 +8,17 @@ RoundButton {
 
     property string defaultColor: "transparent"
     property string hoveredColor: "#E0E0E0"
+    property int buttonRadius: 4
+    property string textColor: "black"
+    property string textClickedColor: "#585757"
+
 
     contentItem: Text {
         text: control.text
         font: control.font
         opacity: enabled ? 1.0 : 0.5
 //        color: control.down ? "#17a81a" : "#21be2b"
-        color: control.down ? "#585757" : "black"
+        color: control.down ? textClickedColor : textColor
         horizontalAlignment: Text.AlignLeft
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight
@@ -25,7 +29,7 @@ RoundButton {
         implicitHeight: 40
         opacity: enabled ? 1 : 0.3
         color: control.hovered ? hoveredColor : defaultColor // Transparent by default, changes to #E0E0E0 when hovered over
-        radius: 4 // Adjust radius to make it round
+        radius: buttonRadius // Adjust radius to make it round
     }
     //#E0E0E0
 

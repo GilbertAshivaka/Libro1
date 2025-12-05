@@ -20,6 +20,7 @@
 #include "emailnotificationcontroller.h"
 #include "opacmanager.h"
 #include "reportsmanager.h"
+#include "settingsmanager.h"
 
 
 #include "issuebookslist.h"// for issuing books
@@ -117,6 +118,17 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("opacManager"), &opacManager);
     engine.rootContext()->setContextProperty(QStringLiteral("reportsManager"), &reportsManager);
 
+
+
+    // Register SettingsManager as a QML singleton
+    qmlRegisterSingletonType<SettingsManager>(
+        "com.libro.settings", 1, 0, "SettingsManager",
+        [](QQmlEngine *engine, QJSEngine *scriptEngine) -> QObject * {
+            Q_UNUSED(engine)
+            Q_UNUSED(scriptEngine)
+            return SettingsManager::instance();
+        }
+        );
 
     const QUrl url(u"qrc:/Libro1/Main.qml"_qs);
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreationFailed,

@@ -24,6 +24,7 @@ Rectangle{
         property var issueBook: null
         property var pendingApprovals: null
         property var allUsers: null
+        property var settingsPage: null
 
         function createAddUserPage(){
             if (addUser == null){
@@ -180,7 +181,7 @@ Rectangle{
             }
 
             onClicked: {
-               CustomComponentLoader.customCreateComponent(settingsContainer,"Settings", page2)
+               CustomComponentLoader.customCreateComponent(settingsPage,"Settings/SettingsPage", page2)
             }
         }
 

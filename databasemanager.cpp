@@ -366,6 +366,26 @@ bool DatabaseManager::createDatabase()
     }
 
 
+    // Create app_settings table
+    if (!query.exec(
+            "CREATE TABLE IF NOT EXISTS app_settings ("
+            "setting_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "category TEXT NOT NULL,"
+            "setting_key TEXT NOT NULL UNIQUE,"
+            "setting_value TEXT,"
+            "setting_type TEXT DEFAULT 'string',"
+            "description TEXT,"
+            "updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)")) {
+        qWarning() << "Error creating app_settings table:" << query.lastError().text();
+        emit errorOccured("Failed to create app_settings table: " + query.lastError().text());
+        return false;
+    }
+
+    // Create indexes for app_settings
+    query.exec("CREATE INDEX IF NOT EXISTS idx_settings_key ON app_settings(setting_key)");
+    query.exec("CREATE INDEX IF NOT EXISTS idx_settings_category ON app_settings(category)");
+
+
     qDebug() << "Tables created successfully";
     return true;
 }

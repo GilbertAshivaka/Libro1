@@ -86,9 +86,43 @@ Page {
     }
 
     ScrollView {
+        id: collectionScrollView
         anchors.fill: parent
         contentWidth: availableWidth
         clip: true
+
+        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+        ScrollBar.vertical: ScrollBar {
+            id: vbar
+            active: true
+            policy: ScrollBar.AsNeeded
+            parent: collectionScrollView
+            anchors.right: collectionScrollView.right
+            anchors.top: collectionScrollView.top
+            anchors.bottom: collectionScrollView.bottom
+
+            property bool isExpanded: vbar.hovered || vbar.pressed
+
+            contentItem: Rectangle {
+                implicitWidth: vbar.isExpanded ? 12 : 6
+                radius: width / 2
+                color: vbar.pressed ? "#818181" : "#c2c2c2"
+
+                Behavior on implicitWidth {
+                    NumberAnimation { duration: 150; easing.type: Easing.OutQuad }
+                }
+            }
+
+            background: Rectangle {
+                implicitWidth: vbar.isExpanded ? 12 : 6
+                radius: width / 2
+                color: "#f0f0f0"
+
+                Behavior on implicitWidth {
+                    NumberAnimation { duration: 150; easing.type: Easing.OutQuad }
+                }
+            }
+        }
 
         ColumnLayout {
             width: parent.width
