@@ -494,9 +494,33 @@ Rectangle {
                     margins: 1
                 }
 
+                // ScrollBar.vertical: ScrollBar {
+                //     active: true
+                //     policy: ScrollBar.AlwaysOn
+                // }
+
+                // ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                 ScrollBar.vertical: ScrollBar {
+                    id: vbar
                     active: true
                     policy: ScrollBar.AlwaysOn
+                    width: 6
+                    parent: emailLogsListView
+                    anchors.right: emailLogsListView.right
+                    anchors.top: emailLogsListView.top
+                    anchors.bottom: emailLogsListView.bottom
+
+                    contentItem: Rectangle {
+                        implicitWidth: 6
+                        radius: width / 2
+                        color: vbar.pressed ? "#818181" : "#c2c2c2"
+                    }
+
+                    background: Rectangle {
+                        implicitWidth: 6
+                        radius: width / 2
+                        color: "#f0f0f0"
+                    }
                 }
 
                 model: emailController ? emailController.emailLogs : null

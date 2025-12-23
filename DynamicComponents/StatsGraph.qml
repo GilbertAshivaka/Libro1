@@ -1,152 +1,79 @@
-//import QtQuick 2.15
-//import QtQuick.Controls
-
-//Item {
-//    Rectangle{
-//        id:statsRect
-//        radius: 8
-//        anchors.fill: parent
-//        color: "transparent"
-
-
-//        Text {
-//            id: statsTitle
-//            text: qsTr("Stats")
-//            color: "blue"
-//            anchors{
-//                top: parent.top
-//                topMargin: 20
-//                left: parent.left
-//                leftMargin: 10
-//            }
-//            font.bold: true
-//            font.pixelSize: 14
-//            font.underline: true
-//        }
-
-////        Rectangle{
-////            id: graphRect
-////            color: "transparent"
-////            height: parent.height/2
-////            width: parent.width* .75
-////            anchors{
-////                top: statsTitle.bottom
-////                topMargin: 10
-////                left: parent.left
-////                leftMargin: 10
-////            }
-
-////            Image {
-////                id: dailyGraph
-////                source: "icons/barGraph.png"
-////                anchors.fill: parent
-////                fillMode: Image.PreserveAspectFit
-////            }
-////        }
-
-//        Image {
-//            id: dailyGraph
-//            source: "icons/barGraph.png"
-////            anchors.fill: parent
-////            fillMode: Image.PreserveAspectFit
-//            height: parent.height/2
-//            width: parent.width* .5
-//            anchors{
-//                top: statsTitle.bottom
-//                topMargin: 10
-//                left: parent.left
-//                leftMargin: 10
-//            }
-//        }
-
-//        Text {
-//            id: dailyGraphTxt
-//            text: qsTr("Daily activity")
-//            anchors{
-//                top: dailyGraph.bottom
-//                topMargin: 10
-//                left: statsTitle.left
-//            }
-//            font.italic: true
-//        }
-
-//        Text {
-//            id: moreBtn
-//            text: "Show more..."
-//            font.pixelSize: 12
-//            color: "#0078D4"
-//            anchors{
-//                verticalCenter: dailyGraphTxt.verticalCenter
-//                right: parent.right
-//                rightMargin: 20
-//            }
-
-//            Rectangle {
-//                id: underline
-//                visible: false
-//                width: moreBtn.width + 5  // some extra width for spacing
-//                height: 1
-//                color: "#0078D4"
-//                anchors.top: moreBtn.bottom
-//                anchors.horizontalCenter: moreBtn.horizontalCenter
-//                anchors.topMargin: 0  // spacing between text and underline
-//            }
-
-//            MouseArea{
-//                id: moreBtnMA
-//                anchors.fill: parent
-//                cursorShape: Qt.PointingHandCursor
-//                hoverEnabled: true
-//                onEntered: {
-//                    underline.visible = true
-//                }
-//                onExited: {
-//                    underline.visible = false
-//                }
-
-//                onClicked:{
-
-//                }
-//                onPressed: {
-//                    moreBtn.color = "darkblue"
-//                    underline.color = "darkblue"
-//                }
-//                onReleased: {
-//                    moreBtn.color = "#0078D4"
-//                    underline.color = "#0078D4"
-//                }
-//            }
-//        }
-//    }
-//}
-
-
-
-
 import QtQuick
 import QtCharts
+import "../DynamicComponentLoader.js" as CustomComponentLoader
 
+// Most Reserved Books Chart (copied from ReservationReports)
 Item {
-    ChartView{
-        id: barChart
+    id: mostReservedContainer
+    width: 600
+    height: 500
+
+    property var reportsPage: null
+
+    MouseArea{
+        id: mostReserverdChartMA
         anchors.fill: parent
-        legend.alignment: Qt.AlignBottom
+        z: 3
+        cursorShape: "PointingHandCursor"
+        onClicked: function() {
+            CustomComponentLoader.customCreateComponent(reportsPage,"ReportsPage", mainContainer)
+        }
+    }
+
+    ChartView {
+        id: mostReservedChart
+        anchors.fill: parent
+        title: "Most Reserved Books"
         antialiasing: true
+        legend.visible: false
         backgroundColor: "transparent"
 
-        BarSeries{
-            id: myBarSeries
-            axisX: BarCategoryAxis{categories:["2018", "2019", "2020", "2021", "2022", "2023", "2024"] }
-            BarSet{
-                label: "Gilbert"; values: [2,2,3,4,5,6,8]
+        HorizontalBarSeries {
+            id: mostReservedSeries
+            axisY: BarCategoryAxis { id: bookAxis }
+            axisX: ValuesAxis {
+                id: mostReservedAxis
+                titleText: "Reservation Count"
+                min: 0
+                max: 100
             }
-            BarSet{
-                label: "Susan"; values: [5,1,2,4,1,7,4]
-            }
-            BarSet{
-                label: "John"; values: [3,5,8,13,5,8,9]
+
+            BarSet {
+                id: reservedBarSet
+                label: "Reservations"
+                color: "#00BCD4"
             }
         }
+    }
+
+    Component.onCompleted: {
+        loadMostReservedBooks()
+    }
+
+    function loadMostReservedBooks() {
+        reservedBarSet.remove(0, reservedBarSet.count)
+
+        var data = reportsManager.getMostReservedBooks(4)
+        var categories = []
+        var maxValue = 0
+
+        for (var i = data.length - 1; i >= 0; i--) {
+            var title = data[i].label
+            if (title.length > 30) {
+                title = title.substring(0, 27) + "..."
+            }
+            categories.push(title)
+            reservedBarSet.append(data[i].value)
+
+            if(data[i].value > maxValue){
+                maxValue = data[i].value
+            }
+        }
+
+        bookAxis.categories = categories
+
+        // Set the Y-axis max to slightly above the max value (e.g., 10% padding)
+        mostReservedAxis.max = Math.ceil(maxValue * 1.1)
     }
 }
 

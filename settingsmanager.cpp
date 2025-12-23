@@ -8,6 +8,8 @@
 #include <QStandardPaths>
 #include <QDir>
 
+#include "databasemanager.h"
+
 // STATIC MEMBERS
 SettingsManager *SettingsManager::m_instance = nullptr;
 QMutex SettingsManager::m_mutex;
@@ -113,6 +115,13 @@ SettingsManager::SettingsManager(QObject *parent)
 
     // Initialize bootstrap settings in INI file
     initializeIniDefaults();
+
+    //Initialize database using connection from databasemanager
+    QSqlDatabase db = DatabaseManager::getConnection();
+    qDebug() << "Database connection fetched...";
+    initializeDatabase(db);
+
+    qDebug() << "Database initialised...";
 }
 
 SettingsManager::~SettingsManager()
@@ -134,13 +143,15 @@ SettingsManager *SettingsManager::instance()
 // DATABASE INITIALIZATION
 bool SettingsManager::initializeDatabase(const QSqlDatabase &db)
 {
-    QMutexLocker locker(&m_mutex);
+    // QMutexLocker locker(&m_mutex);
 
     if (!db.isOpen()) {
         qWarning() << "SettingsManager: Cannot initialize - database is not open";
         emit errorOccurred("Database is not open");
         return false;
     }
+
+    qDebug() << "Database is open...";
 
     m_db = db;
 

@@ -547,9 +547,17 @@ void EmailNotificationController::processServerResponse(const QString &response)
 
     case EhloSent:
         if (code == "250") {
-            if (useTLS()) {
+            // if (useTLS()) {
+            //     m_currentState = StartTlsSent;
+            //     m_socket->write("STARTTLS\r\n");
+            // } else {
+            //     m_currentState = AuthLoginSent;
+            //     m_socket->write("AUTH LOGIN\r\n");
+            // }
+            if (true) {  // ← force STARTTLS
                 m_currentState = StartTlsSent;
                 m_socket->write("STARTTLS\r\n");
+                logEmailActivity("Forcing STARTTLS (debug)");
             } else {
                 m_currentState = AuthLoginSent;
                 m_socket->write("AUTH LOGIN\r\n");

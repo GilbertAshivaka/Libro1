@@ -59,7 +59,7 @@ BackupManager::BackupManager(QObject *parent)
         }
     });
 
-    //restart the application
+    //restart the application after database restoration
     connect(this, &BackupManager::databaseRestored, this, [this](){
         restart();
     });

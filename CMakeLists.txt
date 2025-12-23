@@ -212,6 +212,7 @@ qt_add_qml_module(appLibro1
     QML_FILES Settings/SettingsCard.qml Settings/SettingsDoubleSpinBox.qml Settings/SettingsLabelField.qml Settings/SettingsPage.qml Settings/SettingsSpinBox.qml Settings/SettingsSwitch.qml Settings/SettingsTextArea.qml Settings/SettingsTextField.qml
     RESOURCES assets/booksSettingsIcon.png assets/settingsIcon.png
     RESOURCES assets/mailSettings.png assets/reservationsSettings.png assets/systemSettings.png
+    SOURCES analyticsmanager.h analyticsmanager.cpp
 )
 
 # Include directories for ZXing

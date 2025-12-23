@@ -21,6 +21,7 @@
 #include "opacmanager.h"
 #include "reportsmanager.h"
 #include "settingsmanager.h"
+#include "analyticsmanager.h"
 
 
 #include "issuebookslist.h"// for issuing books
@@ -74,7 +75,7 @@ int main(int argc, char *argv[])
     qmlRegisterType<SingleBookReturn>("com.singleBookReturn", 1, 0, "SingleBookReturn");
     qmlRegisterType<InventoryManager>("com.inventoryManager", 1, 0, "InventoryManager");
 
-    qmlRegisterType<BackupManager>("com.backupManager", 1, 0, "BackupManager");
+    // qmlRegisterType<BackupManager>("com.backupManager", 1, 0, "BackupManager");
     qmlRegisterType<BookshopManager>("com.bookshopManager", 1, 0, "BookshopManager");
     qmlRegisterType<StorageManager>("com.storageManager", 1, 0, "StorageManager");
     qmlRegisterType<DigitalMaterialsManager>("com.digitalMaterialsManager", 1, 0, "DigitalMaterialsManager");
@@ -104,6 +105,8 @@ int main(int argc, char *argv[])
     EmailNotificationController emailNotificationController; //for email notifications
     OpacManager opacManager;
     ReportsManager reportsManager;
+    BackupManager backupManagerInstance;
+    AnalyticsManager analyticsManager;
 
 
 
@@ -117,7 +120,19 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("emailNotificationController"), &emailNotificationController);
     engine.rootContext()->setContextProperty(QStringLiteral("opacManager"), &opacManager);
     engine.rootContext()->setContextProperty(QStringLiteral("reportsManager"), &reportsManager);
+    engine.rootContext()->setContextProperty("analyticsManager", &analyticsManager);
 
+
+
+    //Register BackupManager as QML singleton.
+    qmlRegisterSingletonType<BackupManager>(
+        "com.backupManager", 1, 0, "BackupManagerInstance",
+        [](QQmlEngine *engine, QJSEngine *scriptEngine) -> QObject * {
+            Q_UNUSED(engine)
+            Q_UNUSED(scriptEngine)
+            static BackupManager* instance = new BackupManager();
+            return instance;
+        });
 
 
     // Register SettingsManager as a QML singleton

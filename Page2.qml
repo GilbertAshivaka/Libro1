@@ -5,6 +5,7 @@ import Qt5Compat.GraphicalEffects
 import QtQuick.Effects
 import QtQuick.Dialogs
 import QtCharts
+import QtCore
 import "ui"
 import "DynamicComponentLoader.js" as CustomComponentLoader
 
@@ -19,6 +20,13 @@ Rectangle {
 
     property string toolBarAdminProfilePic: "assets/userImage.png"
     property var moreTools: null
+    property var settingsPage: null
+
+    Settings {
+        id: appSettings
+        category: "UserProfile"
+        property string profilePicturePath: "assets/userImage.png" // default image
+    }
 
     ToolBar {
         id: toolBar
@@ -80,7 +88,7 @@ Rectangle {
 
                 Image {
                     id: sourceItem
-                    source: toolBarAdminProfilePic
+                    source: appSettings.profilePicturePath
                     anchors.centerIn: parent
                     width: parent.width
                     height: width
@@ -258,7 +266,7 @@ Rectangle {
             anchors {
                 left: buttonsRect.right
                 leftMargin: 20
-//                top: toolBar.bottom
+                //                top: toolBar.bottom
                 top: parent.top
                 topMargin: 10
                 right: parent.right
@@ -348,33 +356,45 @@ Rectangle {
                 MouseArea{
                     anchors.fill: parent
                     cursorShape: "PointingHandCursor"
+
+                    onClicked: {
+                        mainDrawer.close()
+                        CustomComponentLoader.customCreateComponent(settingsPage,"Settings/SettingsPage", page2)
+                    }
                 }
             }
 
             Rectangle {
                 id: userProfileRect
-                width: parent.width* 0.50
+                width: parent.width * 0.50
                 height: width
                 radius: width/2
                 clip: true
                 border.width: 2
                 border.color: "white"
-                anchors{
+                anchors {
                     top: parent.top
                     topMargin: 10
                     horizontalCenter: parent.horizontalCenter
                 }
-
                 color: "transparent"
 
                 Image {
                     id: sourceItem2
-                    source: toolBarAdminProfilePic
+                    source: appSettings.profilePicturePath  // Load from Settings
                     anchors.centerIn: parent
-                    width: parent.width //* 0.4688
+                    width: parent.width
                     height: width
                     visible: false
                     fillMode: Image.PreserveAspectCrop
+
+                    // Fallback if image fails to load
+                    onStatusChanged: {
+                        if (status === Image.Error) {
+                            console.log("Failed to load profile picture, using default")
+                            source = "assets/userImage.png" // default image
+                        }
+                    }
                 }
 
                 MultiEffect {
@@ -390,7 +410,6 @@ Rectangle {
                     height: sourceItem2.height
                     layer.enabled: true
                     visible: false
-
                     Rectangle {
                         width: sourceItem2.width
                         height: sourceItem2.height
@@ -402,24 +421,68 @@ Rectangle {
                 FileDialog {
                     id: fileDialog2
                     title: "Select Profile Picture"
-                    nameFilters: ["Image files (*.png *.jpg *.jpeg *.gif)"]
+                    nameFilters: ["Image files (*.png *.jpg *.jpeg *.gif *.bmp)"]
                     onAccepted: {
                         if (fileDialog2.currentFile) {
-                            var fileUrl = fileDialog2.currentFile
+                            var fileUrl = fileDialog2.currentFile.toString()
                             console.log("Selected file:", fileUrl)
-                            toolBarAdminProfilePic = fileUrl
+
+                            // Save to Settings
+                            appSettings.profilePicturePath = fileUrl
+                            console.log("Profile picture saved to settings")
+
+                            // Optional: Show confirmation
+                            // showNotification("Profile picture updated successfully")
                         }
                     }
                     onRejected: {
-                        console.log("Canceled")
+                        console.log("File selection canceled")
                     }
                 }
 
                 MouseArea {
-                    anchors.fill: sourceItem2
-                    cursorShape: "PointingHandCursor"
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
                     onClicked: fileDialog2.open()
                     hoverEnabled: true
+
+                    // Optional: Add hover effect
+                    onEntered: {
+                        userProfileRect.opacity = 0.8
+                    }
+                    onExited: {
+                        userProfileRect.opacity = 1.0
+                    }
+                }
+
+                // Optional: Add a camera icon overlay to indicate it's clickable
+                Rectangle {
+                    width: 32
+                    height: 32
+                    radius: 16
+                    color: "#000000"
+                    opacity: 0.6
+                    anchors {
+                        bottom: parent.bottom
+                        right: parent.right
+                        margins: 8
+                    }
+
+                    Text {
+                        text: "📷"
+                        font.pixelSize: 16
+                        anchors.centerIn: parent
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: fileDialog2.open()
+                    }
+                }
+
+                Behavior on opacity {
+                    NumberAnimation { duration: 150 }
                 }
             }
 
@@ -486,22 +549,36 @@ Rectangle {
                     anchors.fill: parent
                     title: "Today's Activity"
                     antialiasing: true
+                    legend.visible: true
+
+                    ValuesAxis {
+                        id: xAxis
+                        titleText: "Hour of Day"
+                        min: 0
+                        max: 23
+                        tickCount: 12
+                        labelFormat: "%d"
+                    }
+
+                    ValuesAxis {
+                        id: yAxis
+                        titleText: "Transactions"
+                        min: 0
+                        tickCount: 5
+                        labelFormat: "%d"
+                    }
 
                     LineSeries {
-                        name: "Books issued and returned per hour"
-                        color: "red"
-                        XYPoint { x: 0; y: 5.0 }
-                        XYPoint { x: 1; y: 7.5 }
-                        XYPoint { x: 2; y: 6.0 }
-                        XYPoint { x: 3; y: 8.5 }
-                        XYPoint { x: 4; y: 10.0 }
-                        XYPoint { x: 5; y: 9.0 }
-                        XYPoint { x: 6; y: 11.0 }
-                        XYPoint { x: 7; y: 12.5 }
-                        XYPoint { x: 8; y: 10.5 }
-                        XYPoint { x: 9; y: 8.0 }
-                        XYPoint { x: 10; y: 7.0 }
-                        XYPoint { x: 11; y: 6.5 }
+                        id: activitySeries
+                        name: "Books Issued & Returned"
+                        color: "#3B82F6"
+                        width: 2
+                        axisX: xAxis
+                        axisY: yAxis
+
+                        Component.onCompleted: {
+                            updateChartData()
+                        }
                     }
                 }
 
@@ -529,9 +606,8 @@ Rectangle {
 
                     MouseArea {
                         anchors.fill: parent
-                        cursorShape: "PointingHandCursor"
+                        cursorShape: Qt.PointingHandCursor
                         hoverEnabled: true
-
                         onEntered: {
                             refreshButton.color = "#E2E8F0"
                             refreshButton.scale = 1.1
@@ -541,7 +617,7 @@ Rectangle {
                             refreshButton.scale = 1.0
                         }
                         onClicked: {
-                            // updateChartData()
+                            analyticsManager.refreshData()
                             refreshButton.rotation += 360
                         }
                     }
@@ -549,6 +625,22 @@ Rectangle {
                     Behavior on scale { NumberAnimation { duration: 150 } }
                     Behavior on color { ColorAnimation { duration: 150 } }
                     Behavior on rotation { NumberAnimation { duration: 500; easing.type: Easing.OutCubic } }
+                }
+
+                // No data message
+                Text {
+                    visible: activitySeries.count === 0
+                    text: "No activity recorded today"
+                    color: "#64748B"
+                    font.pixelSize: 14
+                    anchors.centerIn: parent
+                }
+
+                Connections {
+                    target: analyticsManager
+                    function onTodayActivityDataChanged() {
+                        updateChartData()
+                    }
                 }
             }
 
@@ -605,6 +697,45 @@ Rectangle {
                 }
             }
         }
+    }
+
+    //update the activity chart
+    function updateChartData() {
+        activitySeries.clear()
+
+        var data = analyticsManager.todayActivityData
+        var maxCount = 0
+
+        // Find max count for Y axis scaling
+        for (var i = 0; i < data.length; i++) {
+            if (data[i].count > maxCount) {
+                maxCount = data[i].count
+            }
+        }
+
+        // Set Y axis max to a nice round number
+        yAxis.max = Math.max(10, Math.ceil(maxCount * 1.2))
+
+        // Add data points
+        for (var j = 0; j < data.length; j++) {
+            activitySeries.append(data[j].hour, data[j].count)
+        }
+
+        // Update X axis range based on data
+        if (data.length > 0) {
+            var minHour = data[0].hour
+            var maxHour = data[data.length - 1].hour
+
+            // Add padding to X axis
+            xAxis.min = Math.max(0, minHour - 1)
+            xAxis.max = Math.min(23, maxHour + 1)
+        } else {
+            // Default to full day if no data
+            xAxis.min = 0
+            xAxis.max = 23
+        }
+
+        console.log("Chart updated with", data.length, "data points")
     }
 }
 

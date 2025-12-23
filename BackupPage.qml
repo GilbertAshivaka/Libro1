@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Dialogs
 import com.backupManager
-import Qt.labs.settings
+import QtCore
 
 Rectangle {
     id: backupScreen
@@ -13,10 +13,10 @@ Rectangle {
 
     signal closeClicked()
 
-    // BackupManager instance
-    property var backupManager: BackupManager {
+    // BackupManager instance is a qml Singleton (check main.cpp)
+    property var backupManager: BackupManagerInstance /*BackupManager {
         id: backupManagerInstance
-    }
+    }*/
 
     // Current backup path
     property string currentBackupPath: backupManager.defaultBackupPath
@@ -73,7 +73,7 @@ Rectangle {
         MouseArea {
             id: backMA
             anchors.fill: parent
-            enabled: !(backupManager.currentStatus === BackupManager.InProgress)
+            enabled: !(backupManager.currentStatus === BackupManagerInstance.InProgress)
             hoverEnabled: true
 
             onEntered: {
@@ -180,7 +180,7 @@ Rectangle {
 
                 Image {
                     id: localBackupIcon
-                    source: "assets/localBackup.png"
+                    source: "assets/folder.png"
                     width: 32
                     height: 32
                 }
@@ -271,7 +271,7 @@ Rectangle {
 
                 Image {
                     id: cloudBackupIcon
-                    source: "assets/cloudBackup.png"
+                    source: "assets/cloud.png"
                     width: 32
                     height: 32
                 }
@@ -1035,7 +1035,7 @@ Rectangle {
         border.color: "lightgray"
         color: "white"
         opacity: 0.9
-        visible: backupManager.currentStatus === BackupManager.InProgress
+        visible: backupManager.currentStatus === BackupManagerInstance.InProgress
 
         anchors{
             bottom: parent.bottom
@@ -1057,7 +1057,7 @@ Rectangle {
             value: backupManager.progressPercentage
             from: 0
             to: 100
-            visible: backupManager.currentStatus === BackupManager.InProgress
+            visible: backupManager.currentStatus === BackupManagerInstance.InProgress
 
             Text {
                 anchors {
@@ -1083,8 +1083,8 @@ Rectangle {
             text: "Cancel"
 
             onClicked: {
-                backupManagerInstance.cancelCurrentBackup()
-                backupManagerInstance.cancelCurrentBackup()
+                BackupManagerInstance.cancelCurrentBackup()
+                BackupManagerInstance.cancelCurrentBackup()
             }
         }
     }
@@ -1246,19 +1246,19 @@ Rectangle {
         }
 
         onAccepted: {
-            // var selectedProvider = backupManagerInstance.GoogleDrive
+            // var selectedProvider = BackupManagerInstance.GoogleDrive
             // if (dropboxRadio.checked)
-            //     selectedProvider = backupManagerInstance.DropBox
+            //     selectedProvider = BackupManagerInstance.DropBox
             // else if (oneDriveRadio.checked)
-            //     selectedProvider = backupManagerInstance.OneDrive
+            //     selectedProvider = BackupManagerInstance.OneDrive
             // else if (amazonS3Radio.checked)
-            //     selectedProvider = backupManagerInstance.AmazonS3
+            //     selectedProvider = BackupManagerInstance.AmazonS3
             // else if (genericRadio.checked)
-            //     selectedProvider = backupManagerInstance.Generic
+            //     selectedProvider = BackupManagerInstance.Generic
 
             console.log("Provider: ", cloudProviderDialog.provider)
             backupSettings.cloudProvider = cloudProviderDialog.provider
-            backupManagerInstance.openCloudDialog(cloudProviderDialog.provider, backupManagerInstance.defaultBackupPath)
+            BackupManagerInstance.openCloudDialog(cloudProviderDialog.provider, BackupManagerInstance.defaultBackupPath)
             currentBackupPath = getCloudProviderName(cloudProviderDialog.provider)
             updateBackupPath()
         }
@@ -1478,7 +1478,7 @@ Rectangle {
                                 border.color: "#007BFF"
                                 border.width: 1
                                 radius: 4
-                                visible: modelData.status === BackupManager.Completed
+                                visible: modelData.status === BackupManagerInstance.Completed
 
                                 Text {
                                     text: "Restore"
@@ -1530,9 +1530,9 @@ Rectangle {
     // Helper Functions
     function performBackup() {
         let config = ({
-                          type: localBackupCard.isSelected ? backupManagerInstance.LocalBackup : backupManagerInstance.CloudBackup,
+                          type: localBackupCard.isSelected ? BackupManagerInstance.LocalBackup : BackupManagerInstance.CloudBackup,
                           destinationPath: currentBackupPath,
-                          provider: localBackupCard.isSelected ? backupManagerInstance.GoogleDrive : getCurrentCloudProvider(),
+                          provider: localBackupCard.isSelected ? BackupManagerInstance.GoogleDrive : getCurrentCloudProvider(),
                           compressBackup: true,
                           encryptBackup: encryptionSwitch.checked,
                           encryptionPassword: ""
@@ -1570,19 +1570,19 @@ Rectangle {
     }
 
     function getCurrentCloudProvider() {
-        if (googleDriveRadio.checked) return BackupManager.GoogleDrive
-        if (dropboxRadio.checked) return BackupManager.Dropbox
-        if (oneDriveRadio.checked) return BackupManager.OneDrive
-        if (amazonS3Radio.checked) return BackupManager.AmazonS3
-        return BackupManager.GoogleDrive
+        if (googleDriveRadio.checked) return BackupManagerInstance.GoogleDrive
+        if (dropboxRadio.checked) return BackupManagerInstance.Dropbox
+        if (oneDriveRadio.checked) return BackupManagerInstance.OneDrive
+        if (amazonS3Radio.checked) return BackupManagerInstance.AmazonS3
+        return BackupManagerInstance.GoogleDrive
     }
 
     function getCloudProviderName(provider) {
         switch (provider) {
-        case BackupManager.GoogleDrive: return "Google Drive"
-        case BackupManager.Dropbox: return "Dropbox"
-        case BackupManager.OneDrive: return "OneDrive"
-        case BackupManager.AmazonS3: return "Amazon S3"
+        case BackupManagerInstance.GoogleDrive: return "Google Drive"
+        case BackupManagerInstance.Dropbox: return "Dropbox"
+        case BackupManagerInstance.OneDrive: return "OneDrive"
+        case BackupManagerInstance.AmazonS3: return "Amazon S3"
         default: return "Cloud Storage"
         }
     }
@@ -1702,29 +1702,29 @@ Rectangle {
 
     function getStatusColor(status) {
         switch (status) {
-        case BackupManager.Completed: return "#28A745"
-        case BackupManager.InProgress: return "#007BFF"
-        case BackupManager.Failed: return "#DC3545"
-        case BackupManager.Cancelled: return "#6C757D"
+        case BackupManagerInstance.Completed: return "#28A745"
+        case BackupManagerInstance.InProgress: return "#007BFF"
+        case BackupManagerInstance.Failed: return "#DC3545"
+        case BackupManagerInstance.Cancelled: return "#6C757D"
         default: return "#6C757D"
         }
     }
 
     function getStatusText(status) {
         switch (status) {
-        case BackupManager.Completed: return "Complete"
-        case BackupManager.InProgress: return "In Progress"
-        case BackupManager.Failed: return "Failed"
-        case BackupManager.Cancelled: return "Cancelled"
-        case BackupManager.Idle: return "Idle"
+        case BackupManagerInstance.Completed: return "Complete"
+        case BackupManagerInstance.InProgress: return "In Progress"
+        case BackupManagerInstance.Failed: return "Failed"
+        case BackupManagerInstance.Cancelled: return "Cancelled"
+        case BackupManagerInstance.Idle: return "Idle"
         default: return "Unknown"
         }
     }
 
     function getBackupTypeText(type) {
         switch (type) {
-        case BackupManager.LocalBackup: return "Local Backup"
-        case BackupManager.CloudBackup: return "Cloud Backup"
+        case BackupManagerInstance.LocalBackup: return "Local Backup"
+        case BackupManagerInstance.CloudBackup: return "Cloud Backup"
         default: return "Unknown"
         }
     }

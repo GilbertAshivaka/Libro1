@@ -355,14 +355,12 @@ Page {
 
                     contentItem: Rectangle {
                         implicitWidth: 6
-                        // implicitHeight: 100  // Add this
                         radius: width / 2
                         color: vbar.pressed ? "#818181" : "#c2c2c2"
                     }
 
                     background: Rectangle {
                         implicitWidth: 6
-                        // implicitHeight: 100  // Add this
                         radius: width / 2
                         color: "#f0f0f0"
                     }
@@ -444,7 +442,9 @@ Page {
                     SettingsTextField {
                         label: "Application Title"
                         value: settings.applicationTitle
-                        onTextEdited: settings.applicationTitle = newValue
+                        onTextEdited:(newValue) =>{
+                                         settings.applicationTitle = newValue
+                                     }
                         description: "The main title displayed in the application"
                     }
 

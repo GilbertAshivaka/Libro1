@@ -11,27 +11,54 @@ Item {
         color: "transparent"
 
 
-        Text {
-            id: tipTitle
-            text: qsTr("Tips")
+        Row {
+            id: tipTitleRow
+            spacing: 8
+
             anchors{
                 top: parent.top
                 topMargin: 20
                 left: parent.left
                 leftMargin: 20
             }
-            font.bold: true
-            font.pixelSize: 14
-            color: "blue"
+
+            Text {
+                text: "💡"
+                font.pixelSize: 16
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            Text {
+                id: tipTitle
+                text: qsTr("Tips")
+                font.bold: true
+                font.pixelSize: 15
+                color: "#3B82F6"
+                anchors.verticalCenter: parent.verticalCenter
+            }
         }
+
+        // Text {
+        //     id: tipTitle
+        //     text: qsTr("Tips")
+        //     anchors{
+        //         top: parent.top
+        //         topMargin: 20
+        //         left: parent.left
+        //         leftMargin: 20
+        //     }
+        //     font.bold: true
+        //     font.pixelSize: 14
+        //     color: "blue"
+        // }
 
         Text {
             id: tip1
 //            anchors.centerIn: parent
             anchors{
-                top: tipTitle.bottom
+                top: tipTitleRow.bottom
                 topMargin: 20
-                left: tipTitle.left
+                left: tipTitleRow.left
                 right: parent.right
                 rightMargin: 10
             }
@@ -47,7 +74,7 @@ Item {
             anchors{
                 horizontalCenter: parent.horizontalCenter
                 top: tip1.bottom
-                topMargin: 10
+                topMargin: 16
             }
             color: "gray"
         }
@@ -79,8 +106,8 @@ Item {
 //            anchors.centerIn: parent
             anchors{
                 top: separator.bottom
-                topMargin: 10
-                left: tipTitle.left
+                topMargin: 16
+                left: tipTitleRow.left
                 right: parent.right
                 rightMargin: 10
             }
