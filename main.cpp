@@ -22,6 +22,9 @@
 #include "reportsmanager.h"
 #include "settingsmanager.h"
 #include "analyticsmanager.h"
+#include "clearancemanager.h"
+#include "reservationmanager.h"
+#include "suggestionsmanager.h"
 
 
 #include "issuebookslist.h"// for issuing books
@@ -79,6 +82,8 @@ int main(int argc, char *argv[])
     qmlRegisterType<BookshopManager>("com.bookshopManager", 1, 0, "BookshopManager");
     qmlRegisterType<StorageManager>("com.storageManager", 1, 0, "StorageManager");
     qmlRegisterType<DigitalMaterialsManager>("com.digitalMaterialsManager", 1, 0, "DigitalMaterialsManager");
+    qmlRegisterType<ClearanceManager>("com.clearanceManager", 1, 0, "ClearanceManager");
+    qmlRegisterType<ReservationManager>("com.reservationManager", 1, 0, "ReservationManager");
 
 
     qmlRegisterUncreatableType<AllBooksList>("AllBooksList", 1, 0, "AllBooksList",
@@ -108,6 +113,8 @@ int main(int argc, char *argv[])
     BackupManager backupManagerInstance;
     AnalyticsManager analyticsManager;
 
+    SuggestionsManager *suggestionsManager = new SuggestionsManager();
+
 
 
     QQmlApplicationEngine engine;
@@ -122,6 +129,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("reportsManager"), &reportsManager);
     engine.rootContext()->setContextProperty("analyticsManager", &analyticsManager);
 
+    engine.rootContext()->setContextProperty("suggestionsManager", suggestionsManager);
 
 
     //Register BackupManager as QML singleton.

@@ -385,6 +385,31 @@ bool DatabaseManager::createDatabase()
     query.exec("CREATE INDEX IF NOT EXISTS idx_settings_key ON app_settings(setting_key)");
     query.exec("CREATE INDEX IF NOT EXISTS idx_settings_category ON app_settings(category)");
 
+    // Create suggestions_feedback table
+    if (!query.exec(
+            "CREATE TABLE IF NOT EXISTS suggestions_feedback ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "user_id INTEGER,"
+            "user_name TEXT,"
+            "user_number TEXT,"
+            "user_role TEXT,"
+            "content TEXT NOT NULL,"
+            "type TEXT NOT NULL CHECK (type IN ('suggestion', 'feedback')),"
+            "is_anonymous INTEGER DEFAULT 0,"
+            "status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'reviewed', 'addressed')),"
+            "created_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
+            "updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
+            "FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL)")) {
+        qWarning() << "Error creating suggestions_feedback table:" << query.lastError().text();
+        emit errorOccured("Failed to create suggestions_feedback table: " + query.lastError().text());
+        return false;
+    }
+
+    // Create indexes for suggestions_feedback
+    query.exec("CREATE INDEX IF NOT EXISTS idx_suggestions_type ON suggestions_feedback(type)");
+    query.exec("CREATE INDEX IF NOT EXISTS idx_suggestions_status ON suggestions_feedback(status)");
+    query.exec("CREATE INDEX IF NOT EXISTS idx_suggestions_created ON suggestions_feedback(created_at)");
+
 
     qDebug() << "Tables created successfully";
     return true;

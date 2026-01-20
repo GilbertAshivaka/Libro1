@@ -1009,6 +1009,7 @@ void SettingsManager::setAutoBackupEnabled(bool enabled)
 {
     if (autoBackupEnabled() != enabled) {
         writeDbSetting("System", "auto_backup_enabled", enabled, "bool");
+        qDebug() << "Auto-backup changed.";
         emit autoBackupEnabledChanged();
     }
 }

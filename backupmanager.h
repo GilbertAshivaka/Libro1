@@ -23,6 +23,7 @@
 #include <QMutex>
 #include <QMutexLocker>
 #include "databasemanager.h"
+#include "settingsmanager.h"
 
 class BackupManager : public QObject
 {
@@ -33,6 +34,7 @@ class BackupManager : public QObject
     Q_PROPERTY(QString defaultBackupPath READ getDefaultBackupPath WRITE setDefaultBackupPath NOTIFY defaultPathChanged)
     Q_PROPERTY(int backupFrequencyHours READ getBackupFrequencyHours WRITE setBackupFrequencyHours NOTIFY frequencyChanged)
     Q_PROPERTY(bool scheduledBackupEnabled READ isScheduledBackupEnabled WRITE setScheduledBackupEnabled NOTIFY scheduledBackupEnabledChanged)
+    Q_PROPERTY(QDateTime nextScheduledBackup READ nextScheduledBackup NOTIFY nextScheduledBackupChanged)
 
 public:
     enum BackupType{
@@ -116,12 +118,29 @@ public:
     Q_INVOKABLE void setDefaultBackupPath(const QString &path);
 
     //scheduled backup properties
-    int getBackupFrequencyHours() const{return backupFrequencyHours;}
+    int getBackupFrequencyHours() const{return backupFrequencyHours();}
     Q_INVOKABLE void setBackupFrequencyHours(int hours);
-    bool isScheduledBackupEnabled() const{return scheduledBackupEnabled;}
+    bool isScheduledBackupEnabled() const{return scheduledBackupEnabled();}
     Q_INVOKABLE void setScheduledBackupEnabled(bool enabled);
 
+    //getters that read from the settings module
+    bool scheduledBackupEnabled() const {
+        return SettingsManager::instance()->autoBackupEnabled();
+    }
+
+    int backupFrequencyHours() const{
+        return SettingsManager::instance()->backupIntervalDays() * 24;
+    }
+
+    QString backupPath() const {
+        QString location = SettingsManager::instance()->backupLocation();
+        return location.isEmpty() ? defaultBackupPath : location;
+    }
+
+    QDateTime nextScheduledBackup() const { return m_nextScheduledBackup; }
+
     void restart();
+    void initializeScheduledBackup();
 
 
 public slots:
@@ -147,6 +166,7 @@ signals:
     void frequencyChanged();
     void progressChanged();
     void scheduledBackupEnabledChanged();
+    void nextScheduledBackupChanged();
 
     //utility signals
     void errorOccured(const QString &errorMessage);
@@ -162,6 +182,8 @@ private slots:
     void onBackupFinished();
     void onRestoreFinished();
     void performScheduledBackup();
+
+    void onScheduledBackupSettingChanged();
 
 private:
     //Async wrapper functions
@@ -204,8 +226,11 @@ private:
 
     //scheduled backup
     QTimer *scheduledBackupTimer;
-    int backupFrequencyHours;
-    bool scheduledBackupEnabled;
+    QDateTime m_nextScheduledBackup;
+
+    //placeholder member variables
+    int backupFrequencyHours_;
+    bool scheduledBackupEnabled_;
 
     QFutureWatcher<QString> *backupWatcher;
     QFutureWatcher<bool> *restoreWatcher;

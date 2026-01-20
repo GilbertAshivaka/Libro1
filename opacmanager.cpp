@@ -331,16 +331,20 @@ QVariantList OpacManager::getReservationsList(const QString &filter)
 {
     QMutexLocker locker(&m_mutex);
     QVariantList reservations;
-
-    QString sql = "SELECT r.*, b.title, b.author, b.callNumber, b.availability "
+    QString sql = "SELECT r.*, b.title, b.author, b.callNumber, b.availability, "
+                  "u.user_role, "
+                  "COALESCE(s.adm_no, st.staff_no, o.user_no) AS userNo "
                   "FROM reserved_books r "
-                  "JOIN books b ON r.book_id = b.bookID ";
+                  "JOIN books b ON r.book_id = b.bookID "
+                  "JOIN users u ON r.user_id = u.user_id "
+                  "LEFT JOIN students s ON r.user_id = s.student_id "
+                  "LEFT JOIN staff st ON r.user_id = st.staff_id "
+                  "LEFT JOIN other_users o ON r.user_id = o.other_users_id ";
 
     if (filter != "all") {
         sql += "WHERE r.status = :status ";
     }
-
-    sql += "ORDER BY r.reservation_date ASC";
+    sql += "ORDER BY r.reservation_date DESC";
 
     QSqlQuery query(m_db);
     query.prepare(sql);
@@ -364,6 +368,8 @@ QVariantList OpacManager::getReservationsList(const QString &filter)
         res["userId"] = query.value("user_id").toInt();
         res["userEmail"] = query.value("user_email").toString();
         res["userName"] = query.value("user_name").toString();
+        res["userNo"] = query.value("userNo").toString();
+        res["userRole"] = query.value("user_role").toString();
         res["reservationDate"] = query.value("reservation_date").toString();
         res["expiryDate"] = query.value("expiry_date").toString();
         res["status"] = query.value("status").toString();
@@ -371,12 +377,12 @@ QVariantList OpacManager::getReservationsList(const QString &filter)
         res["pickupDeadline"] = query.value("pickup_deadline").toString();
         res["bookAvailability"] = query.value("availability").toString();
         res["notes"] = query.value("notes").toString();
-
         reservations.append(res);
     }
 
     return reservations;
 }
+
 
 bool OpacManager::cancelReservation(int reservationId)
 {
@@ -398,40 +404,39 @@ bool OpacManager::cancelReservation(int reservationId)
 
 bool OpacManager::fulfillReservation(int reservationId, int issueId)
 {
-    QMutexLocker locker(&m_mutex);
+    {
+        QMutexLocker locker(&m_mutex);
 
-    // Update reservation status
-    QSqlQuery query(m_db);
-    query.prepare("UPDATE reserved_books SET status = 'fulfilled', updated_at = CURRENT_TIMESTAMP "
-                  "WHERE reservation_id = :id");
-    query.bindValue(":id", reservationId);
+        // Update reservation status
+        QSqlQuery query(m_db);
+        query.prepare("UPDATE reserved_books SET status = 'fulfilled', updated_at = CURRENT_TIMESTAMP "
+                      "WHERE reservation_id = :id");
+        query.bindValue(":id", reservationId);
+        if (!query.exec()) {
+            qWarning() << "Error fulfilling reservation:" << query.lastError().text();
+            return false;
+        }
 
-    if (!query.exec()) {
-        qWarning() << "Error fulfilling reservation:" << query.lastError().text();
-        return false;
-    }
+        // Link reservation to issued book
+        query.prepare("UPDATE issued_books SET reservation_id = :res_id WHERE issue_id = :issue_id");
+        query.bindValue(":res_id", reservationId);
+        query.bindValue(":issue_id", issueId);
+        if (!query.exec()) {
+            qWarning() << "Error linking reservation to issue:" << query.lastError().text();
+        }
+    } // Mutex unlocks HERE
 
-    // Link reservation to issued book
-    query.prepare("UPDATE issued_books SET reservation_id = :res_id WHERE issue_id = :issue_id");
-    query.bindValue(":res_id", reservationId);
-    query.bindValue(":issue_id", issueId);
-
-    if (!query.exec()) {
-        qWarning() << "Error linking reservation to issue:" << query.lastError().text();
-    }
-
-    // Update OPAC
+    // Everything below happens OUTSIDE the mutex lock
     QString endpoint = QString("/api/sync/reservations/%1").arg(reservationId);
     QJsonObject data;
     data["status"] = "fulfilled";
-
     sendHttpRequest(endpoint, "PUT", data, "reservation_update");
 
     updatePendingCount();
     emit reservationsUpdated();
-
     return true;
 }
+
 
 QVariantList OpacManager::getSyncHistory(int limit)
 {
@@ -1135,24 +1140,23 @@ bool OpacManager::saveReservations(const QJsonArray &reservations)
 
 bool OpacManager::updateReservationStatus(int reservationId, const QString &status, const QDateTime &notificationDate, const QDateTime &pickupDeadline)
 {
-    QMutexLocker locker(&m_mutex);
-
-    QSqlQuery query(m_db);
-    query.prepare("UPDATE reserved_books SET status = :status, "
-                  "notification_sent_date = :notif_date, pickup_deadline = :deadline, "
-                  "updated_at = CURRENT_TIMESTAMP WHERE reservation_id = :id");
-
-    query.bindValue(":status", status);
-    query.bindValue(":notif_date", notificationDate.isValid() ?
-                                       notificationDate.toString(Qt::ISODate) : QVariant());
-    query.bindValue(":deadline", pickupDeadline.isValid() ?
-                                     pickupDeadline.toString(Qt::ISODate) : QVariant());
-    query.bindValue(":id", reservationId);
-
-    if (!query.exec()) {
-        qWarning() << "Error updating reservation status:" << query.lastError().text();
-        return false;
-    }
+    {
+        QMutexLocker locker(&m_mutex);
+        QSqlQuery query(m_db);
+        query.prepare("UPDATE reserved_books SET status = :status, "
+                      "notification_sent_date = :notif_date, pickup_deadline = :deadline, "
+                      "updated_at = CURRENT_TIMESTAMP WHERE reservation_id = :id");
+        query.bindValue(":status", status);
+        query.bindValue(":notif_date", notificationDate.isValid() ?
+                                           notificationDate.toString(Qt::ISODate) : QVariant());
+        query.bindValue(":deadline", pickupDeadline.isValid() ?
+                                         pickupDeadline.toString(Qt::ISODate) : QVariant());
+        query.bindValue(":id", reservationId);
+        if (!query.exec()) {
+            qWarning() << "Error updating reservation status:" << query.lastError().text();
+            return false;
+        }
+    } // Mutex unlocks HERE
 
     updatePendingCount();
     return true;

@@ -12,6 +12,7 @@ Rectangle {
     color: "#FBFBFB"
 
     property var addNewBook: null
+    property var settingsPage: null
 
     property int itemsPerPage: 100
     property string category: "all"
@@ -301,6 +302,7 @@ Rectangle {
                         anchors.fill: parent
                         cursorShape: "PointingHandCursor"
                         onClicked: {
+                            ComponentLoader.customCreateComponent(settingsPage,"Settings/SettingsPage", page2)
                         }
                     }
                 }
@@ -378,7 +380,7 @@ Rectangle {
             }
 
             onClicked:{
-
+                ComponentLoader.customCreateComponent(settingsPage,"Settings/SettingsPage", page2)
             }
         }
     }

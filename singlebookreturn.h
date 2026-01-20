@@ -58,6 +58,11 @@ public:
     QString condition() const;
     bool hasBookData() const;
 
+    Q_INVOKABLE bool recordFinePayment(double amountPaid);
+    Q_INVOKABLE bool returnBookWithFine(bool finePaid);
+    Q_INVOKABLE double getPendingFineAmount() const;
+    Q_INVOKABLE bool hasPendingFine() const;
+
 
 public slots:
 
@@ -76,6 +81,9 @@ signals:
     void bookFound();
     void bookNotFound(const QString &searchTerm);
 
+    void finePaymentRecorded(double amount);
+    void returnRequiresFinePayment(double fineAmt);
+
 private:
     //Member variables
     QSqlDatabase db;
@@ -91,6 +99,8 @@ private:
     bool removeFromIssuedBooks(int issueId);
     bool logReturnTransaction(const BookInfo &bookInfo, double finalFee);
     bool addToLostBooks(const BookInfo &bookInfo);
+
+    bool updateIssuedBookFinePayment(int issueId, double amtPaid);
 };
 
 #endif // SINGLEBOOKRETURN_H

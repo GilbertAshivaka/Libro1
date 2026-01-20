@@ -8,6 +8,7 @@ import QtCharts
 import QtCore
 import "ui"
 import "DynamicComponentLoader.js" as CustomComponentLoader
+import com.libro.settings
 
 
 
@@ -66,7 +67,14 @@ Rectangle {
                 Text {
                     id: libraryName
                     anchors.verticalCenter: parent.verticalCenter
-                    text: qsTr("Libro Integrated Library Management System")
+                    // text: SettingsManager.libraryName //qsTr("Libro Integrated Library Management System")
+                    //using binding component so the binding don't break
+                    Binding {
+                        target: libraryName
+                        property: "text"
+                        value: SettingsManager.libraryName
+                    }
+
                     font.pointSize: 12
                     verticalAlignment: Text.AlignVCenter
                 }

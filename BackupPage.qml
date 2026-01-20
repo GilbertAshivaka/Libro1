@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Dialogs
 import com.backupManager
 import QtCore
+import com.libro.settings 1.0
 
 Rectangle {
     id: backupScreen
@@ -1280,7 +1281,15 @@ Rectangle {
                 spacing: 10
                 Switch {
                     id: enableScheduleSwitch
-                    checked: backupManager.scheduledBackupEnabled
+                    // checked: SettingsManager.autoBackupEnabled //backupManager.scheduledBackupEnabled
+                    Binding {
+                        target: enableScheduleSwitch
+                        property: "checked"
+                        value: SettingsManager.autoBackupEnabled
+                    }
+                    onToggled: {
+                        SettingsManager.autoBackupEnabled = checked
+                    }
                 }
                 Text {
                     text: "Enable automatic backups"
@@ -1527,6 +1536,7 @@ Rectangle {
         }
     }
 
+
     // Helper Functions
     function performBackup() {
         let config = ({
@@ -1663,24 +1673,51 @@ Rectangle {
         return backupManager.getDeviceStorage()
     }
 
+    // function getNextScheduledText() {
+    //     if (!backupManager.scheduledBackupEnabled) return "Not scheduled"
+
+    //     var hours = backupManager.backupFrequencyHours
+    //     var now = new Date()
+    //     var nextBackup = new Date(now.getTime() + (hours * 60 * 60 * 1000))
+
+    //     if (hours < 24) {
+    //         return "In " + hours + " hours"
+    //     } else if (hours === 24) {
+    //         return "Tomorrow " + Qt.formatTime(nextBackup, "hh:mm AP")
+    //     } else {
+    //         // For more than 24 hours, show the actual date
+    //         var diffDays = Math.floor(hours / 24)
+    //         if (diffDays === 1) {
+    //             return "Tomorrow " + Qt.formatTime(nextBackup, "hh:mm AP")
+    //         } else if (diffDays < 7) {
+    //             // For within a week, you might want to show day name
+    //             return Qt.formatDateTime(nextBackup, "dddd hh:mm AP")
+    //         } else {
+    //             return Qt.formatDateTime(nextBackup, "MMM dd hh:mm AP")
+    //         }
+    //     }
+    // }
+
     function getNextScheduledText() {
         if (!backupManager.scheduledBackupEnabled) return "Not scheduled"
 
-        var hours = backupManager.backupFrequencyHours
-        var now = new Date()
-        var nextBackup = new Date(now.getTime() + (hours * 60 * 60 * 1000))
+        var nextBackup = backupManager.nextScheduledBackup
+        if (!nextBackup || !nextBackup.toString()) return "Not scheduled"
 
-        if (hours < 24) {
-            return "In " + hours + " hours"
-        } else if (hours === 24) {
-            return "Tomorrow " + Qt.formatTime(nextBackup, "hh:mm AP")
+        var now = new Date()
+        var diffMs = nextBackup - now
+        var diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+
+        if (diffHours < 1) {
+            var diffMins = Math.floor(diffMs / (1000 * 60))
+            return "In " + diffMins + " minutes"
+        } else if (diffHours < 24) {
+            return "In " + diffHours + " hours"
         } else {
-            // For more than 24 hours, show the actual date
-            var diffDays = Math.floor(hours / 24)
+            var diffDays = Math.floor(diffHours / 24)
             if (diffDays === 1) {
                 return "Tomorrow " + Qt.formatTime(nextBackup, "hh:mm AP")
             } else if (diffDays < 7) {
-                // For within a week, you might want to show day name
                 return Qt.formatDateTime(nextBackup, "dddd hh:mm AP")
             } else {
                 return Qt.formatDateTime(nextBackup, "MMM dd hh:mm AP")
@@ -1805,6 +1842,7 @@ Rectangle {
             successDialog.open()
         }
     }
+
 
     Component.onCompleted: {
         // Initialize backup screen

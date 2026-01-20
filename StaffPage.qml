@@ -11,6 +11,13 @@ Rectangle {
 
     property string imageSource: "assets/1_jWx9suY2k3Ifq4B8A_vz9g.jpeg"
     property var issueBook: null
+    property var reservationPage: null
+
+    // User info properties - these should be set when user logs in
+    property int currentUserId: 0
+    property string currentUserName: "Emma Someone"
+    property string currentUserNumber: "069/NZL/2024"
+    property string currentUserRole: "Staff"
 
 
     TextUtils{
@@ -411,7 +418,7 @@ Rectangle {
                     requestBtn.height = 40
                 }
                 onClicked:{
-                    CustomComponentLoader.customCreateComponent(issueBook,"IssueBookSearchList", container)
+                    CustomComponentLoader.customCreateComponent(reservationPage,"ReservationPage", container)
                 }
             }
         }
@@ -537,7 +544,7 @@ Rectangle {
                         tooltip1.visible = !tooltip1.visible
                     }
                     onClicked:{
-                        suggestionForm.visible = !suggestionForm.visible
+                        suggestionDialog.open()
                     }
                 }
             }
@@ -604,7 +611,7 @@ Rectangle {
                         tooltip2.visible = !tooltip2.visible
                     }
                     onClicked: {
-                        feedbackForm.visible = !feedbackForm.visible
+                        feedbackDialog.open()
                     }
                 }
             }
@@ -647,13 +654,22 @@ Rectangle {
     //        }
         }
 
-        SuggestionForm{
-            id: suggestionForm
-            visible: false
+        // Suggestion Dialog
+        SuggestionDialog {
+            id: suggestionDialog
+            userId: staffPage.currentUserId
+            userName: staffPage.currentUserName
+            userNumber: staffPage.currentUserNumber
+            userRole: staffPage.currentUserRole
         }
-        FeedbackForm{
-            id: feedbackForm
-            visible: false
+
+        // Feedback Dialog
+        FeedbackDialog {
+            id: feedbackDialog
+            userId: staffPage.currentUserId
+            userName: staffPage.currentUserName
+            userNumber: staffPage.currentUserNumber
+            userRole: staffPage.currentUserRole
         }
     }
 }

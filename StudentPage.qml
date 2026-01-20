@@ -12,6 +12,12 @@ Rectangle {
     property string imageSource: "assets/1_jWx9suY2k3Ifq4B8A_vz9g.jpeg"
     property var issueBook: null
 
+    // User info properties - these should be set when user logs in
+    property int currentUserId: 0
+    property string currentUserName: "Gilbert Ashivaka"
+    property string currentUserNumber: "083/NZL/2024"
+    property string currentUserRole: "Student"
+
     TextUtils{
         id: textUtils
     }
@@ -497,7 +503,7 @@ Rectangle {
                         tooltip1.visible = !tooltip1.visible
                     }
                     onClicked:{
-                        suggestionForm.visible = !suggestionForm.visible
+                        suggestionDialog.open()
                     }
                 }
             }
@@ -564,7 +570,7 @@ Rectangle {
                         tooltip2.visible = !tooltip2.visible
                     }
                     onClicked: {
-                        feedbackForm.visible = !feedbackForm.visible
+                        feedbackDialog.open()
                     }
                 }
             }
@@ -607,13 +613,22 @@ Rectangle {
     //        }
         }
 
-        SuggestionForm{
-            id: suggestionForm
-            visible: false
+        // Suggestion Dialog
+        SuggestionDialog {
+            id: suggestionDialog
+            userId: studentPage.currentUserId
+            userName: studentPage.currentUserName
+            userNumber: studentPage.currentUserNumber
+            userRole: studentPage.currentUserRole
         }
-        FeedbackForm{
-            id: feedbackForm
-            visible: false
+
+        // Feedback Dialog
+        FeedbackDialog {
+            id: feedbackDialog
+            userId: studentPage.currentUserId
+            userName: studentPage.currentUserName
+            userNumber: studentPage.currentUserNumber
+            userRole: studentPage.currentUserRole
         }
     }
 }

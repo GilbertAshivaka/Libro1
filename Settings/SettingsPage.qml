@@ -948,7 +948,10 @@ Page {
                     SettingsSwitch {
                         label: "Enable Automatic Backup"
                         checked: settings.autoBackupEnabled
-                        onToggled: settings.autoBackupEnabled = isChecked
+
+                        onToggled: function(isChecked) {
+                        settings.autoBackupEnabled = isChecked
+                    }
                         description: "Automatically backup the database at regular intervals"
                     }
 

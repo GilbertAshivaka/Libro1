@@ -64,6 +64,7 @@ signals:
     void booksUpdated();
     void errorOcurred(const QString &msg);
     void operationSuccessful(const QString &msg);
+    void bookIssued(int issueId);
 
 public slots:
     bool fetchBooks(int page = 1, int pageSize =100);

@@ -14,8 +14,8 @@ BackupManager::BackupManager(QObject *parent)
     ,currentStatus(Idle)
     ,progressPercentage(0)
     ,cancelRequested(false)
-    ,backupFrequencyHours(24)
-    ,scheduledBackupEnabled(false)
+    // ,backupFrequencyHours(24)
+    // ,scheduledBackupEnabled(false)
     ,scheduledBackupTimer(new QTimer(this))
     ,backupWatcher(new QFutureWatcher<QString>(this))
     ,restoreWatcher(new QFutureWatcher<bool>(this))
@@ -63,6 +63,22 @@ BackupManager::BackupManager(QObject *parent)
     connect(this, &BackupManager::databaseRestored, this, [this](){
         restart();
     });
+
+    //connect to settingsmanager signals to react to changes
+    connect(SettingsManager::instance(), &SettingsManager::autoBackupEnabledChanged,
+            this, &BackupManager::onScheduledBackupSettingChanged);
+    connect(SettingsManager::instance(), &SettingsManager::backupIntervalDaysChanged,
+            this, &BackupManager::onScheduledBackupSettingChanged);
+
+    // Load next scheduled backup time from QSettings (this is BackupManager's internal state)
+    QSettings settings;
+    QString savedTime = settings.value("backup/nextScheduledTime").toString();
+    if (!savedTime.isEmpty()) {
+        m_nextScheduledBackup = QDateTime::fromString(savedTime, Qt::ISODate);
+    }
+
+    // Initialize scheduled backups
+    initializeScheduledBackup();
 
     qDebug() << "BackupManager initialized succesfully with default path: " << defaultBackupPath;
 }
@@ -275,11 +291,11 @@ void BackupManager::setDefaultBackupPath(const QString &path)
 
 void BackupManager::setBackupFrequencyHours(int hours)
 {
-    if (backupFrequencyHours != hours && hours >0){
-        backupFrequencyHours = hours;
+    if (backupFrequencyHours() != hours && hours >0){
+        backupFrequencyHours_ = hours;
     }
 
-    if (scheduledBackupEnabled){
+    if (scheduledBackupEnabled()){
         scheduledBackupTimer->setInterval(hours * 60 * 60 * 1000); //convert to milliseconds because the timer expects in milliseconds
     }
 
@@ -288,13 +304,14 @@ void BackupManager::setBackupFrequencyHours(int hours)
 
 void BackupManager::setScheduledBackupEnabled(bool enabled)
 {
-    if (scheduledBackupEnabled != enabled){
-        scheduledBackupEnabled = enabled;
+    if (scheduledBackupEnabled() != enabled){
+        scheduledBackupEnabled_ = enabled;
+        SettingsManager::instance()->setAutoBackupEnabled(enabled);
     }
 
     if (enabled){
-        scheduledBackupTimer->start(backupFrequencyHours * 60 * 60 * 1000);
-        qDebug() << "Backup frequency timer started, interval: " << backupFrequencyHours << " hours";
+        scheduledBackupTimer->start(backupFrequencyHours() * 60 * 60 * 1000);
+        qDebug() << "Backup frequency timer started, interval: " << backupFrequencyHours() << " hours";
     }else {
         scheduledBackupTimer->stop();
         qDebug() << "Backup frequency timer stopped.";
@@ -323,6 +340,61 @@ void BackupManager::restart()
     });
 }
 
+void BackupManager::initializeScheduledBackup()
+{
+    if (!scheduledBackupEnabled()) {
+        qDebug() << "Scheduled backups are disabled";
+        return;
+    }
+
+    // Validate settings
+    if (backupFrequencyHours() <= 0) {
+        qWarning() << "Invalid backup interval configured";
+        emit errorOccured("Invalid backup interval. Please configure backup settings.");
+        return;
+    }
+
+    QString location = SettingsManager::instance()->backupLocation();
+    if (location.isEmpty()) {
+        qWarning() << "No backup location configured, using default";
+    }
+
+    QSettings settings;
+
+    // Check if scheduled backup was missed
+    if (m_nextScheduledBackup.isValid() &&
+        m_nextScheduledBackup <= QDateTime::currentDateTime()) {
+
+        qDebug() << "Scheduled backup was missed. Performing backup now...";
+
+        // Perform backup immediately
+        QTimer::singleShot(0, this, [this]() {
+            performScheduledBackup();
+        });
+
+        // Set next backup time
+        m_nextScheduledBackup = QDateTime::currentDateTime().addSecs(backupFrequencyHours() * 3600);
+        settings.setValue("backup/nextScheduledTime", m_nextScheduledBackup.toString(Qt::ISODate));
+        emit nextScheduledBackupChanged();
+
+    } else if (!m_nextScheduledBackup.isValid()) {
+        // First time setup - schedule from now
+        m_nextScheduledBackup = QDateTime::currentDateTime().addSecs(backupFrequencyHours() * 3600);
+        settings.setValue("backup/nextScheduledTime", m_nextScheduledBackup.toString(Qt::ISODate));
+        emit nextScheduledBackupChanged();
+    }
+
+    // Start timer if we have a valid future time
+    if (m_nextScheduledBackup.isValid() &&
+        m_nextScheduledBackup > QDateTime::currentDateTime()) {
+
+        qint64 msUntilBackup = QDateTime::currentDateTime().msecsTo(m_nextScheduledBackup);
+        scheduledBackupTimer->start(msUntilBackup);
+        qDebug() << "Next backup scheduled for:" << m_nextScheduledBackup
+                 << "(" << (msUntilBackup / 1000 / 60 / 60) << "hours from now)";
+    }
+}
+
 void BackupManager::onBackupFinished()
 {
     QString result = backupWatcher->result();
@@ -344,6 +416,21 @@ void BackupManager::onBackupFinished()
         setStatus(Completed);
         updateBackupRecord(currentBackupId, Completed);
         emit backupCompleted(currentBackupId, result);
+    }
+
+    if (scheduledBackupEnabled()) {
+        m_nextScheduledBackup = QDateTime::currentDateTime().addSecs(backupFrequencyHours() * 3600);
+
+        QSettings settings;
+        settings.setValue("backup/nextScheduledTime", m_nextScheduledBackup.toString(Qt::ISODate));
+
+        emit nextScheduledBackupChanged();
+
+        // Restart timer
+        qint64 msUntilBackup = backupFrequencyHours() * 3600 * 1000;
+        scheduledBackupTimer->start(msUntilBackup);
+
+        qDebug() << "Backup completed. Next backup at:" << m_nextScheduledBackup;
     }
 
     cleanup();
@@ -375,8 +462,26 @@ void BackupManager::performScheduledBackup()
 {
     qDebug() << "Performing sheduled backup...";
 
+    if (!scheduledBackupEnabled()){
+        emit errorOccured("Scheduled backup triggered but auto-backup is disabled.");
+        return;
+    }
+
+    //validate settings before backup
+    if (backupFrequencyHours() <= 0){
+        emit errorOccured("Cannot perform scheduled backup: Invalid interval configured.");
+        return;
+    }
+
+    QString location = backupPath();
+    if (location.isEmpty()){
+        emit errorOccured("Cannot perform backup: No backup location configured");
+        return;
+    }
+
+
     //create the default backup configuration
-    emit gearingUp("Performing scheduled backup...");
+    emit gearingUp(QString("Performing scheduled backup to %1...").arg(location));
     BackupConfig config;
     config.type = LocalBackup;
     config.destinationPath = defaultBackupPath;
@@ -384,6 +489,44 @@ void BackupManager::performScheduledBackup()
     config.encryptBackup = false;
 
     createBackup(config);
+
+    //schedule next backup
+    m_nextScheduledBackup = QDateTime::currentDateTime().addSecs(backupFrequencyHours()*3600);
+
+    QSettings settings;
+    settings.setValue("backup/nextScheduledTime", m_nextScheduledBackup.toString(Qt::ISODate));
+
+    emit nextScheduledBackupChanged();
+
+    //Start timer for next backup
+    quint64 msUntilBackup = backupFrequencyHours()*3600*1000;
+    scheduledBackupTimer->start(msUntilBackup);
+    qDebug() << "Next backup scheduled for: " << m_nextScheduledBackup;
+}
+
+void BackupManager::onScheduledBackupSettingChanged()
+{
+    scheduledBackupTimer->stop();
+
+    if (scheduledBackupEnabled()) {
+        // Recalculate next backup from now with new settings
+        m_nextScheduledBackup = QDateTime::currentDateTime().addSecs(backupFrequencyHours() * 3600);
+
+        QSettings settings;
+        settings.setValue("backup/nextScheduledTime", m_nextScheduledBackup.toString(Qt::ISODate));
+
+        emit nextScheduledBackupChanged();
+
+        qint64 msUntilBackup = QDateTime::currentDateTime().msecsTo(m_nextScheduledBackup);
+        scheduledBackupTimer->start(msUntilBackup);
+        qDebug() << "Backup settings changed. Next backup:" << m_nextScheduledBackup;
+    } else {
+        m_nextScheduledBackup = QDateTime();
+        QSettings settings;
+        settings.remove("backup/nextScheduledTime");
+        emit nextScheduledBackupChanged();
+        qDebug() << "Scheduled backups disabled";
+    }
 }
 
 QFuture<QString> BackupManager::createBackupAsync(const BackupConfig &config)

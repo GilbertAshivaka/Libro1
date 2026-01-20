@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import QtQuick.Layouts
 import "DynamicComponentLoader.js" as CustomComponentLoader
 
 Rectangle {
@@ -81,94 +82,56 @@ Rectangle {
             }
         }
 
-
-        Rectangle{
-            id: sortRect
-            width: 40
-            height: 40
-            radius: 4
+        // Filter buttons
+        RowLayout {
             anchors{
                 right: mainCloseRect.left
-                rightMargin: 10
-                verticalCenter: pendingApprovalsTitleRect.verticalCenter
+                rightMargin: 20
+                verticalCenter: parent.verticalCenter
             }
 
-            Rectangle{
-                id: sortIconRect
-                width: 20
-                height: 20
-                radius: 4
-                anchors.centerIn: parent
-                color: "transparent"
-
-                Image{
-                    id: sortIcon
-                    anchors.fill: parent
-                    fillMode: Image.PreserveAspectFit
-                    source: "qrc:Libro1/assets/sort.png"
-                }
+            ButtonGroup {
+                id: filterButtonGroup
             }
 
-            MouseArea{
-                id: sortMA
-                anchors.fill: parent
-                hoverEnabled: true
-
-                onEntered: {
-                    sortRect.color = "#E8E3E4"
-                }
-                onExited: {
-                    sortRect.color = "white"
-                }
-
+            Button {
+                text: "All"
+                checkable: true
+                checked: true
+                ButtonGroup.group: filterButtonGroup
                 onClicked: {
-
-                }
-            }
-        }
-
-
-        Rectangle{
-            id: searchRect
-            width: 40
-            height: 40
-            radius: 4
-            anchors{
-                right: sortRect.left
-                rightMargin: 10
-                verticalCenter: pendingApprovalsTitleRect.verticalCenter
-            }
-
-            Rectangle{
-                id: searchIconRect
-                width: 20
-                height: 20
-                radius: 4
-                anchors.centerIn: parent
-                color: "transparent"
-
-                Image{
-                    id: searchIcon
-                    anchors.fill: parent
-                    fillMode: Image.PreserveAspectFit
-                    source: "qrc:Libro1/assets/searchIcon.png"
+                    reservationsModel.filterStatus = "all"
+                    reservationsModel.refresh()
                 }
             }
 
-            MouseArea{
-                id: searchMA
-                anchors.fill: parent
-                hoverEnabled: true
-
-                onEntered: {
-                    searchRect.color = "#E8E3E4"
-                }
-                onExited: {
-                    searchRect.color = "white"
-                }
-
+            Button {
+                text: "Pending"
+                checkable: true
+                ButtonGroup.group: filterButtonGroup
                 onClicked: {
-                    pendingApprovalsSearchBox.visible = !pendingApprovalsSearchBox.visible
+                    reservationsModel.filterStatus = "pending"
+                    reservationsModel.refresh()
+                }
+            }
+
+            Button {
+                text: "Notified"
+                checkable: true
+                ButtonGroup.group: filterButtonGroup
+                onClicked: {
+                    reservationsModel.filterStatus = "notified"
+                    reservationsModel.refresh()
+                }
+            }
+
+            Button {
+                text: "Expired"
+                checkable: true
+                ButtonGroup.group: filterButtonGroup
+                onClicked:{
+                    reservationsModel.filterStatus = "expired"
+                    reservationsModel.refresh()
                 }
             }
         }
@@ -201,211 +164,260 @@ Rectangle {
             }
         }
 
+        // Reservations list
         ListView {
-            id: listView
-    //        width: parent.width
-    //        height: parent.height
+            id: reservationsListView
+            // Layout.fillWidth: true
+            // Layout.preferredHeight: 400
             clip: true
-            anchors{
-//                top: {
-//                    if(pendingApprovalsSearchBox.visible == true){
-//                        anchors.top = pendingApprovalsSearchBox.bottom
-//                    }
-//                    else{
-//                        anchors.top = parent.top
-//                    }
-//                }
-                top: pendingApprovalsSearchBox.visible == true ? pendingApprovalsSearchBox.bottom : parent.top
 
+            anchors{
+                top: parent.top
                 topMargin: 10
-                left: parent.left
-                leftMargin: 10
-                bottom: parent.bottom
                 right: parent.right
+                left: parent.left
+                bottom: parent.bottom
+            }
+
+            ScrollBar.vertical: ScrollBar {
+                id: vbar
+                active: true
+                policy: ScrollBar.AsNeeded
+                width: 6
+                parent: reservationsListView
+                anchors.right: reservationsListView.right
+                anchors.top: reservationsListView.top
+                anchors.bottom: reservationsListView.bottom
+
+                contentItem: Rectangle {
+                    implicitWidth: 6
+                    radius: width / 2
+                    color: vbar.pressed ? "#818181" : "#c2c2c2"
+                }
+
+                background: Rectangle {
+                    implicitWidth: 6
+                    radius: width / 2
+                    color: "#f0f0f0"
+                }
             }
 
             model: ListModel {
-                ListElement {
-                    title: "Artificial Intelligence: A Modern Approach"
-                    author: "Stuart Russell and Peter Norvig"
-                    iconSource: "assets/delegateBook.png"
+                id: reservationsModel
+
+                property string filterStatus: "all"
+
+                function refresh() {
+                    clear()
+                    var reservations = opacManager.getReservationsList(filterStatus)
+                    for (var i = 0; i < reservations.length; i++) {
+                        append(reservations[i])
+                    }
                 }
-                ListElement {
-                    title: "Pattern Recognition and Machine Learning"
-                    author: "Christopher M. Bishop"
-                    iconSource: "assets/delegateBook.png"
-                }
-                ListElement {
-                    title: "Operating Systems: Three Easy Pieces"
-                    author: "Remzi H. Arpaci-Dusseau and Andrea C. Arpaci-Dusseau"
-                    iconSource: "assets/delegateBook.png"
-                }
-                ListElement {
-                    title: "Computer Architecture: A Quantitative Approach"
-                    author: "John L. Hennessy and David A. Patterson"
-                    iconSource: "assets/delegateBook.png"
-                }
-                ListElement {
-                    title: "Discrete Mathematics and Its Applications"
-                    author: "Kenneth H. Rosen"
-                    iconSource: "assets/delegateBook.png"
-                }
+
+                Component.onCompleted: refresh()
             }
 
-            delegate: Item {
-                width: listView.width
-                height: 50
+            delegate: ItemDelegate {
+                width: reservationsListView.width
 
-                Rectangle {
-                    id: delegateItemRect
-                    width: parent.width
-                    height: parent.height
-                    color: "transparent"
-                    anchors.left: parent.left
-    //                anchors.leftMargin: 20
+                contentItem: ColumnLayout {
+                    spacing: 5
 
-                    Row {
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: 10
+                    RowLayout {
+                        Layout.fillWidth: true
 
-                        Image {
-                            id: icon
-                            source: model.iconSource
-                            width: 32
-                            height: 32
+                        Label {
+                            text: model.bookTitle
+                            font.bold: true
+                            Layout.fillWidth: true
                         }
 
-                        Column {
-                            spacing: 5
-
-                            Text {
-                                text: model.title
-                                font.pixelSize: 16
-                                color: "black"
+                        Rectangle {
+                            width: statusLabel1.width + 10
+                            height: statusLabel1.height + 4
+                            radius: 3
+                            color: {
+                                if (model.status === "pending") return "#FFF3CD"
+                                if (model.status === "notified") return "#D1ECF1"
+                                if (model.status === "expired") return "#F8D7DA"
+                                return "#D4EDDA"
                             }
 
-                            Text {
-                                text: model.author
-                                font.pixelSize: 12
-                                color: "#606060"
+                            Label {
+                                id: statusLabel1
+                                anchors.centerIn: parent
+                                text: model.status.toUpperCase()
+                                font.pixelSize: 10
+                                font.bold: true
+                                color: {
+                                    if (model.status === "pending") return "#856404"
+                                    if (model.status === "notified") return "#0C5460"
+                                    if (model.status === "expired") return "#721C24"
+                                    return "#155724"
+                                }
                             }
                         }
                     }
 
-                    MouseArea{
-                        id: delegateItemMA
-                        anchors.fill: parent
-                        hoverEnabled: true
-
-                        onEntered: {
-                            delegateItemRect.color = "#F5F5F5"
-                            approveIconRect.visible = true
-                            rejectIconRect.visible = true
-                        }
-
-                        onExited: {
-                            delegateItemRect.color = "transparent"
-                            approveIconRect.visible = false
-                            rejectIconRect.visible = false
-                        }
-
-                        onClicked: {
-                            issueBookPopup.bookTitle = model.title
-                            issueBookPopup.open()
-                        }
+                    Label {
+                        text: "Author: " + model.bookAuthor
+                        color: "gray"
                     }
 
-                    Rectangle{
-                        id: approveIconRect
-                        visible: false
-                        width: 20
-                        height: 20
-                        color: "transparent"
-                        anchors{
-                            right: parent.right
-                            rightMargin: 50
-                            verticalCenter: parent.verticalCenter
+                    Label {
+                        text: "User: " + model.userName + " (" + model.userEmail + ")"
+                        color: "gray"
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+
+                        Label {
+                            text: "Reserved: " + Qt.formatDateTime(new Date(model.reservationDate), "yyyy-MM-dd hh:mm")
+                            color: "gray"
+                            font.pixelSize: 11
                         }
 
-                        MouseArea{
-                            id: approveIconMA
-                            anchors.fill: parent
-                            hoverEnabled: true
+                        Label {
+                            text: model.status === "notified"
+                                  ? "Pickup by: " + Qt.formatDateTime(new Date(model.pickupDeadline), "yyyy-MM-dd")
+                                  : "Expires: " + Qt.formatDateTime(new Date(model.expiryDate), "yyyy-MM-dd")
+                            color: model.status === "notified" ? "#0C5460" : "gray"
+                            font.pixelSize: 11
+                            font.bold: model.status === "notified"
+                        }
 
-                            Image{
-                                id: approveIcon
-                                anchors.fill: parent
-                                fillMode: Image.PreserveAspectFit
-                                source: "assets/checkmarkGreen.png"
-                            }
+                        Item { Layout.fillWidth: true }
+                    }
 
-                            onEntered: {
-                                approveIconRect.color = "#7ED297"
-                                approveIcon.source = "assets/checkmarkWhite.png"
-                            }
+                    // Action buttons
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 5
 
-                            onExited: {
-                                approveIconRect.color = "transparent"
-                                approveIcon.source = "assets/checkmarkGreen.png"
-                            }
+                        Button {
+                            text: "View Details"
+                            flat: true
+                            font.pixelSize: 11
+                            onClicked: showReservationDetails(model)
+                        }
 
+                        Button {
+                            text: "Cancel"
+                            flat: true
+                            font.pixelSize: 11
+                            visible: model.status === "pending" || model.status === "notified"
+                            onClicked: confirmCancelDialog.show(model.reservationId)
+                        }
+
+                        Button {
+                            text: "Issue Book"
+                            flat: true
+                            font.pixelSize: 11
+                            highlighted: true
+                            visible: model.status === "pending" || model.status === "notified"
                             onClicked: {
-                                issueBookPopup.bookTitle = model.title
+                                issueBookPopup.bookTitle = model.bookTitle
+                                issueBookPopup.bookNumber = model.callNumber
+                                issueBookPopup.bookId = model.bookId
+                                issueBookPopup.userNumber = model.userNo
+                                issueBookPopup.userName = model.userName
+                                issueBookPopup.availability = model.bookAvailability
+                                issueBookPopup.reservationId = model.reservationId //for fulfilling reservation in opac manager
                                 issueBookPopup.open()
                             }
                         }
                     }
-
-                    Rectangle{
-                        id: rejectIconRect
-                        visible: false
-                        width: 20
-                        height: 20
-                        color: "transparent"
-                        anchors{
-                            right: approveIconRect.left
-                            rightMargin: 7
-                            verticalCenter: parent.verticalCenter
-                        }
-
-                        MouseArea{
-                            id: rejectIconMA
-                            anchors.fill: parent
-                            hoverEnabled: true
-
-                            Image{
-                                id: rejectIcon
-                                anchors.fill: parent
-                                fillMode: Image.PreserveAspectFit
-                                source: "assets/crossRed.png"
-                            }
-
-                            onEntered: {
-                                rejectIconRect.color = "#EE4E4E"
-                                rejectIcon.source = "assets/crossWhite.png"
-                            }
-
-                            onExited: {
-                                rejectIconRect.color = "transparent"
-                                rejectIcon.source = "assets/crossRed.png"
-                            }
-                        }
-                    }
                 }
+            }
 
-                Rectangle {
-                    id: separator
-                    width: delegateItemRect.width* .95
-                    height: 1
-                    color: "#E0E0E0"
-                    anchors{
-                        bottom: parent.bottom
-                        horizontalCenter: parent.horizontalCenter
-                    }
-                }
+            // ScrollBar.vertical: ScrollBar {}
+
+            Label {
+                anchors.centerIn: parent
+                text: "No reservations found"
+                visible: reservationsListView.count === 0
+                color: "gray"
             }
         }
 
+        // Reservation Details Dialog
+        Dialog {
+          id: reservationDetailsDialog
+          title: "Reservation Details"
+          anchors.centerIn: parent
+          modal: true
+          standardButtons: Dialog.Close
+          width: 500
+
+          property var currentReservation: null
+
+          function showDetails(reservation) {
+            currentReservation = reservation
+            open()
+          }
+
+          ColumnLayout {
+            width: parent.width
+            spacing: 10
+
+            GridLayout {
+              Layout.fillWidth: true
+              columns: 2
+              columnSpacing: 10
+              rowSpacing: 5
+
+              Label { text: "Book Title:"; font.bold: true }
+              Label { text: reservationDetailsDialog.currentReservation ? reservationDetailsDialog.currentReservation.bookTitle : "" }
+
+              Label { text: "Author:"; font.bold: true }
+              Label { text: reservationDetailsDialog.currentReservation ? reservationDetailsDialog.currentReservation.bookAuthor : "" }
+
+              Label { text: "Call Number:"; font.bold: true }
+              Label { text: reservationDetailsDialog.currentReservation ? reservationDetailsDialog.currentReservation.callNumber : "" }
+
+              Label { text: "User:"; font.bold: true }
+              Label { text: reservationDetailsDialog.currentReservation ? reservationDetailsDialog.currentReservation.userName : "" }
+
+              Label { text: "Email:"; font.bold: true }
+              Label { text: reservationDetailsDialog.currentReservation ? reservationDetailsDialog.currentReservation.userEmail : "" }
+
+              Label { text: "Status:"; font.bold: true }
+              Label { text: reservationDetailsDialog.currentReservation ? reservationDetailsDialog.currentReservation.status : "" }
+
+              Label { text: "Reserved:"; font.bold: true }
+              Label { text: reservationDetailsDialog.currentReservation ? Qt.formatDateTime(new Date(reservationDetailsDialog.currentReservation.reservationDate), "yyyy-MM-dd hh:mm") : "" }
+
+              Label { text: "Expires:"; font.bold: true }
+              Label { text: reservationDetailsDialog.currentReservation ? Qt.formatDateTime(new Date(reservationDetailsDialog.currentReservation.expiryDate), "yyyy-MM-dd") : "" }
+
+              Label {
+                text: "Pickup Deadline:";
+                font.bold: true
+                visible: reservationDetailsDialog.currentReservation && reservationDetailsDialog.currentReservation.status === "notified"
+              }
+              Label {
+                text: reservationDetailsDialog.currentReservation && reservationDetailsDialog.currentReservation.pickupDeadline ?
+                        Qt.formatDateTime(new Date(reservationDetailsDialog.currentReservation.pickupDeadline), "yyyy-MM-dd") : ""
+                visible: reservationDetailsDialog.currentReservation && reservationDetailsDialog.currentReservation.status === "notified"
+              }
+            }
+
+            Label {
+              text: "Notes:"
+              font.bold: true
+              visible: reservationDetailsDialog.currentReservation && reservationDetailsDialog.currentReservation.notes
+            }
+
+            Label {
+              Layout.fillWidth: true
+              text: reservationDetailsDialog.currentReservation ? reservationDetailsDialog.currentReservation.notes : ""
+              wrapMode: Text.WordWrap
+              visible: reservationDetailsDialog.currentReservation && reservationDetailsDialog.currentReservation.notes
+            }
+          }
+        }
 
         Popup {
             id: issueBookPopup
@@ -421,6 +433,15 @@ Rectangle {
             closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
 
             property string bookTitle: ""
+            property int bookId: null
+            property string userNumber: ""
+            property string userName: ""
+            property string bookNumber: ""
+            property string availability: ""
+
+            //for fulfilling reservation in Opac manager
+            property int  reservationId: null
+            property int issuedBookId: null
 
             Rectangle {
                 id: issueBookID
@@ -581,7 +602,7 @@ Rectangle {
                             verticalCenter: parent.verticalCenter
                         }
 
-                        text: "13/NRW/2024"
+                        text: issueBookPopup.bookNumber //"13/NRW/2024"
                         font.pointSize: 12
                     }
                 }
@@ -611,7 +632,7 @@ Rectangle {
 
                     Label {
                         id: locationLabel
-                        text: "Location: "
+                        text: "Availability: "
                         anchors {
                             left: parent.left
                             leftMargin: 5
@@ -628,7 +649,7 @@ Rectangle {
                             verticalCenter: parent.verticalCenter
                         }
 
-                        text: "Shelf NO. 12"
+                        text: issueBookPopup.availability //"Shelf NO. 12"
                         font.pointSize: 12
                     }
 
@@ -697,7 +718,7 @@ Rectangle {
                         rightMargin: 5
                     }
 
-                    text: "Gilbert Ashivaka"
+                    text: issueBookPopup.userName  //"Gilbert Ashivaka"
                     font.pixelSize: 16
                 }
 
@@ -743,7 +764,7 @@ Rectangle {
                             verticalCenter: parent.verticalCenter
                         }
 
-                        text: "17/06/2024"
+                        text: issueBooksList.returnDueDate() //"17/06/2024"
                         font.pointSize: 12
                     }
                 }
@@ -761,7 +782,8 @@ Rectangle {
 
                     text: "Approve"
                     onClicked: {
-
+                        console.log("Book number:", issueBookPopup.bookNumber)
+                        issueBooksList.issueBook(issueBookPopup.bookId, issueBookPopup.userNumber)
                     }
                 }
 
@@ -780,7 +802,7 @@ Rectangle {
                     id: messageBox
                     width: 100
                     height: messageText.height + 50
-    //                color: "gray"
+                    //                color: "gray"
                     color: Qt.rgba(0,0,0, 0.6)
                     radius: 4
                     visible: false  // Initially hidden
@@ -839,6 +861,83 @@ Rectangle {
                 samples: 16
             }
         }
+    }
+
+    // Confirm Cancel Reservation Dialog
+    Dialog {
+      id: confirmCancelDialog
+      title: "Cancel Reservation"
+      anchors.centerIn: parent
+      modal: true
+      standardButtons: Dialog.Yes | Dialog.No
+
+      property int reservationId: -1
+
+      function show(resId) {
+        reservationId = resId
+        open()
+      }
+
+      Label {
+        text: "Are you sure you want to cancel this reservation?"
+      }
+
+      onAccepted: {
+        if (opacManager.cancelReservation(reservationId)) {
+          showSuccessMessage("Reservation cancelled successfully")
+          reservationsModel.refresh()
+        } else {
+          showErrorMessage("Failed to cancel reservation")
+        }
+      }
+    }
+
+    Dialog {
+        id: errorDialog
+        title: "Error"
+        property alias text: errorLabel.text
+        modal: true
+        standardButtons: Dialog.Ok
+        anchors.centerIn: parent
+
+        Text {
+            id: errorLabel
+            color: "#8E8E8E"
+        }
+    }
+
+    Connections{
+        target: issueBooksList
+        function onErrorOcurred(errorMsg){
+            // issueBookPopup.close()
+            errorDialog.title = "Error!"
+            errorDialog.text = errorMsg
+            errorDialog.open()
+        }
+
+        function onOperationSuccessful(successMsg){
+            // issueBookPopup.close()
+            errorDialog.title = "Success!"
+            errorDialog.text = successMsg
+            errorDialog.open()
+            opacManager.fulfillReservation(issueBookPopup.reservationId, issueBookPopup.issuedBookId)
+        }
+
+        function onBookIssued(bookId){
+            issueBookPopup.issuedBookId = bookId
+        }
+    }
+
+    Connections{
+        target: opacManager
+        function onReservationsUpdated(){
+            reservationsModel.refresh()
+        }
+    }
+
+
+    function showReservationDetails(reservation) {
+      reservationDetailsDialog.showDetails(reservation)
     }
 }
 

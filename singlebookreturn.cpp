@@ -1,5 +1,6 @@
 #include "singlebookreturn.h"
 #include "databasemanager.h"
+#include "settingsmanager.h"
 
 SingleBookReturn::SingleBookReturn(QObject *parent)
     : QObject{parent}, m_hasBookData(false), m_currentAdminId(1)
@@ -63,6 +64,89 @@ QString SingleBookReturn::condition() const
 bool SingleBookReturn::hasBookData() const
 {
     return m_hasBookData;
+}
+
+bool SingleBookReturn::recordFinePayment(double amountPaid)
+{
+    if (!m_hasBookData) {
+        emit errorOccured("No book data available for fine payment.");
+        return false;
+    }
+
+    if (amountPaid <= 0) {
+        emit errorOccured("Payment amount must be greater than zero.");
+        return false;
+    }
+
+    if (amountPaid != m_currentBook.fineAmount) {
+        emit errorOccured(QString("Payment amount (KSh %1) must equal fine amount (KSh %2)")
+                              .arg(amountPaid).arg(m_currentBook.fineAmount));
+        return false;
+    }
+
+    if (!db.open()) {
+        emit errorOccured("Database not open: " + db.lastError().text());
+        return false;
+    }
+
+    // Update the issued_books table with payment info
+    if (!updateIssuedBookFinePayment(m_currentBook.issueId, amountPaid)) {
+        return false;
+    }
+
+    // Update the local book data
+    m_currentBook.fineAmount = 0.0;
+    emit bookDataChanged();
+    emit finePaymentRecorded(amountPaid);
+
+    return true;
+}
+
+bool SingleBookReturn::returnBookWithFine(bool finePaid)
+{
+    if (!m_hasBookData) {
+        emit errorOccured("Book data empty, no book to return.");
+        return false;
+    }
+
+    // Check if there's a pending fine that hasn't been paid
+    if (m_currentBook.fineAmount > 0.0 && !finePaid) {
+        emit returnRequiresFinePayment(m_currentBook.fineAmount);
+        emit errorOccured(QString("Outstanding fine of KSh %1 must be paid before returning.")
+                              .arg(m_currentBook.fineAmount));
+        return false;
+    }
+
+    if (!db.open()) {
+        emit errorOccured("Database not open: " + db.lastError().text());
+        return false;
+    }
+
+    db.transaction();
+
+    // Proceed with the return process
+    if (processBookReturn(m_currentBook)) {
+        db.commit();
+        emit operationSuccessful(
+            QString("Successfully returned book: %1").arg(m_currentBook.callNumber)
+            );
+        clearBookData();
+        return true;
+    } else {
+        db.rollback();
+        emit errorOccured("Failed to return book: " + m_currentBook.callNumber);
+        return false;
+    }
+}
+
+double SingleBookReturn::getPendingFineAmount() const
+{
+    return m_hasBookData ? m_currentBook.fineAmount : 0.0;
+}
+
+bool SingleBookReturn::hasPendingFine() const
+{
+    return m_hasBookData && m_currentBook.fineAmount > 0.0;
 }
 
 bool SingleBookReturn::searchByCallNumber(const QString &callNumber)
@@ -215,7 +299,11 @@ double SingleBookReturn::calculateLateFees(const QDateTime &dueDate, const QDate
     if(overdueDays <= 0)
         return 0.0;
 
-    return overdueDays*10;
+    int dailyFine = SettingsManager::instance()->fineRatePerDay();
+    int maxFineAmount = SettingsManager::instance()->maxFineAmount();
+    int fineAmount = overdueDays*dailyFine;
+
+    return fineAmount > maxFineAmount ? maxFineAmount : fineAmount;
 }
 
 bool SingleBookReturn::processBookReturn(const BookInfo &bookInfo)
@@ -374,6 +462,33 @@ bool SingleBookReturn::addToLostBooks(const BookInfo &bookInfo)
         emit errorOccured("Failed to add to lost books: " + insertQuery.lastError().text());
         return false;
     }
+    return true;
+}
+
+bool SingleBookReturn::updateIssuedBookFinePayment(int issueId, double amtPaid)
+{
+    QSqlQuery query(db);
+
+    query.prepare(
+        "UPDATE issued_books SET "
+        "fine_paid = ?, "
+        "fine_paid_date = CURRENT_TIMESTAMP "
+        "WHERE issue_id = ?"
+        );
+
+    query.addBindValue(amtPaid);
+    query.addBindValue(issueId);
+
+    if (!query.exec()) {
+        emit errorOccured("Failed to update fine payment: " + query.lastError().text());
+        return false;
+    }
+
+    if (query.numRowsAffected() == 0) {
+        emit errorOccured("No issued book found with issue_id: " + QString::number(issueId));
+        return false;
+    }
+
     return true;
 }
 

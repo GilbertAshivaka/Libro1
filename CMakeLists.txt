@@ -8,7 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 
 find_package(Qt6 6.4 REQUIRED COMPONENTS Quick)
-find_package(Qt6 6.4 REQUIRED COMPONENTS Core Gui Qml Widgets Sql Concurrent)
+find_package(Qt6 6.4 REQUIRED COMPONENTS Core Gui Qml Widgets Sql Concurrent Core5Compat)
 find_package(Qt6 6.4 REQUIRED COMPONENTS QuickControls2 Multimedia Pdf WebEngineQuick WebView)
 
 
@@ -119,8 +119,8 @@ qt_add_qml_module(appLibro1
     QML_FILES StudentPage.qml
     RESOURCES assets/feedbackIcon.png assets/suggestionIcon.png
     QML_FILES HistoryPage.qml
-    QML_FILES SuggestionForm.qml
-    QML_FILES FeedbackForm.qml
+    QML_FILES SuggestionDialog.qml
+    QML_FILES FeedbackDialog.qml
     RESOURCES appIcon.rc
     QML_FILES StaffPage.qml
     RESOURCES DynamicComponents/icons/barGraph.png DynamicComponents/icons/facebook.png DynamicComponents/icons/twitter.png DynamicComponents/icons/youtube.png
@@ -213,6 +213,14 @@ qt_add_qml_module(appLibro1
     RESOURCES assets/booksSettingsIcon.png assets/settingsIcon.png
     RESOURCES assets/mailSettings.png assets/reservationsSettings.png assets/systemSettings.png
     SOURCES analyticsmanager.h analyticsmanager.cpp
+    SOURCES clearancemanager.h clearancemanager.cpp
+    QML_FILES Clearance/ClearanceCheckItem.qml Clearance/ClearancePage.qml Clearance/ClearanceReceipt.qml Clearance/ReceiptCheckItem.qml
+    RESOURCES assets/clearance.png
+    QML_FILES ReservationPage.qml
+    SOURCES reservationmanager.h reservationmanager.cpp
+    QML_FILES SuggestionsAdminPage.qml
+    SOURCES suggestionsmanager.cpp suggestionsmanager.h
+    RESOURCES assets/suggestion.png
 )
 
 # Include directories for ZXing
@@ -264,6 +272,7 @@ target_link_libraries(appLibro1
     PRIVATE Qt6::Pdf
     PRIVATE Qt6::WebEngineQuick
     PRIVATE Qt6::WebView
+    PRIVATE Qt6::Core5Compat
 )
 
 

@@ -16,6 +16,7 @@ Rectangle {
     color: "#FBFBFB"
 
     property var addNewUser: null
+    property var settingsPage: null
 
     //Initialize databaseManager here
     DatabaseManager{
@@ -268,7 +269,7 @@ Rectangle {
             }
 
             onClicked:{
-
+                ComponentLoader.customCreateComponent(settingsPage,"Settings/SettingsPage", page2)
             }
         }
     }

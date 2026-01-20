@@ -3,6 +3,7 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QDebug>
+#include "settingsmanager.h"
 
 IssueBooksList::IssueBooksList(QObject *parent)
     : QObject{parent}, m_db{DatabaseManager::getConnection()}
@@ -316,6 +317,7 @@ bool IssueBooksList::issueBook(int bookId, const QString &userNumber){
                              .arg(privileges.maxLoanDays);
 
     emit operationSuccessful(successMsg);
+    emit bookIssued(bookId);
     qDebug() << successMsg;
     return true;
 }
@@ -467,21 +469,21 @@ UserPrivileges IssueBooksList::getUserPrivileges(const QString &userType)
 
     //Define privilges for different users
     if (userType.compare("student", Qt::CaseInsensitive) ==0){
-        privileges.maxLoanDays = 14;
-        privileges.maxBooksAllowed = 3;
-        privileges.renewableLimit =1;
+        privileges.maxLoanDays = SettingsManager::instance()->studentMaxLoanDays();
+        privileges.maxBooksAllowed = SettingsManager::instance()->studentMaxBooksAllowed();
+        privileges.renewableLimit = SettingsManager::instance()->studentMaxRenewals();
         privileges.privilegeDescription = QString("Student privileges");
     }
     else if (userType.compare("staff", Qt::CaseInsensitive) ==0){
-        privileges.maxLoanDays = 30;
-        privileges.maxBooksAllowed = 10;
-        privileges.renewableLimit = 3;
+        privileges.maxLoanDays = SettingsManager::instance()->staffMaxLoanDays();
+        privileges.maxBooksAllowed = SettingsManager::instance()->staffMaxBooksAllowed();
+        privileges.renewableLimit = SettingsManager::instance()->staffMaxRenewals();
         privileges.privilegeDescription = QString("Staff Privileges");
     }
     else if (userType.compare("other user", Qt::CaseInsensitive) ==0){
-        privileges.maxLoanDays = 7;
-        privileges.maxBooksAllowed = 2;
-        privileges.renewableLimit = 0;
+        privileges.maxLoanDays = SettingsManager::instance()->otherMaxLoanDays();
+        privileges.maxBooksAllowed = SettingsManager::instance()->otherMaxBooksAllowed();
+        privileges.renewableLimit = SettingsManager::instance()->otherMaxRenewals();
         privileges.privilegeDescription = QString("Visitor/guest privileges");
     }
 

@@ -39,6 +39,8 @@ Rectangle {
     property var digitalMaterialPage: null
     property var emailNotifications: null
     property var opacConfigurationView: null
+    property var clearancePage: null
+    property var suggestionsAdminPage: null
 
     property var reportsMainPage: null
 
@@ -299,6 +301,28 @@ Rectangle {
            instruction1:function(){
                CustomComponentLoader.customCreateComponent(opacConfigurationView,"OpacConfigurationView", mainPageContainer)
            }
+
+//            instruction2:
+        }
+
+        ToolsTemplate{
+            id: clearance
+            icon: "assets/clearance.png"
+            description: "Clearance"
+            instruction1: function() {
+                CustomComponentLoader.customCreateComponent(clearancePage,"Clearance/ClearancePage", mainPageContainer)
+            }
+
+//            instruction2:
+        }
+
+        ToolsTemplate{
+            id: suggestions
+            icon: "assets/suggestion.png"
+            description: "Suggestions and Feedback"
+            instruction1: function() {
+                CustomComponentLoader.customCreateComponent(suggestionsAdminPage,"SuggestionsAdminPage", mainPageContainer)
+            }
 
 //            instruction2:
         }
