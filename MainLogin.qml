@@ -116,7 +116,7 @@ Rectangle {
 
     Rectangle{
         id: loginOptions
-        height: loginLabelRect.height
+        height: loginLabelRect.height * 1.3
         width: loginLabelRect.width* .355
         anchors{
             left: loginLabelRect.right
@@ -129,7 +129,7 @@ Rectangle {
 
         RoundButton{
             id: showAdminLogin
-            height: loginOptions.height/3
+            height: loginOptions.height/4
             anchors{
                 left: loginOptions.left
                 right: loginOptions.right
@@ -147,7 +147,7 @@ Rectangle {
 
         RoundButton{
             id: showStaffLogin
-            height: loginOptions.height/3
+            height: loginOptions.height/4
             anchors{
                 left: loginOptions.left
                 right: loginOptions.right
@@ -163,14 +163,31 @@ Rectangle {
         }
 
         RoundButton{
-            id: showUserLogin
-            height: loginOptions.height/3
+            id: showStudentLogin
+            height: loginOptions.height/4
             anchors{
                 left: loginOptions.left
                 right: loginOptions.right
                 top: showStaffLogin.bottom
             }
-            text: "Student/ Other User"
+            text: "Student"
+            radius: 7
+
+            onClicked: {
+                loginSV.push("ui/StudentLogin.qml")
+                loginOptions.visible = false
+            }
+        }
+
+        RoundButton{
+            id: showUserLogin
+            height: loginOptions.height/4
+            anchors{
+                left: loginOptions.left
+                right: loginOptions.right
+                top: showStudentLogin.bottom
+            }
+            text: "Other User"
             radius: 7
 
             onClicked: {

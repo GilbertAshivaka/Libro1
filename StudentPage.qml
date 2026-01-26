@@ -4,19 +4,49 @@ import QtQuick.Dialogs
 import QtQuick.Effects
 import "DynamicComponentLoader.js" as CustomComponentLoader
 
+
 Rectangle {
     id: studentPage
     width: parent.width
     color: "#FBFBFB"
 
     property string imageSource: "assets/1_jWx9suY2k3Ifq4B8A_vz9g.jpeg"
-    property var issueBook: null
+    property var reservationPage: null
 
-    // User info properties - these should be set when user logs in
-    property int currentUserId: 0
-    property string currentUserName: "Gilbert Ashivaka"
-    property string currentUserNumber: "083/NZL/2024"
-    property string currentUserRole: "Student"
+
+    // User info properties - populated from LoginManager after successful login
+    property int currentUserId: loginManager ? loginManager.currentUserId : 0
+    property string currentUserName: loginManager ? loginManager.currentUserName : "Student"
+    property string currentUserNumber: loginManager ? loginManager.currentUserNumber : ""
+    property string currentUserRole: loginManager ? loginManager.currentUserRole : "Student"
+
+    // Additional details from UserManager
+    property var userDetails: ({})
+    property string branch: ""
+    property string level: ""
+    property int totalBooksIssued: 0
+
+    // Load user details on component completion
+    Component.onCompleted: {
+        loadUserDetails()
+    }
+
+    function loadUserDetails() {
+        if (currentUserId > 0 && typeof userManager !== 'undefined') {
+            userDetails = userManager.getUserById(currentUserId)
+            branch = userDetails.branch ? userDetails.branch : ""
+            totalBooksIssued = userDetails.totalBooksIssued
+            level = userDetails.level ? userDetails.level : ""
+        }
+    }
+
+    // Refresh details when dialog updates them
+    Connections {
+        target: editDetailsDialog
+        function onDetailsUpdated() {
+            loadUserDetails()
+        }
+    }
 
     TextUtils{
         id: textUtils
@@ -187,7 +217,7 @@ Rectangle {
 
         Text{
             id: name
-            text: "Gilbert Ashivaka"
+            text: userDetails.fullName || currentUserName
             anchors{
                 top: profilePicRect.top
                 topMargin: 10
@@ -214,7 +244,7 @@ Rectangle {
 
         Text{
             id: _level
-            text: "3rd Year"
+            text: studentPage.level || "N/A"
             anchors{
                 verticalCenter: level.verticalCenter
                 left: level.right
@@ -240,7 +270,7 @@ Rectangle {
 
         Text{
             id: _registrationNumber
-            text: "083/NZL/2024"
+            text: userDetails.admNo || currentUserNumber || "N/A"
             anchors{
                 verticalCenter: registrationNumber.verticalCenter
                 left: registrationNumber.right
@@ -252,7 +282,7 @@ Rectangle {
 
         Text{
             id: borrowScore
-            text: "Library Score:"
+            text: "Currently Borrowed:"
             anchors{
                 top: registrationNumber.bottom
                 topMargin: 10
@@ -266,7 +296,8 @@ Rectangle {
 
         Text{
             id: _borrowScore
-            text: "100%"
+            text: typeof userManager !== 'undefined' && currentUserId > 0 ?
+                  userManager.getCurrentlyBorrowedCount(currentUserId).toString() : "0"
             anchors{
                 verticalCenter: borrowScore.verticalCenter
                 left: borrowScore.right
@@ -292,7 +323,7 @@ Rectangle {
 
         Text{
             id: _borrowCount
-            text: "73"
+            text: totalBooksIssued.toString()
             anchors{
                 verticalCenter: borrowCount.verticalCenter
                 left: borrowCount.right
@@ -321,6 +352,11 @@ Rectangle {
                 }
                 onExited: {
                     editAcc.color = "blue"
+                }
+                onClicked: {
+                    editDetailsDialog.userId = studentPage.currentUserId
+                    editDetailsDialog.userRole = "Student"
+                    editDetailsDialog.open()
                 }
             }
         }
@@ -374,7 +410,7 @@ Rectangle {
                     requestBtn.height = 40
                 }
                 onClicked: {
-                    CustomComponentLoader.customCreateComponent(issueBook,"IssueBookSearchList", container)
+                    CustomComponentLoader.customCreateComponent(reservationPage,"ReservationPage", container)
                     historyPage.visible = false
                     feedbackForm.visible = false
                     suggestionForm.visible = false
@@ -421,6 +457,10 @@ Rectangle {
                     logoutBtn.height = 40
                 }
                 onClicked: {
+                    // Logout using LoginManager
+                    if (typeof loginManager !== 'undefined') {
+                        loginManager.logout()
+                    }
                     mainLoader.source = "Login.qml"
                 }
             }
@@ -629,6 +669,13 @@ Rectangle {
             userName: studentPage.currentUserName
             userNumber: studentPage.currentUserNumber
             userRole: studentPage.currentUserRole
+        }
+
+        // Edit Details Dialog
+        EditDetailsDialog {
+            id: editDetailsDialog
+            userId: studentPage.currentUserId
+            userRole: "Student"
         }
     }
 }

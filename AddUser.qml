@@ -7,7 +7,7 @@ import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import "DynamicComponentLoader.js" as CustomComponentLoader
 
-import UserManager 1.0
+// import UserAddition 1.0
 
 Rectangle{
     id: registrationForm
@@ -20,16 +20,28 @@ Rectangle{
     property var addManyUsers: null
     property string userImageSource: "assets/userImage.png"
 
-    UserManager{
-        id: userManager
-        onErrorOccured: (erroMessage) =>{
-            console.log(erroMessage)
-            messageText.text = (erroMessage)
-            messageBox.visible = true
-            notificationSound.play()
-            messageTimer.restart()
-        }
+    // UserAddition{
+    //     id: userAddition
+    //     onErrorOccurred: (erroMessage) =>{
+    //         console.log(erroMessage)
+    //         messageText.text = (erroMessage)
+    //         messageBox.visible = true
+    //         notificationSound.play()
+    //         messageTimer.restart()
+    //     }
+    // }
+
+    Connections{
+        target: userManager
+        function onErrorOccurred(erroMessage){
+        console.log(erroMessage)
+        messageText.text = (erroMessage)
+        messageBox.visible = true
+        notificationSound.play()
+        messageTimer.restart()
     }
+    }
+
 
     Rectangle{
         id: registrationFormRect

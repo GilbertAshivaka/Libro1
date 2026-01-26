@@ -4,25 +4,29 @@ import QtQuick.Dialogs
 import QtQuick.Effects
 import "DynamicComponentLoader.js" as CustomComponentLoader
 
+/**
+ * OtherUserPage.qml - Profile page for "Other Users" (non-student, non-staff)
+ *
+ * Displays user information and library statistics for community members,
+ * visiting researchers, or other library users.
+ */
 Rectangle {
-    id: staffPage
+    id: otherUserPage
     width: parent.width
     color: "#FBFBFB"
 
     property string imageSource: "assets/1_jWx9suY2k3Ifq4B8A_vz9g.jpeg"
     property var issueBook: null
-    property var reservationPage: null
 
     // User info properties - populated from LoginManager after successful login
     property int currentUserId: loginManager ? loginManager.currentUserId : 0
-    property string currentUserName: loginManager ? loginManager.currentUserName : "Staff Member"
+    property string currentUserName: loginManager ? loginManager.currentUserName : "Library User"
     property string currentUserNumber: loginManager ? loginManager.currentUserNumber : ""
-    property string currentUserRole: loginManager ? loginManager.currentUserRole : "Staff"
+    property string currentUserRole: loginManager ? loginManager.currentUserRole : "Other"
 
     // Additional details from UserManager
     property var userDetails: ({})
-    property string department: ""
-    property string category: ""
+    property string residence: ""
     property int totalBooksIssued: 0
 
     // Load user details on component completion
@@ -33,16 +37,14 @@ Rectangle {
     function loadUserDetails() {
         if (currentUserId > 0 && typeof userManager !== 'undefined') {
             userDetails = userManager.getUserById(currentUserId)
-            department = userDetails.department || ""
-            category = userDetails.category || ""
+            residence = userDetails.residence || ""
             totalBooksIssued = userDetails.totalBooksIssued || 0
 
             // Update display
             name.text = userDetails.fullName || currentUserName
-            _registrationNumber.text = userDetails.staffNo || currentUserNumber
+            _residence.text = residence
+            _registrationNumber.text = userDetails.userNo || currentUserNumber
             _borrowCount.text = totalBooksIssued.toString()
-            _level.text = department
-
         }
     }
 
@@ -59,7 +61,7 @@ Rectangle {
     }
 
     Rectangle {
-        id: staffPageTitleRect
+        id: otherUserPageTitleRect
         width: parent.width
         height: 50
         anchors {
@@ -69,69 +71,23 @@ Rectangle {
         clip: true
 
         Text {
-            id: staffPageTitle
+            id: pageTitle
             anchors {
                 left: parent.left
                 leftMargin: 20
                 verticalCenter: parent.verticalCenter
             }
 
-            text: "Staff"
+            text: "Library User"
             font.pointSize: 12
             color: "#878585"
-        }
-
-        Rectangle{
-            id: menuRect
-            width: 60
-            height: 40
-//            radius: 4
-            anchors{
-                left:staffPageTitle.right
-                leftMargin: 10
-                verticalCenter: parent.verticalCenter
-            }
-
-            Image{
-                id: menuImg
-                anchors.fill: parent
-                fillMode: Image.PreserveAspectFit
-                source: "assets/menu.png"
-            }
-
-            MouseArea{
-                anchors.fill: parent
-                hoverEnabled: true
-
-                onEntered: {
-                    menuRect.color = "lightgray" //"#FBFBFB"
-
-                }
-                onExited: {
-                    menuRect.color = "white"
-                }
-
-                onClicked: {
-                    menu.open()
-                }
-            }
-
-            Menu {
-                id: menu
-                width: 120
-                y: menuRect.height
-
-                MenuItem {
-                    text: "Help"
-                }
-            }
         }
     }
 
     Item{
         id: container
         anchors{
-            top: staffPageTitleRect.bottom
+            top: otherUserPageTitleRect.bottom
             right: parent.right
             left: parent.left
             bottom: parent.bottom
@@ -169,9 +125,9 @@ Rectangle {
 
                 Image {
                     id: sourceItem
-                    source: profilePicRect.imageSource  //"assets/1_jWx9suY2k3Ifq4B8A_vz9g.jpeg"
+                    source: profilePicRect.imageSource
                     anchors.centerIn: parent
-                    width: parent.width //* 0.4688
+                    width: parent.width
                     height: width
                     visible: false
                     fillMode: Image.PreserveAspectCrop
@@ -224,9 +180,7 @@ Rectangle {
                     anchors{
                         left: sourceItem.horizontalCenter
                         verticalCenter: sourceItem.verticalCenter
-
                     }
-
                     radius: 5
 
                     Text {
@@ -238,7 +192,6 @@ Rectangle {
                             rightMargin: 5
                             verticalCenter: parent.verticalCenter
                         }
-
                         color: "white"
                         text: "Click to change profile picture"
                         font.pixelSize: 12
@@ -259,7 +212,7 @@ Rectangle {
 
         Text{
             id: name
-            text: "Emma Someone"
+            text: currentUserName
             anchors{
                 top: profilePicRect.top
                 topMargin: 10
@@ -271,8 +224,8 @@ Rectangle {
         }
 
         Text{
-            id: level
-            text: "Department:"
+            id: residenceLabel
+            text: "Residence:"
             anchors{
                 top: name.bottom
                 topMargin: 10
@@ -285,11 +238,11 @@ Rectangle {
         }
 
         Text{
-            id: _level
-            text: "Science and Engineering"
+            id: _residence
+            text: residence
             anchors{
-                verticalCenter: level.verticalCenter
-                left: level.right
+                verticalCenter: residenceLabel.verticalCenter
+                left: residenceLabel.right
                 leftMargin: 5
             }
             font.pointSize: 11
@@ -298,9 +251,9 @@ Rectangle {
 
         Text{
             id: registrationNumber
-            text: "Staff Number:"
+            text: "User Number:"
             anchors{
-                top: level.bottom
+                top: residenceLabel.bottom
                 topMargin: 10
                 left: profilePicRect.right
                 leftMargin: 20
@@ -312,7 +265,7 @@ Rectangle {
 
         Text{
             id: _registrationNumber
-            text: "069/NZL/2024"
+            text: currentUserNumber
             anchors{
                 verticalCenter: registrationNumber.verticalCenter
                 left: registrationNumber.right
@@ -365,7 +318,7 @@ Rectangle {
 
         Text{
             id: _borrowCount
-            text: "81"
+            text: totalBooksIssued.toString()
             anchors{
                 verticalCenter: borrowCount.verticalCenter
                 left: borrowCount.right
@@ -396,8 +349,8 @@ Rectangle {
                     editAcc.color = "blue"
                 }
                 onClicked: {
-                    editDetailsDialog.userId = staffPage.currentUserId
-                    editDetailsDialog.userRole = "Staff"
+                    editDetailsDialog.userId = otherUserPage.currentUserId
+                    editDetailsDialog.userRole = "Other"
                     editDetailsDialog.open()
                 }
             }
@@ -428,7 +381,7 @@ Rectangle {
 
             Text{
                 id: requestBtnText
-                text: "Place book request" //textUtils.truncateText("Place book request", textUtils.calculateMaxLength(parent.width, requestBtnText.font.pixelSize))
+                text: "Place book request"
                 anchors.centerIn: parent
             }
 
@@ -452,7 +405,8 @@ Rectangle {
                     requestBtn.height = 40
                 }
                 onClicked:{
-                    CustomComponentLoader.customCreateComponent(reservationPage,"ReservationPage", container)
+                    // TODO: Implement reservation page loading
+                    console.log("Open reservation page")
                 }
             }
         }
@@ -472,7 +426,7 @@ Rectangle {
 
             Text{
                 id: logoutBtnText
-                text: "Logout" //textUtils.truncateText("Place book request", textUtils.calculateMaxLength(parent.width, requestBtnText.font.pixelSize))
+                text: "Logout"
                 anchors.centerIn: parent
             }
 
@@ -532,7 +486,7 @@ Rectangle {
         }
 
         Text {
-            id: historyExplain
+            id: historyExplanation
             text: qsTr("This will show your issue and return history starting with the most recent")
             anchors{
                 top: history.bottom
@@ -575,46 +529,15 @@ Rectangle {
                     cursorShape: "PointingHandCursor"
                     onEntered: {
                         suggestion.color = "#878585"
-                        tooltip1.visible = !tooltip1.visible
                     }
                     onExited: {
                         suggestion.color = "blue"
-                        tooltip1.visible = !tooltip1.visible
                     }
                     onClicked:{
                         suggestionDialog.open()
                     }
                 }
             }
-
-            Rectangle {
-                id: tooltip1
-                width: parent.width/2
-                height: toolTipText.height + 20
-                color: Qt.rgba(0,0,0,0.5)
-                visible: false
-                anchors{
-                    bottom: suggestion.top
-                    horizontalCenter: suggestion.horizontalCenter
-                }
-
-                Text {
-                    id: toolTipText1
-                    width: parent.width
-                    anchors{
-                        left: parent.left
-                        leftMargin: 5
-                        rightMargin: 5
-                        verticalCenter: parent.verticalCenter
-                    }
-
-                    color: "white"
-                    text: "Suggestions and complains to Admin"
-                    font.pixelSize:12
-                    wrapMode: Text.WordWrap
-                }
-            }
-
 
             Image {
                 id: feedbackIcon
@@ -642,43 +565,13 @@ Rectangle {
                     cursorShape: "PointingHandCursor"
                     onEntered: {
                         feedback.color = "#878585"
-                        tooltip2.visible = !tooltip2.visible
                     }
                     onExited: {
                         feedback.color = "blue"
-                        tooltip2.visible = !tooltip2.visible
                     }
                     onClicked: {
                         feedbackDialog.open()
                     }
-                }
-            }
-
-            Rectangle {
-                id: tooltip2
-                width: parent.width/2
-                height: toolTipText.height + 20
-                color: Qt.rgba(0,0,0,0.5)
-                visible: false
-                anchors{
-                    top: feedback.bottom
-                    horizontalCenter: suggestion.horizontalCenter
-                }
-
-                Text {
-                    id: toolTipText2
-                    width: parent.width
-                    anchors{
-                        left: parent.left
-                        leftMargin: 5
-                        rightMargin: 5
-                        verticalCenter: parent.verticalCenter
-                    }
-
-                    color: "white"
-                    text: "Send feedback to developers"
-                    font.pixelSize: 12
-                    wrapMode: Text.WordWrap
                 }
             }
         }
@@ -686,35 +579,31 @@ Rectangle {
         HistoryPage{
             id: historyPage
             visible: false
-    //        anchors{
-    //            top: profilePicRect.verticalCenter
-    //            left: parent.horizontalCenter
-    //        }
         }
 
         // Suggestion Dialog
         SuggestionDialog {
             id: suggestionDialog
-            userId: staffPage.currentUserId
-            userName: staffPage.currentUserName
-            userNumber: staffPage.currentUserNumber
-            userRole: staffPage.currentUserRole
+            userId: otherUserPage.currentUserId
+            userName: otherUserPage.currentUserName
+            userNumber: otherUserPage.currentUserNumber
+            userRole: otherUserPage.currentUserRole
         }
 
         // Feedback Dialog
         FeedbackDialog {
             id: feedbackDialog
-            userId: staffPage.currentUserId
-            userName: staffPage.currentUserName
-            userNumber: staffPage.currentUserNumber
-            userRole: staffPage.currentUserRole
+            userId: otherUserPage.currentUserId
+            userName: otherUserPage.currentUserName
+            userNumber: otherUserPage.currentUserNumber
+            userRole: otherUserPage.currentUserRole
         }
 
         // Edit Details Dialog
         EditDetailsDialog {
             id: editDetailsDialog
-            userId: staffPage.currentUserId
-            userRole: "Staff"
+            userId: otherUserPage.currentUserId
+            userRole: "Other"
         }
     }
 }

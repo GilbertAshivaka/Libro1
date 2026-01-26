@@ -2,11 +2,15 @@ import QtQuick 2.15
 import QtQuick.Controls
 import Qt5Compat.GraphicalEffects
 
+/**
+ * StudentLogin.qml - Login page for Students
+ *
+ * Authentication:
+ * - Username: Student's full name or email
+ * - Password: adm_no (admission number) from students table
+ */
 Item{
-    id: staffLogin
-//    height: parent.height
-//    width: parent.width
-    property var staffPage: null
+    id: studentLogin
     property string errorMessage: ""
 
     // Connect to LoginManager signals
@@ -14,8 +18,8 @@ Item{
         target: loginManager
 
         function onLoginSuccessful(userName, userRole) {
-            if (userRole === "Staff") {
-                mainLoader.source = "StaffPage.qml"
+            if (userRole === "Student") {
+                mainLoader.source = "StudentPage.qml"
             }
         }
 
@@ -32,7 +36,7 @@ Item{
     }
 
     GaussianBlur{
-        id: staffGausian
+        id: studentGausian
         anchors.fill: parent
         source: library
         radius: 8
@@ -40,7 +44,7 @@ Item{
     }
 
     Rectangle{
-        id: staffLoginRect
+        id: studentLoginRect
         width: parent.width* .5
         height: parent.height* .7
         color: "transparent"
@@ -48,13 +52,11 @@ Item{
         y: parent.height* .25
 
         anchors{
-//            verticalCenter: parent.verticalCenter
             horizontalCenter: parent.horizontalCenter
-
         }
 
         Rectangle{
-            id: staffAvatarRect
+            id: studentAvatarRect
             height: 80
             width: height
             radius: width/2
@@ -63,13 +65,12 @@ Item{
             anchors{
                 top: parent.top
                 topMargin: 20
-//                horizontalCenter: parent.horizontalCenter
                 left: parent.left
             }
 
             Rectangle{
                 id: profileRect
-                height: staffAvatarRect.height* .7
+                height: studentAvatarRect.height* .7
                 width: height
                 color: "#CECED7"
                 anchors{
@@ -78,40 +79,50 @@ Item{
                 }
 
                 Image{
-                    id: staffAvatar
+                    id: studentAvatar
                     anchors.fill: parent
                     fillMode: Image.PreserveAspectFit
                     source: "qrc:Libro1/assets/user.png"
                 }
-
             }
         }
 
+        // Title
+        Text {
+            id: loginTitle
+            text: "Student Login"
+            font.pixelSize: 20
+            font.bold: true
+            color: "white"
+            anchors {
+                left: studentAvatarRect.right
+                leftMargin: 15
+                verticalCenter: studentAvatarRect.verticalCenter
+            }
+        }
 
         Rectangle{
-            id: staffUsername
+            id: studentUsername
             radius: 4
             width: parent.width* .85
-//            height: parent.height* 1/7
             height: 40
 
             anchors{
                 left: parent.left
-                top: staffAvatarRect.bottom
+                top: studentAvatarRect.bottom
                 topMargin: 20
                 leftMargin: 10
             }
 
-//            color: "#CBCECE"
             color: "white"
 
             MouseArea{
-                id: staffUsernameMA
+                id: studentUsernameMA
                 anchors.fill: parent
                 cursorShape: "IBeamCursor"
 
                 TextInput{
-                    id: staffUsernameTextInput
+                    id: studentUsernameTextInput
                     clip: true
                     anchors{
                         right: parent.right
@@ -127,61 +138,53 @@ Item{
 
             Text{
                 id: usernamePlaceholder
-                visible: staffUsernameTextInput.text ===""
+                visible: studentUsernameTextInput.text === ""
                 color: "#585757"
                 text: "Name or Email"
 
                 anchors{
                     left: parent.left
-//                    bottom: parent.bottom
                     leftMargin: 5
                     verticalCenter: parent.verticalCenter
                 }
                 font.pixelSize: 16
             }
-
         }
 
-        //DropShadow
-
-
         Rectangle{
-            id: staffPassword
+            id: studentPassword
             radius: 5
             width: parent.width* .85
-//            height: parent.height* 1/7
             height: 40
 
             anchors{
                 left: parent.left
-                top: staffUsername.bottom
-                topMargin: 20 //* (parent.height/350)
+                top: studentUsername.bottom
+                topMargin: 20
                 leftMargin: 10
             }
-//            color: "#CBCECE"
             color: "white"
 
             Text{
                 id: passwordPlaceholder
-                visible: staffPasswordTextInput.text === ""
+                visible: studentPasswordTextInput.text === ""
                 color: "#585757"
-                text: "Staff Number"
+                text: "Admission Number"
                 anchors{
                     left: parent.left
                     leftMargin: 5
-//                    bottom: parent.bottom
                     verticalCenter: parent.verticalCenter
                 }
                 font.pixelSize: 16
             }
 
-             MouseArea{
-                id: staffPasswordMA
+            MouseArea{
+                id: studentPasswordMA
                 anchors.fill: parent
                 cursorShape: "IBeamCursor"
 
                 TextInput{
-                    id: staffPasswordTextInput
+                    id: studentPasswordTextInput
                     clip: true
                     anchors{
                         right: parent.right
@@ -192,22 +195,19 @@ Item{
                     }
                     verticalAlignment: Text.AlignVCenter
                     font.pixelSize: 16
-                    echoMode: "Password"
+                    echoMode: TextInput.Password
                 }
             }
         }
 
-
-
         Rectangle{
-            id: staffCancel
+            id: studentCancel
             width: parent.width* .5
-//            height: parent.height* 1/7
             height: 40
             color: "transparent"
             anchors{
-                left: staffPassword.left
-                top: staffPassword.bottom
+                left: studentPassword.left
+                top: studentPassword.bottom
                 topMargin: 10
             }
 
@@ -219,7 +219,7 @@ Item{
                     bottom: parent.bottom
                     bottomMargin: 10
                 }
-                font.pixelSize: 16 /**(staffLoginRect.width/300)*/
+                font.pixelSize: 16
                 font.underline: true
                 color: "white"
 
@@ -234,37 +234,33 @@ Item{
                     onReleased: cancel.color = "white"
                 }
             }
-
         }
 
         RoundButton{
-            id: staffLoginButton
-//            width: parent.width* 1/3
+            id: studentLoginButton
             width: 120
-//            height: parent.height* 1/8
             height: 40
             anchors{
-                right: staffPassword.right
-//                bottom: parent.bottom
-                top: staffCancel.bottom
+                right: studentPassword.right
+                top: studentCancel.bottom
             }
             text: "Login"
 
             onClicked: {
                 errorMessage = ""
-                if (staffUsernameTextInput.text.trim() === "" || staffPasswordTextInput.text.trim() === "") {
-                    errorMessage = "Please enter your name/email and staff number"
+                if (studentUsernameTextInput.text.trim() === "" || studentPasswordTextInput.text.trim() === "") {
+                    errorMessage = "Please enter your name/email and admission number"
                     return
                 }
 
                 // Use LoginManager to authenticate
                 if (typeof loginManager !== 'undefined') {
-                    loginManager.login(staffUsernameTextInput.text.trim(),
-                                       staffPasswordTextInput.text.trim(),
-                                       "Staff")
+                    loginManager.login(studentUsernameTextInput.text.trim(),
+                                       studentPasswordTextInput.text.trim(),
+                                       "Student")
                 } else {
                     // Fallback for testing without LoginManager
-                    mainLoader.source = "StaffPage.qml"
+                    mainLoader.source = "StudentPage.qml"
                 }
             }
         }
@@ -277,7 +273,7 @@ Item{
             font.pixelSize: 14
             visible: errorMessage !== ""
             anchors {
-                top: staffLoginButton.bottom
+                top: studentLoginButton.bottom
                 topMargin: 10
                 horizontalCenter: parent.horizontalCenter
             }
@@ -285,6 +281,5 @@ Item{
             width: parent.width * 0.85
             horizontalAlignment: Text.AlignHCenter
         }
-
     }
 }

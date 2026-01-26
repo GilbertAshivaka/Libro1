@@ -221,6 +221,19 @@ qt_add_qml_module(appLibro1
     QML_FILES SuggestionsAdminPage.qml
     SOURCES suggestionsmanager.cpp suggestionsmanager.h
     RESOURCES assets/suggestion.png
+    QML_FILES ui/StudentLogin.qml
+    QML_FILES EditDetailsDialog.qml
+    SOURCES usermanager.h usermanager.cpp
+    SOURCES loginmanager.h loginmanager.cpp
+    QML_FILES OtherUserPage.qml
+    SOURCES appmanager.h appmanager.cpp
+    QML_FILES LicenseCheckingPage.qml
+    QML_FILES AddAdminDialog.qml
+    QML_FILES AppManagerPage.qml
+    QML_FILES GracePeriodWarningDialog.qml
+    QML_FILES BlockedPage.qml
+    QML_FILES FirstTimeSetupPage.qml
+    QML_FILES ActivationPage.qml
 )
 
 # Include directories for ZXing

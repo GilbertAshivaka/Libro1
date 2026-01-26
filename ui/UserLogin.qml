@@ -3,11 +3,35 @@ import QtQuick.Controls
 import Qt5Compat.GraphicalEffects
 //import "DynamicComponentLoader.js" as CustomComponentLoader
 
+/**
+ * UserLogin.qml - Login page for "Other Users" (non-student, non-staff)
+ *
+ * Authentication:
+ * - Username: User's full name or email
+ * - Password: user_no from other_users table
+ */
 Item{
     id: userLogin
 //    height: parent.height
 //    width: parent.width
     property var studentPage: null
+    property string errorMessage: ""
+
+    // Connect to LoginManager signals
+    Connections {
+        target: loginManager
+
+        function onLoginSuccessful(userName, userRole) {
+            if (userRole === "Other") {
+                // Other users use a generic user page (can be StudentPage or a dedicated OtherUserPage)
+                mainLoader.source = "OtherUserPage.qml"
+            }
+        }
+
+        function onLoginFailed(error) {
+            errorMessage = error
+        }
+    }
 
     Image{
         id: library
@@ -114,7 +138,7 @@ Item{
                 id: usernamePlaceholder
                 visible: userUsernameTextInput.text ===""
                 color: "#585757"
-                text: "Username"
+                text: "Name or Email"
 
                 anchors{
                     left: parent.left
@@ -150,7 +174,7 @@ Item{
                 id: passwordPlaceholder
                 visible: userPasswordTextInput.text === ""
                 color: "#585757"
-                text: "Password"
+                text: "User Number"
                 anchors{
                     left: parent.left
                     leftMargin: 5
@@ -236,11 +260,39 @@ Item{
             text: "Login"
 
             onClicked: {
-//                login.visible = !login.visible
-//                loginLabelRect.visible = !loginLabelRect.visible
-//                staffLogin.visible = false
-                mainLoader.source = "StudentPage.qml"
+                errorMessage = ""
+                if (userUsernameTextInput.text.trim() === "" || userPasswordTextInput.text.trim() === "") {
+                    errorMessage = "Please enter your name/email and user number"
+                    return
+                }
+
+                // Use LoginManager to authenticate as Other user
+                if (typeof loginManager !== 'undefined') {
+                    loginManager.login(userUsernameTextInput.text.trim(),
+                                       userPasswordTextInput.text.trim(),
+                                       "Other")
+                } else {
+                    // Fallback for testing without LoginManager
+                    mainLoader.source = "OtherUserPage.qml"
+                }
             }
+        }
+
+        // Error message display
+        Text {
+            id: errorText
+            text: errorMessage
+            color: "#FF6B6B"
+            font.pixelSize: 14
+            visible: errorMessage !== ""
+            anchors {
+                top: userLoginButton.bottom
+                topMargin: 10
+                horizontalCenter: parent.horizontalCenter
+            }
+            wrapMode: Text.WordWrap
+            width: parent.width * 0.85
+            horizontalAlignment: Text.AlignHCenter
         }
 
     }

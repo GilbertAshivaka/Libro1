@@ -411,6 +411,45 @@ bool DatabaseManager::createDatabase()
     query.exec("CREATE INDEX IF NOT EXISTS idx_suggestions_created ON suggestions_feedback(created_at)");
 
 
+    // Create indexes for suggestions_feedback
+    query.exec("CREATE INDEX IF NOT EXISTS idx_suggestions_type ON suggestions_feedback(type)");
+    query.exec("CREATE INDEX IF NOT EXISTS idx_suggestions_status ON suggestions_feedback(status)");
+    query.exec("CREATE INDEX IF NOT EXISTS idx_suggestions_created ON suggestions_feedback(created_at)");
+
+
+    // Create admins table for system administrators
+    // First admin is set up during initial app configuration
+    // Subsequent admins must be staff members first, then promoted by existing admin
+    if (!query.exec(
+            "CREATE TABLE IF NOT EXISTS admins ("
+            "admin_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "user_id INTEGER,"
+            "staff_id INTEGER,"
+            "username TEXT NOT NULL UNIQUE,"
+            "password TEXT NOT NULL,"
+            "admin_name TEXT NOT NULL,"
+            "email TEXT,"
+            "phone TEXT,"
+            "is_super_admin INTEGER DEFAULT 0,"
+            "is_active INTEGER DEFAULT 1,"
+            "last_login DATETIME,"
+            "created_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
+            "updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
+            "created_by INTEGER,"
+            "FOREIGN KEY (staff_id) REFERENCES staff(staff_id) ON DELETE SET NULL,"
+            "FOREIGN KEY (created_by) REFERENCES admins(admin_id)"
+            ")")) {
+        qWarning() << "Error creating admins table:" << query.lastError().text();
+        emit errorOccured("Failed to create admins table: " + query.lastError().text());
+        return false;
+    }
+
+    // Create indexes for admins table
+    query.exec("CREATE INDEX IF NOT EXISTS idx_admins_username ON admins(username)");
+    query.exec("CREATE INDEX IF NOT EXISTS idx_admins_staff_id ON admins(staff_id)");
+    query.exec("CREATE INDEX IF NOT EXISTS idx_admins_active ON admins(is_active)");
+
+
     qDebug() << "Tables created successfully";
     return true;
 }

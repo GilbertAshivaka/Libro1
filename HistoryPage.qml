@@ -14,6 +14,61 @@ Window {
     title: "History"
     flags: Qt.Window | Qt.CustomizeWindowHint | Qt.WindowCloseButtonHint
 
+    // User ID to fetch history for - set by parent page
+    property int userId: loginManager ? loginManager.currentUserId : 0
+
+    // History data model
+    ListModel {
+        id: historyModel
+    }
+
+    // Load history when window becomes visible or userId changes
+    onVisibleChanged: {
+        if (visible) {
+            loadHistory()
+        }
+    }
+
+    onUserIdChanged: {
+        if (visible) {
+            loadHistory()
+        }
+    }
+
+    function loadHistory() {
+        historyModel.clear()
+
+        if (userId <= 0 || typeof userManager === 'undefined') {
+            return
+        }
+
+        var history = userManager.getBorrowingHistory(userId, 10)
+
+        for (var i = 0; i < history.length; i++) {
+            var record = history[i]
+            var dateStr = record.issueDate ? formatDate(record.issueDate) : "N/A"
+            var status = record.status || "Unknown"
+
+            historyModel.append({
+                title: record.title || "Unknown Book",
+                author: record.author || "",
+                date: dateStr,
+                status: status,
+                dueDate: record.dueDate ? formatDate(record.dueDate) : "N/A",
+                returnDate: record.returnDate ? formatDate(record.returnDate) : "",
+                iconSource: "assets/delegateBook.png"
+            })
+        }
+    }
+
+    // Format date string to display format
+    function formatDate(dateString) {
+        if (!dateString) return "N/A"
+        var date = new Date(dateString)
+        if (isNaN(date.getTime())) return dateString
+        return Qt.formatDate(date, "dd/MM/yyyy")
+    }
+
     Rectangle {
         id: historyPageTitleRect
         width: parent.width
@@ -169,7 +224,55 @@ Window {
         color: "black"
     }
 
+    // Empty state display
+    Item {
+        id: emptyState
+        anchors.fill: parent
+        anchors.topMargin: historyPageTitleRect.height + separator.height + 20
+        visible: historyModel.count === 0
 
+        Column {
+            anchors.centerIn: parent
+            spacing: 20
+
+            // Empty state icon
+            Rectangle {
+                width: 100
+                height: 100
+                radius: 50
+                color: "#F0F0F0"
+                anchors.horizontalCenter: parent.horizontalCenter
+
+                Image {
+                    anchors.centerIn: parent
+                    width: 50
+                    height: 50
+                    source: "assets/delegateBook.png"
+                    opacity: 0.5
+                    fillMode: Image.PreserveAspectFit
+                }
+            }
+
+            Text {
+                id: emptyTitle
+                text: "No Borrowing History"
+                font.pointSize: 16
+                font.bold: true
+                color: "#606060"
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
+
+            Text {
+                id: emptyDescription
+                text: "You haven't borrowed any books yet.\nPlace reservation to get started!"
+                font.pointSize: 11
+                color: "#909090"
+                horizontalAlignment: Text.AlignHCenter
+                anchors.horizontalCenter: parent.horizontalCenter
+                lineHeight: 1.4
+            }
+        }
+    }
 
     ListView {
         id: listView
@@ -181,38 +284,13 @@ Window {
         anchors.left: parent.left
         anchors.leftMargin: 10
         clip: true
+        visible: historyModel.count > 0
 
-        model: ListModel {
-            ListElement {
-                title: "Artificial Intelligence: A Modern Approach"
-                date: "01/08/2024"
-                iconSource: "assets/delegateBook.png"
-            }
-            ListElement {
-                title: "Pattern Recognition and Machine Learning"
-                date: "01/08/2024"
-                iconSource: "assets/delegateBook.png"
-            }
-            ListElement {
-                title: "Operating Systems: Three Easy Pieces"
-                date: "02/08/2024"
-                iconSource: "assets/delegateBook.png"
-            }
-            ListElement {
-                title: "Computer Architecture: A Quantitative Approach"
-                date: "03/08/2024"
-                iconSource: "assets/delegateBook.png"
-            }
-            ListElement {
-                title: "Discrete Mathematics and Its Applications"
-                date: "04/08/2024"
-                iconSource: "assets/delegateBook.png"
-            }
-        }
+        model: historyModel
 
         delegate: Item {
             width: listView.width
-            height: 50
+            height: 60
 
             Rectangle {
                 id: delegateItemRect
@@ -220,7 +298,6 @@ Window {
                 height: parent.height
                 color: "transparent"
                 anchors.left: parent.left
-//                anchors.leftMargin: 20
 
                 Row {
                     anchors.verticalCenter: parent.verticalCenter
@@ -234,18 +311,52 @@ Window {
                     }
 
                     Column {
-                        spacing: 5
+                        spacing: 3
+                        width: listView.width - icon.width - statusBadge.width - 40
 
                         Text {
                             text: model.title
-                            font.pixelSize: 16
+                            font.pixelSize: 14
+                            font.bold: true
                             color: "black"
+                            elide: Text.ElideRight
+                            width: parent.width
                         }
 
                         Text {
-                            text: model.date
-                            font.pixelSize: 12
+                            text: model.author
+                            font.pixelSize: 11
+                            color: "#808080"
+                            elide: Text.ElideRight
+                            width: parent.width
+                            visible: model.author !== ""
+                        }
+
+                        Text {
+                            text: "Issued: " + model.date + (model.returnDate ? " • Returned: " + model.returnDate : " • Due: " + model.dueDate)
+                            font.pixelSize: 11
                             color: "#606060"
+                        }
+                    }
+
+                    // Status badge
+                    Rectangle {
+                        id: statusBadge
+                        width: statusText.width + 16
+                        height: 22
+                        radius: 11
+                        color: model.status === "Borrowed" ? "#FFF3E0" :
+                               model.status === "Returned" ? "#E8F5E9" : "#FFEBEE"
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Text {
+                            id: statusText
+                            text: model.status
+                            font.pixelSize: 10
+                            font.bold: true
+                            color: model.status === "Borrowed" ? "#E65100" :
+                                   model.status === "Returned" ? "#2E7D32" : "#C62828"
+                            anchors.centerIn: parent
                         }
                     }
                 }

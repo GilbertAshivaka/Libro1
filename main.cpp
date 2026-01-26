@@ -25,6 +25,10 @@
 #include "clearancemanager.h"
 #include "reservationmanager.h"
 #include "suggestionsmanager.h"
+#include "usermanager.h"
+#include "loginmanager.h"
+
+#include "appmanager.h"
 
 
 #include "issuebookslist.h"// for issuing books
@@ -64,7 +68,7 @@ int main(int argc, char *argv[])
     qDebug() << "Database initialised successfully.";
 
     qmlRegisterType<DatabaseManager>("com.databaseManager", 1, 0, "DatabaseManager");
-    qmlRegisterType<UserManager>("UserManager", 1, 0, "UserManager");
+    // qmlRegisterType<UserManager>("UserManager", 1, 0, "UserManager"); //functionality transfered to userManager singleton
     qmlRegisterType<BookManager>("com.bookmanager", 1, 0, "BookManager");
     qmlRegisterType<AllBooksListModel>("com.allbookslistmodel", 1, 0, "AllBooksListModel");
     qmlRegisterType<UserImporter>("com.userImporter", 1, 0, "UserImporter");
@@ -100,6 +104,10 @@ int main(int argc, char *argv[])
     qmlRegisterType<ZXingQt::BarcodeReader>("ZXing", 1, 0, "BarcodeReader");
     qmlRegisterType<BarcodeWriter>("WriteBarcode", 1, 0, "WriteBarcode");
 
+
+    // Create AppManager singleton FIRST (it needs to be ready for license check)
+    AppManager *appManager = AppManager::instance();
+
     // registering the allbookslist class
     AllBooksList allBooksList;
     AllUsersList allUsersList;
@@ -114,10 +122,15 @@ int main(int argc, char *argv[])
     AnalyticsManager analyticsManager;
 
     SuggestionsManager *suggestionsManager = new SuggestionsManager();
+    LoginManager *loginManager = new LoginManager();
+    UserManager *userManager = new UserManager();
 
 
 
     QQmlApplicationEngine engine;
+
+    // Register as context property so QML can access it
+    engine.rootContext()->setContextProperty("appManager", appManager);
 
     engine.rootContext()->setContextProperty(QStringLiteral("allBooksList"), &allBooksList);
     engine.rootContext()->setContextProperty(QStringLiteral("allUsersList"), &allUsersList);
@@ -130,6 +143,8 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("analyticsManager", &analyticsManager);
 
     engine.rootContext()->setContextProperty("suggestionsManager", suggestionsManager);
+    engine.rootContext()->setContextProperty("loginManager", loginManager);
+    engine.rootContext()->setContextProperty("userManager", userManager);
 
 
     //Register BackupManager as QML singleton.
