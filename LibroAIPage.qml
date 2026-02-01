@@ -91,7 +91,7 @@ Rectangle{
             bottom: parent.bottom
         }
 
-        url: Qt.resolvedUrl("webPages/LibroAI.html")
+        url: Qt.resolvedUrl("http://localhost:5173/embed/ai")  //http://localhost:5173/embed/ai //webPages/LibroAI.html
         onLoadingChanged: {
             if(loadProgress === 100){
                 console.log("Loaded the AI page.")

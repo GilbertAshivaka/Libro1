@@ -2,6 +2,9 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
+
+import Qt.labs.platform as StandardPaths  // For StandardPaths
+
 import com.clearanceManager
 
 Rectangle {
@@ -508,8 +511,18 @@ Rectangle {
             }
         }
 
+        // onAccepted: {
+        //     // Pass HTML content to file dialog and open it
+        //     fileDialog.htmlToSave = htmlDialog.htmlContent
+        //     fileDialog.open()
+        // }
+
         onAccepted: {
-            // Pass HTML content to file dialog and open it
+            // Generate filename from user name
+            var userName = clearanceManager.clearanceResult.user_name || "clearance"
+            var fileName = userName.toLowerCase().replace(/\s+/g, '_') + "_clearance.html"
+
+            fileDialog.currentFile = fileName
             fileDialog.htmlToSave = htmlDialog.htmlContent
             fileDialog.open()
         }
@@ -560,17 +573,18 @@ Rectangle {
     FileDialog {
         id: fileDialog
         title: "Save Clearance Receipt"
-        // selectExisting: false
+        fileMode: FileDialog.SaveFile  // Add this line - explicitly set to save mode
         nameFilters: ["HTML files (*.html)", "All files (*)"]
         defaultSuffix: "html"
+        currentFolder: StandardPaths.writableLocation(StandardPaths.DocumentsLocation) // Optional: set default location
 
         property string htmlToSave: ""
 
         onAccepted: {
             if (clearanceManager && htmlToSave.length > 0) {
-                var success = clearanceManager.saveHTMLReceipt(fileUrl.toString(), htmlToSave)
+                var success = clearanceManager.saveHTMLReceipt(selectedFile.toString(), htmlToSave)
                 if (success) {
-                    console.log("HTML receipt saved successfully to:", fileUrl)
+                    console.log("HTML receipt saved successfully to:", selectedFile)
                     // Show success message
                     successDialog.text = "Receipt saved successfully!"
                     successDialog.open()
@@ -587,20 +601,6 @@ Rectangle {
         }
     }
 
-    // Success Dialog
-    Dialog {
-        id: successDialog
-        title: "Success"
-        modal: true
-        standardButtons: Dialog.Ok
-
-        property alias text: successText.text
-
-        Text {
-            id: successText
-            wrapMode: Text.WordWrap
-        }
-    }
 
     // Error Dialog
     Dialog {

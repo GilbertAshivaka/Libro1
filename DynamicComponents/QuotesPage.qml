@@ -79,7 +79,7 @@ Item {
             }
 
             // For testing - loads a simple page
-            url: "https://example.com"
+            url: "http://localhost:5173/embed/announcements" //"https://example.com"
 
             onLoadingChanged: function(loadRequest) {
                 if (loadRequest.status === WebView.LoadFailedStatus) {

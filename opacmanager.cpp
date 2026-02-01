@@ -1,5 +1,6 @@
 #include "opacmanager.h"
 #include "databasemanager.h"
+#include "activitylogs.h"
 #include <QNetworkRequest>
 #include <QJsonObject>
 #include <QJsonArray>
