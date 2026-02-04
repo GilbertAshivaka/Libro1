@@ -37,6 +37,22 @@ public:
     //book manager functions
     Q_INVOKABLE bool deleteBook(const QString &bookNumber);
     Q_INVOKABLE bool archiveBook(const QString &bookNumber);
+    Q_INVOKABLE bool unarchiveBook(const QString &bookNumber);
+    Q_INVOKABLE QVariantMap getBookByCallNumber(const QString &callNumber);
+    Q_INVOKABLE bool updateBook(const QString &callNumber,
+                                const QString &title,
+                                const QString &author,
+                                const QString &publisher,
+                                const QString &isbn,
+                                const QString &yearPublished,
+                                const QString &shelfNumber,
+                                const QString &description,
+                                const QString &language,
+                                const QString &subject,
+                                const QString &genre,
+                                int value,
+                                const QString &method,
+                                const QString &condition);
 
     //inventory reports functions
     Q_INVOKABLE QVariantList getRecentAcquisitions(const QDate &fromDate);

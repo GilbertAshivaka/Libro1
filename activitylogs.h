@@ -18,7 +18,10 @@ public:
 
     ~ActivityLogs();
 
-    bool logActivity(const QString &level, const QString &category, const QString &message, const QString &details = QString(), int userId = -1);
+    // Static method - can be called from anywhere without creating an instance
+    // Usage: ActivityLogs::logActivity("INFO", "BOOKS", "Book added", "Details here", userId);
+    static bool logActivity(const QString &level, const QString &category, const QString &message, const QString &details = QString(), int userId = -1);
+
     Q_INVOKABLE QList<QVariantMap> getLogs(const QString &level = QString(), const QString &category = QString(), int limit = 100, int offset = 0);
     Q_INVOKABLE int getTotalLogsCount(const QString &level = QString(), const QString &category = QString());
 
@@ -31,7 +34,7 @@ signals:
     void ooperationSuccessful(const QString & message);
 
 private:
-    QMutex logsMutex;
+    static QMutex logsMutex;  // Static mutex for thread safety
     QSqlDatabase db;
 };
 

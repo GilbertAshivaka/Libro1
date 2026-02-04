@@ -280,6 +280,10 @@ QVariantMap SuggestionsManager::getRandomActiveSuggestion()
 {
     QVariantMap suggestion;
 
+    if (!db.open()){
+        qDebug() << "Failed to opendatabase: Suggestions.";
+    }
+
     // Get all active suggestions (pending or reviewed, not addressed)
     QSqlQuery query(db);
     query.prepare(

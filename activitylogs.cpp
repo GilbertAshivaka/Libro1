@@ -1,5 +1,8 @@
 #include "activitylogs.h"
 
+// Define the static mutex
+QMutex ActivityLogs::logsMutex;
+
 ActivityLogs::ActivityLogs(QObject *parent)
     : QObject{parent}
 {
@@ -16,9 +19,11 @@ bool ActivityLogs::logActivity(const QString &level, const QString &category, co
 {
     QMutexLocker locker(&logsMutex);
 
-    if (!db.open()){
-        emit errorOccured("Failed to open the database for logging activity: " +db.lastError().text());
-        qDebug() << "Failed to open the database for logging activity.";
+    // Get database connection directly (static method, no instance)
+    QSqlDatabase db = DatabaseManager::getConnection();
+
+    if (!db.isOpen() && !db.open()){
+        qDebug() << "Failed to open the database for logging activity: " << db.lastError().text();
         return false;
     }
 
@@ -33,7 +38,6 @@ bool ActivityLogs::logActivity(const QString &level, const QString &category, co
     query.addBindValue(userId == -1 ? QVariant() : userId);
 
     if (!query.exec()){
-        emit errorOccured("Failed to log activity: " + query.lastError().text());
         qDebug() << "Failed to log activity: " << query.lastError().text();
         return false;
     }
@@ -209,7 +213,6 @@ bool ActivityLogs::executeSystemLogsInsert()
     qDebug() << "Insert successful! Rows affected:" << query.numRowsAffected();
     return true;
 }
-
 
 
 

@@ -13,7 +13,8 @@ public:
     explicit AllUsersListModel(QObject *parent = nullptr);
 
     enum{
-        FirstNameRole = Qt::UserRole,
+        UserIdRole = Qt::UserRole,
+        FirstNameRole,
         LastNameRole,
         EmailRole,PhoneRole,
         UserTypeRole, StatusRole,

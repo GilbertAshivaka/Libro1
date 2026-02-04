@@ -41,6 +41,7 @@ Rectangle {
     property var opacConfigurationView: null
     property var clearancePage: null
     property var suggestionsAdminPage: null
+    property var appManagerPage: null
 
     property var reportsMainPage: null
 
@@ -311,6 +312,17 @@ Rectangle {
             description: "Clearance"
             instruction1: function() {
                 CustomComponentLoader.customCreateComponent(clearancePage,"Clearance/ClearancePage", mainPageContainer)
+            }
+
+//            instruction2:
+        }
+
+        ToolsTemplate{
+            id: management
+            icon: "assets/management.png"
+            description: "System Management"
+            instruction1: function() {
+                CustomComponentLoader.customCreateComponent(appManagerPage,"AppManagerPage", mainPageContainer)
             }
 
 //            instruction2:

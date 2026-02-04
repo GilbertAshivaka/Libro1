@@ -372,6 +372,25 @@ Rectangle {
 
                 verticalAlignment: Text.AlignVCenter
                 font.pixelSize: 11
+
+                // Real-time search as user types
+                onTextChanged: {
+                    searchDebounceTimer.restart()
+                }
+            }
+
+            // Debounce timer to avoid too many searches while typing
+            Timer {
+                id: searchDebounceTimer
+                interval: 300  // Wait 300ms after user stops typing
+                onTriggered: {
+                    if (navigationTextInput.text.trim().length > 0) {
+                        allUsersList.searchUsers(navigationTextInput.text)
+                    } else {
+                        // When search is cleared, reload current view
+                        fetchCurrentPageData()
+                    }
+                }
             }
         }
     }

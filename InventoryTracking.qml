@@ -3,6 +3,7 @@ import QtQuick.Controls
 import "DynamicComponentLoader.js" as ComponentLoader
 import com.inventoryManager
 import QtQuick.Layouts
+import com.libro.settings 1.0
 
 Rectangle {
     id: inventoryTracking
@@ -35,9 +36,9 @@ Rectangle {
                        }
 
         onOperationCompleted:(successMsg) =>{
-                                 errorDialog.title = "Success!"
-                                 errorDialog.text = successMsg
-                                 errorDialog.open()
+                                 successDialog.text = successMsg
+                                 successDialog.open()
+                                 refreshStats()
                              }
 
         onCategoryNotFound: (message)=> {
@@ -156,7 +157,7 @@ Rectangle {
     ScrollView{
         id: inventorySV
         height: parent.height
-        contentHeight: parent.height
+        contentHeight: parent.height + 200
         clip: true
         anchors{
             top: pageTitleRect.bottom
@@ -214,7 +215,7 @@ Rectangle {
                 }
 
                 Text{
-                    id: totalBooksNumber
+                    id: totalBooksCountText
                     text: inventoryManager.getTotalBooksCount() //"3,042"
                     font.pointSize: 18
                     font.bold: true
@@ -254,6 +255,7 @@ Rectangle {
                 }
 
                 Text{
+                    id: availableBooksCountText
                     text: inventoryManager.getAvailableBooksCount() //"2,893"
                     font.pointSize: 18
                     font.bold: true
@@ -293,6 +295,7 @@ Rectangle {
                 }
 
                 Text{
+                    id: checkedOutCountText
                     text: inventoryManager.getCheckedOutBooksCount() //"149"
                     font.pointSize: 18
                     font.bold: true
@@ -345,6 +348,7 @@ Rectangle {
                 }
 
                 Text{
+                    id: overdueCountText
                     text: inventoryManager.getOverdueBooksCount() //"13"
                     font.pointSize: 18
                     font.bold: true
@@ -353,7 +357,8 @@ Rectangle {
                 }
 
                 Text{
-                    text: "Total Fees: $47.50"
+                    id: overdueFeeText
+                    text: "Total Fees " + SettingsManager.currencySymbol + ": " + inventoryManager.getTotalOverdueFees().toFixed(2)
                     font.pointSize: 8
                     color: "#FFE6E6"
                     anchors{
@@ -394,6 +399,7 @@ Rectangle {
                 }
 
                 Text{
+                    id: missingCountText
                     text: inventoryManager.getMissingBooksCount() //"3"
                     font.pointSize: 18
                     font.bold: true
@@ -402,7 +408,8 @@ Rectangle {
                 }
 
                 Text{
-                    text: "Replacement: $156.43"
+                    id: replacementCostText
+                    text: "Replacement " + SettingsManager.currencySymbol +": " + inventoryManager.getTotalReplacementCost().toFixed(2)
                     font.pointSize: 8
                     color: "#F3E5F5"
                     anchors{
@@ -419,7 +426,7 @@ Rectangle {
         Rectangle{
             id: bookManagementContainer
             width: parent.width * 0.4
-            height: 240
+            height: 290
             color: "transparent"
             radius: 8
             border.width: 1
@@ -458,7 +465,7 @@ Rectangle {
                     leftMargin: 15
                 }
                 onClicked: {
-                    ComponentLoader.customCreateComponent(addBooks, "AddBooks", mainPageContainer)
+                    ComponentLoader.customCreateComponent(addBooks, "AddBooks", mainContainer)
                 }
             }
 
@@ -474,7 +481,7 @@ Rectangle {
                     rightMargin: 15
                 }
                 onClicked: {
-                    ComponentLoader.customCreateComponent(importBooks, "ImportBooks", mainPageContainer)
+                    ComponentLoader.customCreateComponent(importBooks, "ImportBooks", mainContainer)
                 }
             }
 
@@ -490,7 +497,8 @@ Rectangle {
                     leftMargin: 15
                 }
                 onClicked: {
-                    // Edit book functionality
+                    editBookCallNumberPopup.open()
+                    editCallNumberInput.forceActiveFocus()
                 }
             }
 
@@ -514,16 +522,33 @@ Rectangle {
             CustomButton{
                 id: archiveBtn
                 text: "Archive"
-                width: parent.width - 30
+                width: (parent.width - 45) / 2
                 height: 50
                 anchors{
                     top: editBookBtn.bottom
                     topMargin: 10
-                    horizontalCenter: parent.horizontalCenter
+                    left: parent.left
+                    leftMargin: 15
                 }
                 onClicked: {
-                    // Archive functionality
                     bookNumberPopup.caller = "archive"
+                    bookNumberPopup.open()
+                }
+            }
+
+            CustomButton{
+                id: unarchiveBtn
+                text: "Unarchive"
+                width: (parent.width - 45) / 2
+                height: 50
+                anchors{
+                    top: deleteBtn.bottom
+                    topMargin: 10
+                    right: parent.right
+                    rightMargin: 15
+                }
+                onClicked: {
+                    bookNumberPopup.caller = "unarchive"
                     bookNumberPopup.open()
                 }
             }
@@ -1316,8 +1341,8 @@ Rectangle {
 
     Popup {
         id: bookNumberPopup
-        width: parent.width * .7
-        height: parent.height * .6
+        width: 400 //parent.width * .7
+        height: 300 //parent.height * .6
         anchors.centerIn: parent
         modal: true
         focus: true
@@ -1384,8 +1409,8 @@ Rectangle {
                         confirmDeleteDialog.open()
                         break
                     default:
-                        errorDialog.text = "Unknown caller"
-                        errorDialog.open()
+                        // errorDialog.text = "Unknown caller"
+                        // errorDialog.open()
                         break
                     }
                 }
@@ -1452,21 +1477,31 @@ Rectangle {
         Text {
             id: confirmLabel
             color: "#8E8E8E"
-            text: "Are you sure you want to delete book: " +bookNumberTxtField.text + "?"
+            text: {
+                switch(bookNumberPopup.caller) {
+                    case "delete": return "Are you sure you want to permanently delete book: " + bookNumberTxtField.text + "?"
+                    case "archive": return "Are you sure you want to archive book: " + bookNumberTxtField.text + "?"
+                    case "unarchive": return "Are you sure you want to unarchive book: " + bookNumberTxtField.text + "?"
+                    default: return ""
+                }
+            }
         }
 
         onAccepted:{
             switch(bookNumberPopup.caller){
             case "delete":
-                //call the function to delete
+                inventoryManager.deleteBook(bookNumberTxtField.text)
                 break
             case "archive":
-                //call the function to archive
+                inventoryManager.archiveBook(bookNumberTxtField.text)
+                break
+            case "unarchive":
+                inventoryManager.unarchiveBook(bookNumberTxtField.text)
                 break
             default:
-
                 break
             }
+            bookNumberTxtField.text = ""
         }
         onRejected: {
             close()
@@ -1538,6 +1573,727 @@ Rectangle {
                 dynamicContentLoader.state = "recentBooks"
             }
         }
+    }
+
+    // Success Dialog
+    Dialog {
+        id: successDialog
+        title: "Success!"
+        property alias text: successLabel.text
+        modal: true
+        standardButtons: Dialog.Ok
+        anchors.centerIn: parent
+
+        Text {
+            id: successLabel
+            color: "#27AE60"
+            font.pixelSize: 14
+        }
+    }
+
+    // Edit Book - Call Number Input Popup
+    Popup {
+        id: editBookCallNumberPopup
+        width: 400
+        height: 200
+        anchors.centerIn: parent
+        modal: true
+        focus: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+        background: Rectangle {
+            color: "white"
+            radius: 8
+            border.color: "#E0E0E0"
+        }
+
+        Column {
+            anchors.fill: parent
+            anchors.margins: 20
+            spacing: 15
+
+            Text {
+                text: "Enter Book Call Number"
+                font.pixelSize: 16
+                font.bold: true
+                color: "#2C3E50"
+            }
+
+            CustomTextField {
+                id: editCallNumberInput
+                width: parent.width
+                placeholderText: "Enter call number..."
+            }
+
+            Row {
+                spacing: 10
+                anchors.horizontalCenter: parent.horizontalCenter
+
+                CustomButton {
+                    text: "Cancel"
+                    width: 100
+                    height: 40
+                    onClicked: {
+                        editCallNumberInput.text = ""
+                        editBookCallNumberPopup.close()
+                    }
+                }
+
+                CustomButton {
+                    text: "Fetch Book"
+                    width: 120
+                    height: 40
+                    onClicked: {
+                        if (editCallNumberInput.text.trim() === "") {
+                            errorDialog.text = "Please enter a call number."
+                            errorDialog.open()
+                            return
+                        }
+
+                        var bookData = inventoryManager.getBookByCallNumber(editCallNumberInput.text.trim())
+
+                        if (Object.keys(bookData).length > 0) {
+                            // Populate the edit dialog fields
+                            editTitleField.text = bookData.title || ""
+                            editAuthorField.text = bookData.author || ""
+                            editCallNumberField.text = bookData.callNumber || ""
+                            editPublisherField.text = bookData.publisher || ""
+                            editIsbnField.text = bookData.isbn || ""
+                            editBarcodeField.text = bookData.barcode || ""
+                            editYearField.text = bookData.yearPublished || ""
+                            editShelfField.text = bookData.shelfNumber || ""
+                            editDescriptionField.text = bookData.description || ""
+                            editLanguageField.text = bookData.language || ""
+                            editSubjectField.text = bookData.subject || ""
+                            editGenreField.text = bookData.genre || ""
+                            editValueField.text = bookData.value ? bookData.value.toString() : "0"
+                            editMethodField.text = bookData.method || ""
+                            editConditionCombo.currentIndex = editConditionCombo.find(bookData.condition) !== -1 ?
+                                                              editConditionCombo.find(bookData.condition) : 0
+
+                            editBookCallNumberPopup.close()
+                            editBookDialog.open()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Edit Book Dialog
+    Dialog {
+        id: editBookDialog
+        title: "Edit Book"
+        modal: true
+        width: Math.min(700, inventoryTracking.width * 0.85)
+        height: Math.min(650, inventoryTracking.height * 0.9)
+        anchors.centerIn: parent
+        closePolicy: Popup.CloseOnEscape
+
+        background: Rectangle {
+            color: "#FFFFFF"
+            radius: 12
+            border.color: "#E0E0E0"
+            border.width: 1
+        }
+
+        header: Rectangle {
+            width: parent.width
+            height: 60
+            color: "#3498DB" //"#A4CCA4" //"gray" //"#f4f4f4" //"#3498DB"
+            radius: 12
+
+            Rectangle {
+                width: parent.width
+                height: 12
+                color: "#3498DB" //"#A4CCA4" //"gray" //"#3498DB"
+                anchors.bottom: parent.bottom
+            }
+
+            Text {
+                text: "Edit Book: " + editCallNumberField.text
+                font.pixelSize: 18
+                font.bold: true
+                color: "white"
+                anchors {
+                    left: parent.left
+                    leftMargin: 20
+                    verticalCenter: parent.verticalCenter
+                }
+            }
+
+            Rectangle {
+                width: 32
+                height: 32
+                radius: 16
+                color: editCloseMA.containsMouse ? "#E74C3C" : "transparent"
+                anchors {
+                    right: parent.right
+                    rightMargin: 15
+                    verticalCenter: parent.verticalCenter
+                }
+
+                Text {
+                    text: "✕"
+                    color: "white"
+                    font.pixelSize: 16
+                    font.bold: true
+                    anchors.centerIn: parent
+                }
+
+                MouseArea {
+                    id: editCloseMA
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: editBookDialog.close()
+                }
+            }
+        }
+
+        contentItem: ScrollView {
+            clip: true
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+            ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+            Column {
+                width: editBookDialog.width - 40
+                spacing: 16
+                padding: 20
+
+                // Basic Info Section
+                Rectangle {
+                    width: parent.width - 40
+                    height: basicEditColumn.height + 30
+                    color: "#F8F9FA"
+                    radius: 8
+                    border.color: "#E9ECEF"
+
+                    Column {
+                        id: basicEditColumn
+                        width: parent.width - 30
+                        spacing: 12
+                        anchors {
+                            top: parent.top
+                            topMargin: 15
+                            horizontalCenter: parent.horizontalCenter
+                        }
+
+                        Text {
+                            text: "Basic Information"
+                            font.pixelSize: 13
+                            font.bold: true
+                            color: "#2C3E50"
+                        }
+
+                        // Title and Author
+                        Row {
+                            width: parent.width
+                            spacing: 15
+
+                            Column {
+                                width: (parent.width - 15) / 2
+                                spacing: 4
+
+                                Text { text: "Title *"; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: editTitleField
+                                    width: parent.width
+                                    height: 36
+                                    font.pixelSize: 12
+                                    background: Rectangle {
+                                        color: "white"
+                                        border.color: editTitleField.focus ? "#3498DB" : "#DEE2E6"
+                                        radius: 4
+                                    }
+                                }
+                            }
+
+                            Column {
+                                width: (parent.width - 15) / 2
+                                spacing: 4
+
+                                Text { text: "Author *"; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: editAuthorField
+                                    width: parent.width
+                                    height: 36
+                                    font.pixelSize: 12
+                                    background: Rectangle {
+                                        color: "white"
+                                        border.color: editAuthorField.focus ? "#3498DB" : "#DEE2E6"
+                                        radius: 4
+                                    }
+                                }
+                            }
+                        }
+
+                        // Call Number (read-only) and Publisher
+                        Row {
+                            width: parent.width
+                            spacing: 15
+
+                            Column {
+                                width: (parent.width - 15) / 2
+                                spacing: 4
+
+                                Text { text: "Call Number (Read-only)"; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: editCallNumberField
+                                    width: parent.width
+                                    height: 36
+                                    font.pixelSize: 12
+                                    readOnly: true
+                                    background: Rectangle {
+                                        color: "#ECEFF1"
+                                        border.color: "#DEE2E6"
+                                        radius: 4
+                                    }
+                                }
+                            }
+
+                            Column {
+                                width: (parent.width - 15) / 2
+                                spacing: 4
+
+                                Text { text: "Publisher"; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: editPublisherField
+                                    width: parent.width
+                                    height: 36
+                                    font.pixelSize: 12
+                                    background: Rectangle {
+                                        color: "white"
+                                        border.color: editPublisherField.focus ? "#3498DB" : "#DEE2E6"
+                                        radius: 4
+                                    }
+                                }
+                            }
+                        }
+
+                        // ISBN and Barcode
+                        Row {
+                            width: parent.width
+                            spacing: 15
+
+                            Column {
+                                width: (parent.width - 15) / 2
+                                spacing: 4
+
+                                Text { text: "ISBN"; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: editIsbnField
+                                    width: parent.width
+                                    height: 36
+                                    font.pixelSize: 12
+                                    background: Rectangle {
+                                        color: "white"
+                                        border.color: editIsbnField.focus ? "#3498DB" : "#DEE2E6"
+                                        radius: 4
+                                    }
+                                }
+                            }
+
+                            Column {
+                                width: (parent.width - 15) / 2
+                                spacing: 4
+
+                                Text { text: "Barcode (Read-only)"; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: editBarcodeField
+                                    width: parent.width
+                                    height: 36
+                                    font.pixelSize: 12
+                                    readOnly: true
+                                    background: Rectangle {
+                                        color: "#ECEFF1"
+                                        border.color: "#DEE2E6"
+                                        radius: 4
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Classification Section
+                Rectangle {
+                    width: parent.width - 40
+                    height: classEditColumn.height + 30
+                    color: "#F8F9FA"
+                    radius: 8
+                    border.color: "#E9ECEF"
+
+                    Column {
+                        id: classEditColumn
+                        width: parent.width - 30
+                        spacing: 12
+                        anchors {
+                            top: parent.top
+                            topMargin: 15
+                            horizontalCenter: parent.horizontalCenter
+                        }
+
+                        Text {
+                            text: "Classification & Location"
+                            font.pixelSize: 13
+                            font.bold: true
+                            color: "#2C3E50"
+                        }
+
+                        // Year, Shelf, Language
+                        Row {
+                            width: parent.width
+                            spacing: 10
+
+                            Column {
+                                width: (parent.width - 20) / 3
+                                spacing: 4
+
+                                Text { text: "Year Published"; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: editYearField
+                                    width: parent.width
+                                    height: 36
+                                    font.pixelSize: 12
+                                    background: Rectangle {
+                                        color: "white"
+                                        border.color: editYearField.focus ? "#3498DB" : "#DEE2E6"
+                                        radius: 4
+                                    }
+                                }
+                            }
+
+                            Column {
+                                width: (parent.width - 20) / 3
+                                spacing: 4
+
+                                Text { text: "Shelf Number"; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: editShelfField
+                                    width: parent.width
+                                    height: 36
+                                    font.pixelSize: 12
+                                    background: Rectangle {
+                                        color: "white"
+                                        border.color: editShelfField.focus ? "#3498DB" : "#DEE2E6"
+                                        radius: 4
+                                    }
+                                }
+                            }
+
+                            Column {
+                                width: (parent.width - 20) / 3
+                                spacing: 4
+
+                                Text { text: "Language"; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: editLanguageField
+                                    width: parent.width
+                                    height: 36
+                                    font.pixelSize: 12
+                                    background: Rectangle {
+                                        color: "white"
+                                        border.color: editLanguageField.focus ? "#3498DB" : "#DEE2E6"
+                                        radius: 4
+                                    }
+                                }
+                            }
+                        }
+
+                        // Subject and Genre
+                        Row {
+                            width: parent.width
+                            spacing: 15
+
+                            Column {
+                                width: (parent.width - 15) / 2
+                                spacing: 4
+
+                                Text { text: "Subject"; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: editSubjectField
+                                    width: parent.width
+                                    height: 36
+                                    font.pixelSize: 12
+                                    background: Rectangle {
+                                        color: "white"
+                                        border.color: editSubjectField.focus ? "#3498DB" : "#DEE2E6"
+                                        radius: 4
+                                    }
+                                }
+                            }
+
+                            Column {
+                                width: (parent.width - 15) / 2
+                                spacing: 4
+
+                                Text { text: "Genre"; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: editGenreField
+                                    width: parent.width
+                                    height: 36
+                                    font.pixelSize: 12
+                                    background: Rectangle {
+                                        color: "white"
+                                        border.color: editGenreField.focus ? "#3498DB" : "#DEE2E6"
+                                        radius: 4
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Value & Condition Section
+                Rectangle {
+                    width: parent.width - 40
+                    height: valueEditColumn.height + 30
+                    color: "#F8F9FA"
+                    radius: 8
+                    border.color: "#E9ECEF"
+
+                    Column {
+                        id: valueEditColumn
+                        width: parent.width - 30
+                        spacing: 12
+                        anchors {
+                            top: parent.top
+                            topMargin: 15
+                            horizontalCenter: parent.horizontalCenter
+                        }
+
+                        Text {
+                            text: "Value & Condition"
+                            font.pixelSize: 13
+                            font.bold: true
+                            color: "#2C3E50"
+                        }
+
+                        Row {
+                            width: parent.width
+                            spacing: 10
+
+                            Column {
+                                width: (parent.width - 20) / 3
+                                spacing: 4
+
+                                Text { text: "Value " + SettingsManager.currencySymbol; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: editValueField
+                                    width: parent.width
+                                    height: 36
+                                    font.pixelSize: 12
+                                    validator: IntValidator { bottom: 0 }
+                                    background: Rectangle {
+                                        color: "white"
+                                        border.color: editValueField.focus ? "#3498DB" : "#DEE2E6"
+                                        radius: 4
+                                    }
+                                }
+                            }
+
+                            Column {
+                                width: (parent.width - 20) / 3
+                                spacing: 4
+
+                                Text { text: "Acquisition Method"; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: editMethodField
+                                    width: parent.width
+                                    height: 36
+                                    font.pixelSize: 12
+                                    background: Rectangle {
+                                        color: "white"
+                                        border.color: editMethodField.focus ? "#3498DB" : "#DEE2E6"
+                                        radius: 4
+                                    }
+                                }
+                            }
+
+                            Column {
+                                width: (parent.width - 20) / 3
+                                spacing: 4
+
+                                Text { text: "Condition"; font.pixelSize: 11; color: "#5D6D7E" }
+                                ComboBox {
+                                    id: editConditionCombo
+                                    width: parent.width
+                                    height: 36
+                                    font.pixelSize: 12
+                                    model: ["Good", "Excellent", "Fair", "Poor", "Damaged"]
+                                    background: Rectangle {
+                                        color: "white"
+                                        border.color: "#DEE2E6"
+                                        radius: 4
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Description Section
+                Rectangle {
+                    width: parent.width - 40
+                    height: descEditColumn.height + 30
+                    color: "#F8F9FA"
+                    radius: 8
+                    border.color: "#E9ECEF"
+
+                    Column {
+                        id: descEditColumn
+                        width: parent.width - 30
+                        spacing: 12
+                        anchors {
+                            top: parent.top
+                            topMargin: 15
+                            horizontalCenter: parent.horizontalCenter
+                        }
+
+                        Text {
+                            text: "Description"
+                            font.pixelSize: 13
+                            font.bold: true
+                            color: "#2C3E50"
+                        }
+
+                        TextArea {
+                            id: editDescriptionField
+                            width: parent.width
+                            height: 80
+                            font.pixelSize: 12
+                            wrapMode: TextArea.Wrap
+                            // background: Rectangle {
+                            //     color: "white"
+                            //     border.color: editDescriptionField.focus ? "#3498DB" : "#DEE2E6"
+                            //     radius: 4
+                            // }
+                        }
+                    }
+                }
+            }
+        }
+
+        footer: Rectangle {
+            width: parent.width
+            height: 70
+            color: "#F8F9FA"
+            radius: 12
+
+            Rectangle {
+                width: parent.width
+                height: 12
+                color: "#F8F9FA"
+                anchors.top: parent.top
+            }
+
+            Rectangle {
+                width: parent.width
+                height: 1
+                color: "#E9ECEF"
+                anchors.top: parent.top
+            }
+
+            Row {
+                anchors{
+                    right: parent.right
+                    rightMargin: 30
+                    verticalCenter: parent.verticalCenter
+                }
+
+                spacing: 15
+
+                // Cancel button
+                Rectangle {
+                    width: 100
+                    height: 40
+                    radius: 6
+                    color: editCancelMA.containsMouse ? "#F5F5F5" : "white"
+                    border.color: "#DEE2E6"
+                    border.width: 1
+
+                    Text {
+                        text: "Cancel"
+                        color: "#5D6D7E"
+                        font.pixelSize: 13
+                        font.bold: true
+                        anchors.centerIn: parent
+                    }
+
+                    MouseArea {
+                        id: editCancelMA
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: editBookDialog.close()
+                    }
+                }
+
+                // Save button
+                Rectangle {
+                    width: 150
+                    height: 40
+                    radius: 6
+                    color: editSaveMA.containsMouse ? "#2980B9" : "#3498DB"
+
+                    Text {
+                        text: "Save Changes"
+                        color: "white"
+                        font.pixelSize: 13
+                        font.bold: true
+                        anchors.centerIn: parent
+                    }
+
+                    MouseArea {
+                        id: editSaveMA
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (editTitleField.text.trim() === "" || editAuthorField.text.trim() === "") {
+                                errorDialog.text = "Title and Author are required fields."
+                                errorDialog.open()
+                                return
+                            }
+
+                            var success = inventoryManager.updateBook(
+                                editCallNumberField.text,
+                                editTitleField.text.trim(),
+                                editAuthorField.text.trim(),
+                                editPublisherField.text.trim(),
+                                editIsbnField.text.trim(),
+                                editYearField.text.trim(),
+                                editShelfField.text.trim(),
+                                editDescriptionField.text.trim(),
+                                editLanguageField.text.trim(),
+                                editSubjectField.text.trim(),
+                                editGenreField.text.trim(),
+                                parseInt(editValueField.text) || 0,
+                                editMethodField.text.trim(),
+                                editConditionCombo.currentText
+                            )
+
+                            if (success) {
+                                editBookDialog.close()
+                                editCallNumberInput.text = ""
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Helper function to refresh stats
+    function refreshStats() {
+        totalBooksCountText.text = inventoryManager.getTotalBooksCount()
+        availableBooksCountText.text = inventoryManager.getAvailableBooksCount()
+        checkedOutCountText.text = inventoryManager.getCheckedOutBooksCount()
+        overdueCountText.text = inventoryManager.getOverdueBooksCount()
+        overdueFeeText.text = "₱" + inventoryManager.getTotalOverdueFees().toFixed(2)
+        missingCountText.text = inventoryManager.getMissingBooksCount()
+        replacementCostText.text = "₱" + inventoryManager.getTotalReplacementCost().toFixed(2)
     }
 
     Component.onCompleted:{

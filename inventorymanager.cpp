@@ -1,4 +1,6 @@
 #include "inventorymanager.h"
+#include "activitylogs.h"
+#include "appmanager.h"
 
 InventoryManager::InventoryManager(QObject *parent)
     : QObject{parent}
@@ -195,6 +197,8 @@ bool InventoryManager::deleteBook(const QString &bookNumber)
         return false;
     }
 
+    ActivityLogs::logActivity("INFO", "BOOK_OPERATIONS", "Deleted book: Inventory tracking module", "Book deleted.", AppManager::instance()->currentAdminId());
+
     emit operationCompleted("Book deleted successfully: " + bookNumber);
     return true;
 }
@@ -224,7 +228,7 @@ bool InventoryManager::archiveBook(const QString &bookNumber)
     }
 
     QSqlQuery query(db);
-    query.prepare("UPDATE books SET availabilty = 'Archived' WHERE bookID = ?");
+    query.prepare("UPDATE books SET availability = 'Archived' WHERE bookID = ?");
     query.addBindValue(bookId);
 
     if (!query.exec()){
@@ -232,7 +236,170 @@ bool InventoryManager::archiveBook(const QString &bookNumber)
         return false;
     }
 
+    ActivityLogs::logActivity("INFO", "BOOK_OPERATIONS", "Archived book: Inventory tracking module", "Book archived.", AppManager::instance()->currentAdminId());
+
     emit operationCompleted("Successfully archived book: " + bookNumber);
+    return true;
+}
+
+bool InventoryManager::unarchiveBook(const QString &bookNumber)
+{
+    if (bookNumber.isEmpty()) {
+        emit errorOccured("Book number cannot be empty.");
+        return false;
+    }
+
+    int bookId = getBookIdFromNumber(bookNumber);
+    if (bookId == -1) {
+        emit errorOccured("Could not find book: " + bookNumber);
+        return false;
+    }
+
+    if (!db.open()) {
+        emit errorOccured("Failed to open the database for unarchiving book: " + db.lastError().text());
+        return false;
+    }
+
+    QSqlQuery query(db);
+    query.prepare("UPDATE books SET availability = 'Available' WHERE bookID = ?");
+    query.addBindValue(bookId);
+
+    if (!query.exec()) {
+        emit errorOccured("Failed to unarchive book: " + query.lastError().text());
+        return false;
+    }
+
+    ActivityLogs::logActivity("INFO", "BOOK_OPERATIONS", "Unarchived book: Inventory tracking module", "Book unarchived.", AppManager::instance()->currentAdminId());
+
+    emit operationCompleted("Successfully unarchived book: " + bookNumber);
+    return true;
+}
+
+QVariantMap InventoryManager::getBookByCallNumber(const QString &callNumber)
+{
+    QVariantMap bookData;
+
+    if (callNumber.isEmpty()) {
+        emit errorOccured("Call number cannot be empty.");
+        return bookData;
+    }
+
+    if (!db.open()) {
+        emit errorOccured("Failed to open database: " + db.lastError().text());
+        return bookData;
+    }
+
+    QSqlQuery query(db);
+    query.prepare("SELECT title, author, callNumber, publisher, isbn, barcode, year_published, "
+                  "shelfNumber, description, language, subject, genre, value, method, "
+                  "dateAdded, availability, timesBorrowed, condition "
+                  "FROM books WHERE callNumber = ?");
+    query.addBindValue(callNumber);
+
+    if (!query.exec()) {
+        emit errorOccured("Failed to fetch book: " + query.lastError().text());
+        return bookData;
+    }
+
+    if (query.next()) {
+        bookData["title"] = query.value("title").toString();
+        bookData["author"] = query.value("author").toString();
+        bookData["callNumber"] = query.value("callNumber").toString();
+        bookData["publisher"] = query.value("publisher").toString();
+        bookData["isbn"] = query.value("isbn").toString();
+        bookData["barcode"] = query.value("barcode").toString();
+        bookData["yearPublished"] = query.value("year_published").toString();
+        bookData["shelfNumber"] = query.value("shelfNumber").toString();
+        bookData["description"] = query.value("description").toString();
+        bookData["language"] = query.value("language").toString();
+        bookData["subject"] = query.value("subject").toString();
+        bookData["genre"] = query.value("genre").toString();
+        bookData["value"] = query.value("value").toInt();
+        bookData["method"] = query.value("method").toString();
+        bookData["dateAdded"] = query.value("dateAdded").toString();
+        bookData["availability"] = query.value("availability").toString();
+        bookData["timesBorrowed"] = query.value("timesBorrowed").toInt();
+        bookData["condition"] = query.value("condition").toString();
+    } else {
+        emit errorOccured("Book not found with call number: " + callNumber);
+    }
+
+    return bookData;
+}
+
+bool InventoryManager::updateBook(const QString &callNumber,
+                                  const QString &title,
+                                  const QString &author,
+                                  const QString &publisher,
+                                  const QString &isbn,
+                                  const QString &yearPublished,
+                                  const QString &shelfNumber,
+                                  const QString &description,
+                                  const QString &language,
+                                  const QString &subject,
+                                  const QString &genre,
+                                  int value,
+                                  const QString &method,
+                                  const QString &condition)
+{
+    if (callNumber.isEmpty()) {
+        emit errorOccured("Call number cannot be empty.");
+        return false;
+    }
+
+    if (title.isEmpty() || author.isEmpty()) {
+        emit errorOccured("Title and author are required fields.");
+        return false;
+    }
+
+    if (!db.open()) {
+        emit errorOccured("Failed to open database: " + db.lastError().text());
+        return false;
+    }
+
+    QSqlQuery query(db);
+    query.prepare("UPDATE books SET "
+                  "title = ?, "
+                  "author = ?, "
+                  "publisher = ?, "
+                  "isbn = ?, "
+                  "year_published = ?, "
+                  "shelfNumber = ?, "
+                  "description = ?, "
+                  "language = ?, "
+                  "subject = ?, "
+                  "genre = ?, "
+                  "value = ?, "
+                  "method = ?, "
+                  "condition = ? "
+                  "WHERE callNumber = ?");
+
+    query.addBindValue(title);
+    query.addBindValue(author);
+    query.addBindValue(publisher);
+    query.addBindValue(isbn);
+    query.addBindValue(yearPublished);
+    query.addBindValue(shelfNumber);
+    query.addBindValue(description);
+    query.addBindValue(language);
+    query.addBindValue(subject);
+    query.addBindValue(genre);
+    query.addBindValue(value);
+    query.addBindValue(method);
+    query.addBindValue(condition);
+    query.addBindValue(callNumber);
+
+    if (!query.exec()) {
+        emit errorOccured("Failed to update book: " + query.lastError().text());
+        return false;
+    }
+
+    if (query.numRowsAffected() == 0) {
+        emit errorOccured("No book found with call number: " + callNumber);
+        return false;
+    }
+
+    emit operationCompleted("Successfully updated book: " + title);
     return true;
 }
 

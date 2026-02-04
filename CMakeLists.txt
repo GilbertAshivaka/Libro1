@@ -234,6 +234,7 @@ qt_add_qml_module(appLibro1
     QML_FILES BlockedPage.qml
     QML_FILES FirstTimeSetupPage.qml
     QML_FILES ActivationPage.qml
+    RESOURCES assets/management.png
 )
 
 # Include directories for ZXing

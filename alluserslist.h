@@ -67,6 +67,7 @@ public:
 public slots:
     bool fetchUsers(QString userRole, int page, int pageSize);
     void removeUser(QString UserID);
+    Q_INVOKABLE bool searchUsers(const QString &searchTerm);
 
 
 signals:

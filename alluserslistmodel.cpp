@@ -24,6 +24,8 @@ QVariant AllUsersListModel::data(const QModelIndex &index, int role) const
 
     const User user = mList->getUsers().at(index.row());
     switch(role){
+    case UserIdRole:
+        return QVariant(user.userId);
     case FirstNameRole:
         return QVariant(user.firstName);
     case LastNameRole:
@@ -158,6 +160,7 @@ Qt::ItemFlags AllUsersListModel::flags(const QModelIndex &index) const
 QHash<int, QByteArray> AllUsersListModel::roleNames() const
 {
     QHash<int, QByteArray> names;
+    names[UserIdRole] = "userId";
     names[FirstNameRole] = "firstName";
     names[LastNameRole] = "lastName";
     names[EmailRole] = "email";

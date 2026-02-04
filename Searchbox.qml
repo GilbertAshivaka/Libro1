@@ -8,6 +8,8 @@ Rectangle{
     color: "transparent"
     border.color: "blue"
 
+    signal textChanged()
+
     property string placeHolderText: "Search for tools and FAQs"
 
     Image {

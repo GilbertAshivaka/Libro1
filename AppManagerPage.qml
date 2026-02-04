@@ -10,6 +10,7 @@ import QtQuick.Layouts
 Rectangle {
     id: appManagerPage
     color: "#F5F5F5"
+    anchors.fill: parent
 
     // Colors
     readonly property color accentColor: "#0078D4"
@@ -17,6 +18,8 @@ Rectangle {
     readonly property color warningColor: "#F57C00"
     readonly property color errorColor: "#D32F2F"
     readonly property color cardColor: "#FFFFFF"
+
+    signal closeClicked()
 
     // Refresh admin list
     function refreshAdmins() {
@@ -81,12 +84,52 @@ Rectangle {
 
                     Text {
                         text: "App Manager"
-                        font.pixelSize: 24
-                        font.bold: true
-                        color: "#1A1A1A"
+                        font.pixelSize: 16
+                        // font.bold: true
+                        color: "#878585" //"#1A1A1A"
                     }
 
                     Item { Layout.fillWidth: true }
+
+                    // Back button
+                    Rectangle {
+                        id: backBtn
+                        width: 80
+                        height: 32
+                        radius: 25
+                        border.color: "#878585"
+                        border.width: 2
+                        clip: true
+                        // z: 3
+                        // anchors {
+                        //     verticalCenter: parent.verticalCenter
+                        //     right: parent.right
+                        //     rightMargin: 20
+                        // }
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Close"
+                            font.pixelSize: 16
+                            font.bold: true
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+
+                            onEntered: {
+                                backBtn.color = "#878585"
+                                parent.children[0].color = "white"
+                            }
+                            onExited: {
+                                backBtn.color = "white"
+                                parent.children[0].color = "#878585"
+                            }
+                            onClicked: closeClicked()
+                        }
+                    }
 
                     Text {
                         id: validationMessage
@@ -541,11 +584,11 @@ Rectangle {
                                 height: 36
                                 echoMode: TextInput.Password
                                 placeholderText: "Enter current password"
-                                background: Rectangle {
-                                    color: "white"
-                                    border.color: parent.activeFocus ? accentColor : "#CCCCCC"
-                                    radius: 4
-                                }
+                                // background: Rectangle {
+                                //     color: "white"
+                                //     border.color: parent.activeFocus ? accentColor : "#CCCCCC"
+                                //     radius: 4
+                                // }
                             }
 
                             Text { text: "New Password"; font.pixelSize: 13; color: "#333333" }
@@ -555,11 +598,11 @@ Rectangle {
                                 height: 36
                                 echoMode: TextInput.Password
                                 placeholderText: "Min. 6 characters"
-                                background: Rectangle {
-                                    color: "white"
-                                    border.color: parent.activeFocus ? accentColor : "#CCCCCC"
-                                    radius: 4
-                                }
+                                // background: Rectangle {
+                                //     color: "white"
+                                //     border.color: parent.activeFocus ? accentColor : "#CCCCCC"
+                                //     radius: 4
+                                // }
                             }
 
                             Text { text: "Confirm Password"; font.pixelSize: 13; color: "#333333" }
@@ -569,11 +612,11 @@ Rectangle {
                                 height: 36
                                 echoMode: TextInput.Password
                                 placeholderText: "Repeat new password"
-                                background: Rectangle {
-                                    color: "white"
-                                    border.color: parent.activeFocus ? accentColor : "#CCCCCC"
-                                    radius: 4
-                                }
+                                // background: Rectangle {
+                                //     color: "white"
+                                //     border.color: parent.activeFocus ? accentColor : "#CCCCCC"
+                                //     radius: 4
+                                // }
                             }
                         }
 

@@ -22,6 +22,7 @@
 #include <QFile>
 #include <QDate>
 #include <QSqlRecord>
+#include "activitylogs.h"
 
 // ============================================================================
 // ChartDataModel Implementation

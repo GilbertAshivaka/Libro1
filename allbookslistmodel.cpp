@@ -30,18 +30,22 @@ QVariant AllBooksListModel::data(const QModelIndex &index, int role) const
         return QVariant(book.title);
     case AuthorRole:
         return QVariant(book.author);
-    case BookNumberRole:
+    case CallNumberRole:
         return QVariant(book.callNumber);
     case PublisherRole:
         return QVariant(book.publisher);
-    case EditionRole:
+    case IsbnRole:
         return QVariant(book.isbn);
-    case VolumeRole:
+    case BarcodeRole:
         return QVariant(book.barcode);
+    case YearPublishedRole:
+        return QVariant(book.yearPublished);
     case ShelfNumberRole:
         return QVariant(book.shelfNumber);
     case DescriptionRole:
         return QVariant(book.description);
+    case LanguageRole:
+        return QVariant(book.language);
     case SubjectRole:
         return QVariant(book.subject);
     case GenreRole:
@@ -50,8 +54,16 @@ QVariant AllBooksListModel::data(const QModelIndex &index, int role) const
         return QVariant(book.value);
     case MethodRole:
         return QVariant(book.method);
+    case DateAddedRole:
+        return QVariant(book.dateAdded);
+    case AvailabilityRole:
+        return QVariant(book.availability);
+    case TimesBorrowedRole:
+        return QVariant(book.timesBorrowed);
+    case ConditionRole:
+        return QVariant(book.condition);
     default:
-        return QStringLiteral("Not specified");
+        return QVariant();
     }
 
     return QVariant();
@@ -71,23 +83,29 @@ bool AllBooksListModel::setData(const QModelIndex &index, const QVariant &value,
     case AuthorRole:
         book.author = value.toString();
         break;
-    case BookNumberRole:
+    case CallNumberRole:
         book.callNumber = value.toString();
         break;
     case PublisherRole:
         book.publisher = value.toString();
         break;
-    case EditionRole:
+    case IsbnRole:
         book.isbn = value.toString();
         break;
-    case VolumeRole:
+    case BarcodeRole:
         book.barcode = value.toString();
+        break;
+    case YearPublishedRole:
+        book.yearPublished = value.toString();
         break;
     case ShelfNumberRole:
         book.shelfNumber = value.toString();
         break;
     case DescriptionRole:
         book.description = value.toString();
+        break;
+    case LanguageRole:
+        book.language = value.toString();
         break;
     case SubjectRole:
         book.subject = value.toString();
@@ -100,6 +118,18 @@ bool AllBooksListModel::setData(const QModelIndex &index, const QVariant &value,
         break;
     case MethodRole:
         book.method = value.toString();
+        break;
+    case DateAddedRole:
+        book.dateAdded = value.toString();
+        break;
+    case AvailabilityRole:
+        book.availability = value.toString();
+        break;
+    case TimesBorrowedRole:
+        book.timesBorrowed = value.toInt();
+        break;
+    case ConditionRole:
+        book.condition = value.toString();
         break;
     }
 
@@ -124,16 +154,22 @@ QHash<int, QByteArray> AllBooksListModel::roleNames() const
     QHash<int, QByteArray> names;
     names[TitleRole] = "title";
     names[AuthorRole] = "author";
-    names[BookNumberRole] = "bookNumber";
+    names[CallNumberRole] = "callNumber";
     names[PublisherRole] = "publisher";
-    names[EditionRole] = "edition";
-    names[VolumeRole] = "volume";
+    names[IsbnRole] = "isbn";
+    names[BarcodeRole] = "barcode";
+    names[YearPublishedRole] = "yearPublished";
     names[ShelfNumberRole] = "shelfNumber";
-    names[DescriptionRole]= "description";
-    names[SubjectRole]= "subject";
+    names[DescriptionRole] = "description";
+    names[LanguageRole] = "language";
+    names[SubjectRole] = "subject";
     names[GenreRole] = "genre";
     names[ValueRole] = "value";
     names[MethodRole] = "method";
+    names[DateAddedRole] = "dateAdded";
+    names[AvailabilityRole] = "availability";
+    names[TimesBorrowedRole] = "timesBorrowed";
+    names[ConditionRole] = "condition";
 
     return names;
 }

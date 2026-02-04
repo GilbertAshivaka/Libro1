@@ -331,23 +331,23 @@ Rectangle {
             color: "#DBE0E7"
             clip: true
 
-            Image {
-                id: notificationIcon
-                source: "assets/bell.png"
-                width: 24
-                height: 24
-                anchors{
-                    top: parent.top
-                    topMargin: 20
-                    left: parent.left
-                    leftMargin: 20
-                }
-                fillMode: Image.PreserveAspectFit
-                MouseArea{
-                    anchors.fill: parent
-                    cursorShape: "PointingHandCursor"
-                }
-            }
+            // Image {
+            //     id: notificationIcon
+            //     source: "assets/bell.png"
+            //     width: 24
+            //     height: 24
+            //     anchors{
+            //         top: parent.top
+            //         topMargin: 20
+            //         left: parent.left
+            //         leftMargin: 20
+            //     }
+            //     fillMode: Image.PreserveAspectFit
+            //     MouseArea{
+            //         anchors.fill: parent
+            //         cursorShape: "PointingHandCursor"
+            //     }
+            // }
 
             Image {
                 id: settingsIcon
@@ -496,7 +496,7 @@ Rectangle {
 
             Text {
                 id:adminLabel
-                text: "Admin: " + "Noel Nonstein" //the name should be dynamically fetched from the database
+                text: "Admin: " + appManager.currentAdminName //"Noel Nonstein" //the name should be dynamically fetched from the database
                 color: "#1E293B"
                 font.pixelSize: 12
                 font.weight: Font.Bold

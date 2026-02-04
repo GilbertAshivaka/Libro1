@@ -4,6 +4,7 @@
 #include <QJsonArray>
 #include <QNetworkRequest>
 #include <QUrlQuery>
+#include "activitylogs.h"
 
 // Initialize static members
 AppManager* AppManager::m_instance = nullptr;
@@ -979,6 +980,9 @@ void AppManager::handleActivationResponse(const QJsonObject &response)
         m_licenseKey.clear();
         emit activationFailed(error);
         logValidation("activation", true, "failed", QJsonDocument(response).toJson(), error);
+
+        ActivityLogs::logActivity("ERROR", "SYSTEM", "License activation failed", "License activation failed.");
+
         return;
     }
 
@@ -1011,6 +1015,9 @@ void AppManager::handleActivationResponse(const QJsonObject &response)
     emit activationSucceeded();
 
     logValidation("activation", true, "success", QJsonDocument(response).toJson());
+
+    ActivityLogs::logActivity("INFO", "SYSTEM", "License activation succeeded", "License activation succeeded.");
+
     qDebug() << "License activated successfully for:" << m_organizationName;
 }
 
@@ -1037,6 +1044,8 @@ void AppManager::handleValidationResponse(const QJsonObject &response)
         emit licenseStatusChanged();
         emit validationCompleted(true, "License validated successfully");
         logValidation("periodic", true, m_licenseStatus, QJsonDocument(response).toJson());
+
+        ActivityLogs::logActivity("INFO", "SYSTEM", "License validated successfully", "License validated successfully.");
     } else {
         // License invalid from server
         QString error = response["error"].toString("License validation failed");
@@ -1049,6 +1058,8 @@ void AppManager::handleValidationResponse(const QJsonObject &response)
         emit licenseStatusChanged();
         emit validationCompleted(false, error);
         logValidation("periodic", true, "invalid", QJsonDocument(response).toJson(), error);
+
+        ActivityLogs::logActivity("WARNING", "SYSTEM", "License validation failed", "License validation fialed.");
     }
 }
 
@@ -1066,7 +1077,7 @@ void AppManager::handleNetworkError(QNetworkReply *reply, const QString &context
         // Validation failed - fall back to offline check
         updateLicenseStatus();
         emit validationCompleted(false, "Offline mode - using cached license data");
-        logValidation("periodic", false, m_licenseStatus, QString(), "Network error - offline validation");
+        logValidation("periodic", false, m_licenseStatus, QString(), "Network error - offline validation");        
     }
 
     emit networkError(errorMsg);

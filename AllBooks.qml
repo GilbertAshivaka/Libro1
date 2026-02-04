@@ -1,8 +1,10 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 import "DynamicComponentLoader.js" as ComponentLoader
 import com.allbookslistmodel 1.0
 import com.categorylist 1.0
+import com.libro.settings 1.0
 
 Rectangle {
     id: allBooks
@@ -20,6 +22,30 @@ Rectangle {
     property int previousPage: 0
     property int currentPage: 1
     property int nextPage: 2
+
+    // Search state properties
+    property bool isSearchActive: false
+    property int searchResultCount: 0
+
+    // Book details dialog properties
+    property string selectedTitle: ""
+    property string selectedAuthor: ""
+    property string selectedCallNumber: ""
+    property string selectedPublisher: ""
+    property string selectedIsbn: ""
+    property string selectedBarcode: ""
+    property string selectedYearPublished: ""
+    property string selectedShelfNumber: ""
+    property string selectedDescription: ""
+    property string selectedLanguage: ""
+    property string selectedSubject: ""
+    property string selectedGenre: ""
+    property int selectedValue: 0
+    property string selectedMethod: ""
+    property string selectedDateAdded: ""
+    property string selectedAvailability: ""
+    property int selectedTimesBorrowed: 0
+    property string selectedCondition: ""
 
     //categoryList
     property var categoryList: CategoryList{}
@@ -286,6 +312,7 @@ Rectangle {
                         anchors.fill: parent
                         cursorShape: "PointingHandCursor"
                         onClicked: {
+                            advancedSearchDialog.open()
                         }
                     }
                 }
@@ -362,7 +389,7 @@ Rectangle {
             }
 
             onClicked:{
-
+                advancedSearchDialog.open()
             }
         }
 
@@ -411,16 +438,189 @@ Rectangle {
         }
     }
 
-    Searchbox{
+    // Searchbox{
+    //     id: allBooksSearchBox
+    //     width: 300
+    //     height: 30
+    //     border.color: "#E0E0E0"
+    //     placeHolderText: "Search title, author, call number, ISBN, publisher..."
+    //     anchors{
+    //         right: clearSearchBtn.visible ? clearSearchBtn.left : parent.right
+    //         rightMargin: 10
+    //         verticalCenter: pageTitleRect.verticalCenter
+    //     }
+
+    //     onTextChanged: function(text) {
+    //         searchDebounceTimer.restart()
+    //     }
+    // }
+
+    Rectangle{
         id: allBooksSearchBox
-        width: 300
-        height: 30
+        width: allBooks.width < 680 ? 400* (parent.width/1080) : 400
+        height: 40
+        radius: 4
+        color: "transparent"
         border.color: "#E0E0E0"
-        placeHolderText: "Search"
+        visible: allBooks.width > 325
         anchors{
+            right: clearSearchBtn.visible ? clearSearchBtn.left : parent.right
+            rightMargin: 10
+            verticalCenter: pageTitleRect.verticalCenter
+        }
+
+        Image {
+            id: searchIcon
+            anchors{
+                left: parent.left
+                leftMargin: 15
+                verticalCenter: parent.verticalCenter
+            }
+
+            height: parent.height *.45
+            fillMode: Image.PreserveAspectFit
+            source: "assets/searchIcon.png"
+
+            MouseArea{
+                id: searchMA
+                anchors.fill: parent
+                cursorShape: "PointingHandCursor"
+                enabled: navigationTextInput.text !== ""
+                onClicked: {
+
+                }
+            }
+        }
+
+        Text{
+            id: searchBoxPlaceHolder
+            visible: navigationTextInput.text === ""
+            color: "#585757"
+            text: "Search title, author, call number, ISBN, publisher..."
+            anchors{
+                left: searchIcon.right
+                verticalCenter: parent.verticalCenter
+                leftMargin: 20
+            }
+            elide: Text.ElideRight
+        }
+
+        MouseArea{
+            id: toolBarSearchBoxMA
+            cursorShape: "IBeamCursor"
+            anchors{
+                right: parent.right
+                top: parent.top
+                bottom: parent.bottom
+                left: searchIcon.right
+                leftMargin: 20
+            }
+
+            TextInput{
+                id: navigationTextInput
+                clip: true
+                anchors{
+                    right: parent.right
+                    rightMargin: 5
+                    top: parent.top
+                    bottom: parent.bottom
+                    left: parent.left
+                }
+
+                verticalAlignment: Text.AlignVCenter
+                font.pixelSize: 11
+
+                // Real-time search as user types
+                onTextChanged: function(text) {
+                    searchDebounceTimer.restart()
+                }
+            }
+
+            // Debounce timer for search
+            Timer {
+                id: searchDebounceTimer
+                interval: 400
+                repeat: false
+                onTriggered: {
+                    if (navigationTextInput.text.trim().length > 0) {
+                        allBooksList.searchBooks(navigationTextInput.text.trim())
+                        isSearchActive = true
+                    } else {
+                        isSearchActive = false
+                        resetPagination()
+                        fetchCurrentPageData()
+                    }
+                }
+            }
+        }
+    }
+
+    // Clear search button
+    Rectangle {
+        id: clearSearchBtn
+        width: 80
+        height: 30
+        radius: 4
+        color: clearSearchMA.containsMouse ? "#E74C3C" : "#C0392B"
+        visible: isSearchActive
+        anchors {
             right: parent.right
             rightMargin: 10
             verticalCenter: pageTitleRect.verticalCenter
+        }
+
+        Text {
+            text: "Clear"
+            color: "white"
+            font.pixelSize: 12
+            font.bold: true
+            anchors.centerIn: parent
+        }
+
+        MouseArea {
+            id: clearSearchMA
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: {
+                navigationTextInput.text = ""
+                isSearchActive = false
+                searchResultCount = 0
+                resetPagination()
+                fetchCurrentPageData()
+            }
+        }
+    }
+
+    // Search result count display
+    Rectangle {
+        id: searchResultsLabel
+        width: resultsText.width + 20
+        height: 24
+        radius: 4
+        color: "#3498DB"
+        visible: isSearchActive && searchResultCount > 0
+        anchors {
+            left: pageTitleRect.right
+            leftMargin: 15
+            verticalCenter: pageTitleRect.verticalCenter
+        }
+
+        Text {
+            id: resultsText
+            text: searchResultCount + " result" + (searchResultCount !== 1 ? "s" : "") + " found"
+            color: "white"
+            font.pixelSize: 11
+            font.bold: true
+            anchors.centerIn: parent
+        }
+    }
+
+    // Connection for search results
+    Connections {
+        target: allBooksList
+        function onSearchCompleted(resultCount) {
+            searchResultCount = resultCount
         }
     }
 
@@ -488,6 +688,7 @@ Rectangle {
                     id: delegateItemMA
                     anchors.fill: parent
                     hoverEnabled: true
+                    // cursorShape: Qt.PointingHandCursor
 
                     onEntered: {
                         delegateItemRect.color = "#F5F5F5"
@@ -497,6 +698,29 @@ Rectangle {
                     onExited: {
                         delegateItemRect.color = "transparent"
                         deleteIconRect.visible = false
+                    }
+
+                    onClicked: {
+                        // Populate dialog with book data
+                        selectedTitle = model.title
+                        selectedAuthor = model.author
+                        selectedCallNumber = model.callNumber
+                        selectedPublisher = model.publisher
+                        selectedIsbn = model.isbn
+                        selectedBarcode = model.barcode
+                        selectedYearPublished = model.yearPublished
+                        selectedShelfNumber = model.shelfNumber
+                        selectedDescription = model.description
+                        selectedLanguage = model.language
+                        selectedSubject = model.subject
+                        selectedGenre = model.genre
+                        selectedValue = model.value
+                        selectedMethod = model.method
+                        selectedDateAdded = model.dateAdded
+                        selectedAvailability = model.availability
+                        selectedTimesBorrowed = model.timesBorrowed
+                        selectedCondition = model.condition
+                        bookDetailsDialog.open()
                     }
                 }
 
@@ -720,5 +944,1068 @@ Rectangle {
         fetchCurrentPageData()
         totalPages= Math.ceil(allBooksList.getTotalBooksCount(category)/itemsPerPage)
         console.log(totalPages)
+    }
+
+    // =====================================================
+    // ADVANCED SEARCH DIALOG
+    // =====================================================
+    Dialog {
+        id: advancedSearchDialog
+        title: "Advanced Book Search"
+        modal: true
+        width: Math.min(700, allBooks.width * 0.85)
+        height: Math.min(650, allBooks.height * 0.9)
+        anchors.centerIn: parent
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+        // Load dropdown data when opened
+        onOpened: {
+            subjectCombo.model = allBooksList.getDistinctSubjects()
+            genreCombo.model = allBooksList.getDistinctGenres()
+            languageCombo.model = allBooksList.getDistinctLanguages()
+            availabilityCombo.model = allBooksList.getDistinctAvailability()
+            conditionCombo.model = allBooksList.getDistinctConditions()
+            methodCombo.model = allBooksList.getDistinctMethods()
+        }
+
+        // background: Rectangle {
+        //     color: "#FFFFFF"
+        //     radius: 12
+        //     border.color: "#E0E0E0"
+        //     border.width: 1
+
+        //     // Shadow effect
+        //     layer.enabled: true
+        //     layer.effect: Item {
+        //         Rectangle {
+        //             anchors.fill: parent
+        //             anchors.margins: -8
+        //             color: "#20000000"
+        //             radius: 16
+        //             z: -1
+        //         }
+        //     }
+        // }
+
+        header: Rectangle {
+            width: parent.width
+            height: 60
+            color: "#2C3E50"
+            radius: 12
+
+            // Fix bottom corners
+            Rectangle {
+                width: parent.width
+                height: 12
+                color: "#2C3E50"
+                anchors.bottom: parent.bottom
+            }
+
+            Row {
+                anchors.fill: parent
+                anchors.leftMargin: 20
+                anchors.rightMargin: 20
+                spacing: 12
+
+                Image {
+                    source: "assets/advancedSearch.png"
+                    width: 28
+                    height: 28
+                    anchors.verticalCenter: parent.verticalCenter
+                    fillMode: Image.PreserveAspectFit
+                }
+
+                Text {
+                    text: "Advanced Book Search"
+                    font.pixelSize: 18
+                    font.bold: true
+                    color: "white"
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+            }
+
+            // Close button
+            Rectangle {
+                width: 32
+                height: 32
+                radius: 16
+                color: closeDialogMA.containsMouse ? "#E74C3C" : "transparent"
+                anchors {
+                    right: parent.right
+                    rightMargin: 15
+                    verticalCenter: parent.verticalCenter
+                }
+
+                Text {
+                    text: "✕"
+                    color: "white"
+                    font.pixelSize: 16
+                    font.bold: true
+                    anchors.centerIn: parent
+                }
+
+                MouseArea {
+                    id: closeDialogMA
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: advancedSearchDialog.close()
+                }
+            }
+        }
+
+        contentItem: ScrollView {
+            clip: true
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+            ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+            Column {
+                width: advancedSearchDialog.width - 40
+                spacing: 16
+                padding: 20
+
+                // Search info text
+                Text {
+                    text: "Fill in one or more fields below. Results will match ANY of the criteria (OR search)."
+                    font.pixelSize: 12
+                    color: "#7F8C8D"
+                    wrapMode: Text.WordWrap
+                    width: parent.width - 40
+                }
+
+                // === TEXT SEARCH FIELDS ===
+                Rectangle {
+                    width: parent.width - 40
+                    height: textFieldsColumn.height + 30
+                    color: "#F8F9FA"
+                    radius: 8
+                    border.color: "#E9ECEF"
+
+                    Column {
+                        id: textFieldsColumn
+                        width: parent.width - 30
+                        spacing: 12
+                        anchors {
+                            top: parent.top
+                            topMargin: 15
+                            horizontalCenter: parent.horizontalCenter
+                        }
+
+                        Text {
+                            text: "Text Search Fields"
+                            font.pixelSize: 13
+                            font.bold: true
+                            color: "#2C3E50"
+                        }
+
+                        // Row 1: Title and Author
+                        Row {
+                            width: parent.width
+                            spacing: 15
+
+                            Column {
+                                width: (parent.width - 15) / 2
+                                spacing: 4
+
+                                Text { text: "Title"; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: advTitleField
+                                    width: parent.width
+                                    height: 36
+                                    placeholderText: "Enter title..."
+                                    font.pixelSize: 12
+                                    // background: Rectangle {
+                                    //     color: "white"
+                                    //     border.color: advTitleField.focus ? "#3498DB" : "#DEE2E6"
+                                    //     border.width: advTitleField.focus ? 2 : 1
+                                    //     radius: 4
+                                    // }
+                                }
+                            }
+
+                            Column {
+                                width: (parent.width - 15) / 2
+                                spacing: 4
+
+                                Text { text: "Author"; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: advAuthorField
+                                    width: parent.width
+                                    height: 36
+                                    placeholderText: "Enter author..."
+                                    font.pixelSize: 12
+                                    // background: Rectangle {
+                                    //     color: "white"
+                                    //     border.color: advAuthorField.focus ? "#3498DB" : "#DEE2E6"
+                                    //     border.width: advAuthorField.focus ? 2 : 1
+                                    //     radius: 4
+                                    // }
+                                }
+                            }
+                        }
+
+                        // Row 2: Call Number and ISBN
+                        Row {
+                            width: parent.width
+                            spacing: 15
+
+                            Column {
+                                width: (parent.width - 15) / 2
+                                spacing: 4
+
+                                Text { text: "Call Number"; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: advCallNumberField
+                                    width: parent.width
+                                    height: 36
+                                    placeholderText: "Enter call number..."
+                                    font.pixelSize: 12
+                                    // background: Rectangle {
+                                    //     color: "white"
+                                    //     border.color: advCallNumberField.focus ? "#3498DB" : "#DEE2E6"
+                                    //     border.width: advCallNumberField.focus ? 2 : 1
+                                    //     radius: 4
+                                    // }
+                                }
+                            }
+
+                            Column {
+                                width: (parent.width - 15) / 2
+                                spacing: 4
+
+                                Text { text: "ISBN"; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: advIsbnField
+                                    width: parent.width
+                                    height: 36
+                                    placeholderText: "Enter ISBN..."
+                                    font.pixelSize: 12
+                                    // background: Rectangle {
+                                    //     color: "white"
+                                    //     border.color: advIsbnField.focus ? "#3498DB" : "#DEE2E6"
+                                    //     border.width: advIsbnField.focus ? 2 : 1
+                                    //     radius: 4
+                                    // }
+                                }
+                            }
+                        }
+
+                        // Row 3: Publisher and Shelf Number
+                        Row {
+                            width: parent.width
+                            spacing: 15
+
+                            Column {
+                                width: (parent.width - 15) / 2
+                                spacing: 4
+
+                                Text { text: "Publisher"; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: advPublisherField
+                                    width: parent.width
+                                    height: 36
+                                    placeholderText: "Enter publisher..."
+                                    font.pixelSize: 12
+                                    // background: Rectangle {
+                                    //     color: "white"
+                                    //     border.color: advPublisherField.focus ? "#3498DB" : "#DEE2E6"
+                                    //     border.width: advPublisherField.focus ? 2 : 1
+                                    //     radius: 4
+                                    // }
+                                }
+                            }
+
+                            Column {
+                                width: (parent.width - 15) / 2
+                                spacing: 4
+
+                                Text { text: "Shelf Number"; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: advShelfNumberField
+                                    width: parent.width
+                                    height: 36
+                                    placeholderText: "Enter shelf number..."
+                                    font.pixelSize: 12
+                                    // background: Rectangle {
+                                    //     color: "white"
+                                    //     border.color: advShelfNumberField.focus ? "#3498DB" : "#DEE2E6"
+                                    //     border.width: advShelfNumberField.focus ? 2 : 1
+                                    //     radius: 4
+                                    // }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // === YEAR RANGE ===
+                Rectangle {
+                    width: parent.width - 40
+                    height: yearRangeColumn.height + 30
+                    color: "#F8F9FA"
+                    radius: 8
+                    border.color: "#E9ECEF"
+
+                    Column {
+                        id: yearRangeColumn
+                        width: parent.width - 30
+                        spacing: 12
+                        anchors {
+                            top: parent.top
+                            topMargin: 15
+                            horizontalCenter: parent.horizontalCenter
+                        }
+
+                        Text {
+                            text: "Year Published Range"
+                            font.pixelSize: 13
+                            font.bold: true
+                            color: "#2C3E50"
+                        }
+
+                        Row {
+                            width: parent.width
+                            spacing: 15
+
+                            Column {
+                                width: (parent.width - 30) / 2
+                                spacing: 4
+
+                                Text { text: "From Year"; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: advYearFromField
+                                    width: parent.width
+                                    height: 36
+                                    placeholderText: "e.g., 1990"
+                                    font.pixelSize: 12
+                                    validator: IntValidator { bottom: 1000; top: 9999 }
+                                    // background: Rectangle {
+                                    //     color: "white"
+                                    //     border.color: advYearFromField.focus ? "#3498DB" : "#DEE2E6"
+                                    //     border.width: advYearFromField.focus ? 2 : 1
+                                    //     radius: 4
+                                    // }
+                                }
+                            }
+
+                            Text {
+                                text: "—"
+                                font.pixelSize: 16
+                                color: "#7F8C8D"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            Column {
+                                width: (parent.width - 30) / 2
+                                spacing: 4
+
+                                Text { text: "To Year"; font.pixelSize: 11; color: "#5D6D7E" }
+                                TextField {
+                                    id: advYearToField
+                                    width: parent.width
+                                    height: 36
+                                    placeholderText: "e.g., 2024"
+                                    font.pixelSize: 12
+                                    validator: IntValidator { bottom: 1000; top: 9999 }
+                                    // background: Rectangle {
+                                    //     color: "white"
+                                    //     border.color: advYearToField.focus ? "#3498DB" : "#DEE2E6"
+                                    //     border.width: advYearToField.focus ? 2 : 1
+                                    //     radius: 4
+                                    // }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // === DROPDOWN FILTERS ===
+                Rectangle {
+                    width: parent.width - 40
+                    height: dropdownColumn.height + 30
+                    color: "#F8F9FA"
+                    radius: 8
+                    border.color: "#E9ECEF"
+
+                    Column {
+                        id: dropdownColumn
+                        width: parent.width - 30
+                        spacing: 12
+                        anchors {
+                            top: parent.top
+                            topMargin: 15
+                            horizontalCenter: parent.horizontalCenter
+                        }
+
+                        Text {
+                            text: "Category Filters"
+                            font.pixelSize: 13
+                            font.bold: true
+                            color: "#2C3E50"
+                        }
+
+                        // Row 1: Subject, Genre, Language
+                        Row {
+                            width: parent.width
+                            spacing: 10
+
+                            Column {
+                                width: (parent.width - 20) / 3
+                                spacing: 4
+
+                                Text { text: "Subject"; font.pixelSize: 11; color: "#5D6D7E" }
+                                ComboBox {
+                                    id: subjectCombo
+                                    width: parent.width
+                                    height: 36
+                                    font.pixelSize: 12
+                                    model: ["All"]
+                                    background: Rectangle {
+                                        color: "white"
+                                        border.color: "#DEE2E6"
+                                        radius: 4
+                                    }
+                                }
+                            }
+
+                            Column {
+                                width: (parent.width - 20) / 3
+                                spacing: 4
+
+                                Text { text: "Genre"; font.pixelSize: 11; color: "#5D6D7E" }
+                                ComboBox {
+                                    id: genreCombo
+                                    width: parent.width
+                                    height: 36
+                                    font.pixelSize: 12
+                                    model: ["All"]
+                                    background: Rectangle {
+                                        color: "white"
+                                        border.color: "#DEE2E6"
+                                        radius: 4
+                                    }
+                                }
+                            }
+
+                            Column {
+                                width: (parent.width - 20) / 3
+                                spacing: 4
+
+                                Text { text: "Language"; font.pixelSize: 11; color: "#5D6D7E" }
+                                ComboBox {
+                                    id: languageCombo
+                                    width: parent.width
+                                    height: 36
+                                    font.pixelSize: 12
+                                    model: ["All"]
+                                    background: Rectangle {
+                                        color: "white"
+                                        border.color: "#DEE2E6"
+                                        radius: 4
+                                    }
+                                }
+                            }
+                        }
+
+                        // Row 2: Availability, Condition, Method
+                        Row {
+                            width: parent.width
+                            spacing: 10
+
+                            Column {
+                                width: (parent.width - 20) / 3
+                                spacing: 4
+
+                                Text { text: "Availability"; font.pixelSize: 11; color: "#5D6D7E" }
+                                ComboBox {
+                                    id: availabilityCombo
+                                    width: parent.width
+                                    height: 36
+                                    font.pixelSize: 12
+                                    model: ["All"]
+                                    background: Rectangle {
+                                        color: "white"
+                                        border.color: "#DEE2E6"
+                                        radius: 4
+                                    }
+                                }
+                            }
+
+                            Column {
+                                width: (parent.width - 20) / 3
+                                spacing: 4
+
+                                Text { text: "Condition"; font.pixelSize: 11; color: "#5D6D7E" }
+                                ComboBox {
+                                    id: conditionCombo
+                                    width: parent.width
+                                    height: 36
+                                    font.pixelSize: 12
+                                    model: ["All"]
+                                    background: Rectangle {
+                                        color: "white"
+                                        border.color: "#DEE2E6"
+                                        radius: 4
+                                    }
+                                }
+                            }
+
+                            Column {
+                                width: (parent.width - 20) / 3
+                                spacing: 4
+
+                                Text { text: "Acquisition Method"; font.pixelSize: 11; color: "#5D6D7E" }
+                                ComboBox {
+                                    id: methodCombo
+                                    width: parent.width
+                                    height: 36
+                                    font.pixelSize: 12
+                                    model: ["All"]
+                                    background: Rectangle {
+                                        color: "white"
+                                        border.color: "#DEE2E6"
+                                        radius: 4
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        footer: Rectangle {
+            width: parent.width
+            height: 70
+            color: "#F8F9FA"
+            radius: 12
+
+            // Fix top corners
+            Rectangle {
+                width: parent.width
+                height: 12
+                color: "#F8F9FA"
+                anchors.top: parent.top
+            }
+
+            // Separator line
+            Rectangle {
+                width: parent.width
+                height: 1
+                color: "#E9ECEF"
+                anchors.top: parent.top
+            }
+
+            Row {
+                anchors.centerIn: parent
+                spacing: 15
+
+                // Clear All button
+                Rectangle {
+                    width: 120
+                    height: 40
+                    radius: 6
+                    color: clearAllMA.containsMouse ? "#F5F5F5" : "white"
+                    border.color: "#DEE2E6"
+                    border.width: 1
+
+                    Text {
+                        text: "Clear All"
+                        color: "#5D6D7E"
+                        font.pixelSize: 13
+                        font.bold: true
+                        anchors.centerIn: parent
+                    }
+
+                    MouseArea {
+                        id: clearAllMA
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            // Clear all fields
+                            advTitleField.text = ""
+                            advAuthorField.text = ""
+                            advCallNumberField.text = ""
+                            advIsbnField.text = ""
+                            advPublisherField.text = ""
+                            advShelfNumberField.text = ""
+                            advYearFromField.text = ""
+                            advYearToField.text = ""
+                            subjectCombo.currentIndex = 0
+                            genreCombo.currentIndex = 0
+                            languageCombo.currentIndex = 0
+                            availabilityCombo.currentIndex = 0
+                            conditionCombo.currentIndex = 0
+                            methodCombo.currentIndex = 0
+                        }
+                    }
+                }
+
+                // Search button
+                Rectangle {
+                    width: 150
+                    height: 40
+                    radius: 6
+                    color: searchBtnMA.containsMouse ? "#2980B9" : "#3498DB"
+
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 8
+
+                        Image {
+                            source: "assets/advancedSearch.png"
+                            width: 18
+                            height: 18
+                            anchors.verticalCenter: parent.verticalCenter
+                            fillMode: Image.PreserveAspectFit
+                        }
+
+                        Text {
+                            text: "Search"
+                            color: "white"
+                            font.pixelSize: 13
+                            font.bold: true
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+
+                    MouseArea {
+                        id: searchBtnMA
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            // Perform advanced search
+                            allBooksList.advancedSearchBooks(
+                                advTitleField.text,
+                                advAuthorField.text,
+                                advCallNumberField.text,
+                                advIsbnField.text,
+                                advPublisherField.text,
+                                advYearFromField.text,
+                                advYearToField.text,
+                                subjectCombo.currentText,
+                                genreCombo.currentText,
+                                languageCombo.currentText,
+                                advShelfNumberField.text,
+                                availabilityCombo.currentText,
+                                conditionCombo.currentText,
+                                methodCombo.currentText
+                            )
+                            isSearchActive = true
+                            navigationTextInput.text = ""  // Clear basic search
+                            advancedSearchDialog.close()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // =====================================================
+    // BOOK DETAILS DIALOG
+    // =====================================================
+    Dialog {
+        id: bookDetailsDialog
+        title: "Book Details"
+        modal: true
+        width: Math.min(650, allBooks.width * 0.85)
+        height: Math.min(620, allBooks.height * 0.9)
+        anchors.centerIn: parent
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+        background: Rectangle {
+            color: "#FFFFFF"
+            radius: 12
+            border.color: "#E0E0E0"
+            border.width: 1
+        }
+
+        header: Rectangle {
+            width: parent.width
+            height: 70
+            color: "#1ABC9C"
+            radius: 12
+
+            Rectangle {
+                width: parent.width
+                height: 12
+                color: "#1ABC9C"
+                anchors.bottom: parent.bottom
+            }
+
+            Row {
+                anchors.fill: parent
+                anchors.leftMargin: 20
+                anchors.rightMargin: 60
+                spacing: 15
+
+                Image {
+                    source: "assets/delegateBook.png"
+                    width: 40
+                    height: 40
+                    anchors.verticalCenter: parent.verticalCenter
+                    fillMode: Image.PreserveAspectFit
+                }
+
+                Column {
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 2
+                    width: parent.width - 70
+
+                    Text {
+                        text: selectedTitle
+                        font.pixelSize: 16
+                        font.bold: true
+                        color: "white"
+                        elide: Text.ElideRight
+                        width: parent.width
+                    }
+
+                    Text {
+                        text: "by " + selectedAuthor
+                        font.pixelSize: 12
+                        color: "#E8F6F3"
+                        elide: Text.ElideRight
+                        width: parent.width
+                    }
+                }
+            }
+
+            Rectangle {
+                width: 32
+                height: 32
+                radius: 16
+                color: closeDetailsMA.containsMouse ? "#E74C3C" : "transparent"
+                anchors {
+                    right: parent.right
+                    rightMargin: 15
+                    verticalCenter: parent.verticalCenter
+                }
+
+                Text {
+                    text: "✕"
+                    color: "white"
+                    font.pixelSize: 16
+                    font.bold: true
+                    anchors.centerIn: parent
+                }
+
+                MouseArea {
+                    id: closeDetailsMA
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: bookDetailsDialog.close()
+                }
+            }
+        }
+
+        contentItem: ScrollView {
+            clip: true
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+            ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+            Column {
+                width: bookDetailsDialog.width - 40
+                spacing: 16
+                padding: 20
+
+                // === BASIC INFO SECTION ===
+                Rectangle {
+                    width: parent.width - 40
+                    height: basicInfoColumn.height + 30
+                    color: "#F8F9FA"
+                    radius: 8
+                    border.color: "#E9ECEF"
+
+                    Column {
+                        id: basicInfoColumn
+                        width: parent.width - 30
+                        spacing: 10
+                        anchors {
+                            top: parent.top
+                            topMargin: 15
+                            horizontalCenter: parent.horizontalCenter
+                        }
+
+                        Text {
+                            text: "Basic Information"
+                            font.pixelSize: 13
+                            font.bold: true
+                            color: "#2C3E50"
+                        }
+
+                        Grid {
+                            columns: 2
+                            columnSpacing: 20
+                            rowSpacing: 8
+                            width: parent.width
+
+                            // Call Number
+                            Text { text: "Call Number:"; font.pixelSize: 11; font.bold: true; color: "#5D6D7E"; width: 120 }
+                            Text { text: selectedCallNumber || "N/A"; font.pixelSize: 11; color: "#2C3E50"; width: parent.width - 140; wrapMode: Text.Wrap }
+
+                            // ISBN
+                            Text { text: "ISBN:"; font.pixelSize: 11; font.bold: true; color: "#5D6D7E"; width: 120 }
+                            Text { text: selectedIsbn || "N/A"; font.pixelSize: 11; color: "#2C3E50"; width: parent.width - 140; wrapMode: Text.Wrap }
+
+                            // Barcode
+                            Text { text: "Barcode:"; font.pixelSize: 11; font.bold: true; color: "#5D6D7E"; width: 120 }
+                            Text { text: selectedBarcode || "N/A"; font.pixelSize: 11; color: "#2C3E50"; width: parent.width - 140; wrapMode: Text.Wrap }
+
+                            // Publisher
+                            Text { text: "Publisher:"; font.pixelSize: 11; font.bold: true; color: "#5D6D7E"; width: 120 }
+                            Text { text: selectedPublisher || "N/A"; font.pixelSize: 11; color: "#2C3E50"; width: parent.width - 140; wrapMode: Text.Wrap }
+
+                            // Year Published
+                            Text { text: "Year Published:"; font.pixelSize: 11; font.bold: true; color: "#5D6D7E"; width: 120 }
+                            Text { text: selectedYearPublished || "N/A"; font.pixelSize: 11; color: "#2C3E50"; width: parent.width - 140; wrapMode: Text.Wrap }
+                        }
+                    }
+                }
+
+                // === CLASSIFICATION SECTION ===
+                Rectangle {
+                    width: parent.width - 40
+                    height: classificationColumn.height + 30
+                    color: "#F8F9FA"
+                    radius: 8
+                    border.color: "#E9ECEF"
+
+                    Column {
+                        id: classificationColumn
+                        width: parent.width - 30
+                        spacing: 10
+                        anchors {
+                            top: parent.top
+                            topMargin: 15
+                            horizontalCenter: parent.horizontalCenter
+                        }
+
+                        Text {
+                            text: "Classification"
+                            font.pixelSize: 13
+                            font.bold: true
+                            color: "#2C3E50"
+                        }
+
+                        Grid {
+                            columns: 2
+                            columnSpacing: 20
+                            rowSpacing: 8
+                            width: parent.width
+
+                            // Subject
+                            Text { text: "Subject:"; font.pixelSize: 11; font.bold: true; color: "#5D6D7E"; width: 120 }
+                            Text { text: selectedSubject || "N/A"; font.pixelSize: 11; color: "#2C3E50"; width: parent.width - 140; wrapMode: Text.Wrap }
+
+                            // Genre
+                            Text { text: "Genre:"; font.pixelSize: 11; font.bold: true; color: "#5D6D7E"; width: 120 }
+                            Text { text: selectedGenre || "N/A"; font.pixelSize: 11; color: "#2C3E50"; width: parent.width - 140; wrapMode: Text.Wrap }
+
+                            // Language
+                            Text { text: "Language:"; font.pixelSize: 11; font.bold: true; color: "#5D6D7E"; width: 120 }
+                            Text { text: selectedLanguage || "N/A"; font.pixelSize: 11; color: "#2C3E50"; width: parent.width - 140; wrapMode: Text.Wrap }
+
+                            // Shelf Number
+                            Text { text: "Shelf Number:"; font.pixelSize: 11; font.bold: true; color: "#5D6D7E"; width: 120 }
+                            Text { text: selectedShelfNumber || "N/A"; font.pixelSize: 11; color: "#2C3E50"; width: parent.width - 140; wrapMode: Text.Wrap }
+                        }
+                    }
+                }
+
+                // === STATUS & VALUE SECTION ===
+                Rectangle {
+                    width: parent.width - 40
+                    height: statusColumn.height + 30
+                    color: "#F8F9FA"
+                    radius: 8
+                    border.color: "#E9ECEF"
+
+                    Column {
+                        id: statusColumn
+                        width: parent.width - 30
+                        spacing: 10
+                        anchors {
+                            top: parent.top
+                            topMargin: 15
+                            horizontalCenter: parent.horizontalCenter
+                        }
+
+                        Text {
+                            text: "Status & Value"
+                            font.pixelSize: 13
+                            font.bold: true
+                            color: "#2C3E50"
+                        }
+
+                        Row {
+                            spacing: 15
+                            width: parent.width
+
+                            // Availability badge
+                            Rectangle {
+                                width: availabilityText.width + 20
+                                height: 26
+                                radius: 13
+                                color: selectedAvailability === "Available" ? "#27AE60" :
+                                       selectedAvailability === "Borrowed" ? "#E67E22" : "#95A5A6"
+
+                                Text {
+                                    id: availabilityText
+                                    text: selectedAvailability || "Unknown"
+                                    font.pixelSize: 11
+                                    font.bold: true
+                                    color: "white"
+                                    anchors.centerIn: parent
+                                }
+                            }
+
+                            // Condition badge
+                            Rectangle {
+                                width: conditionText.width + 20
+                                height: 26
+                                radius: 13
+                                color: selectedCondition === "Good" || selectedCondition === "Excellent" ? "#3498DB" :
+                                       selectedCondition === "Fair" ? "#F39C12" : "#E74C3C"
+
+                                Text {
+                                    id: conditionText
+                                    text: selectedCondition || "Unknown"
+                                    font.pixelSize: 11
+                                    font.bold: true
+                                    color: "white"
+                                    anchors.centerIn: parent
+                                }
+                            }
+                        }
+
+                        Grid {
+                            columns: 2
+                            columnSpacing: 20
+                            rowSpacing: 8
+                            width: parent.width
+
+                            // Value
+                            Text { text: "Value:"; font.pixelSize: 11; font.bold: true; color: "#5D6D7E"; width: 120 }
+                            Text { text: SettingsManager.currencySymbol + " " + selectedValue.toLocaleString(); font.pixelSize: 11; color: "#27AE60"; font.bold: true; width: parent.width - 140 }
+
+                            // Times Borrowed
+                            Text { text: "Times Borrowed:"; font.pixelSize: 11; font.bold: true; color: "#5D6D7E"; width: 120 }
+                            Text { text: selectedTimesBorrowed.toString(); font.pixelSize: 11; color: "#2C3E50"; width: parent.width - 140 }
+
+                            // Acquisition Method
+                            Text { text: "Acquired Via:"; font.pixelSize: 11; font.bold: true; color: "#5D6D7E"; width: 120 }
+                            Text { text: selectedMethod || "N/A"; font.pixelSize: 11; color: "#2C3E50"; width: parent.width - 140; wrapMode: Text.Wrap }
+
+                            // Date Added
+                            Text { text: "Date Added:"; font.pixelSize: 11; font.bold: true; color: "#5D6D7E"; width: 120 }
+                            Text { text: selectedDateAdded || "N/A"; font.pixelSize: 11; color: "#2C3E50"; width: parent.width - 140; wrapMode: Text.Wrap }
+                        }
+                    }
+                }
+
+                // === DESCRIPTION SECTION ===
+                Rectangle {
+                    width: parent.width - 40
+                    height: descriptionColumn.height + 30
+                    color: "#F8F9FA"
+                    radius: 8
+                    border.color: "#E9ECEF"
+                    visible: selectedDescription && selectedDescription.length > 0
+
+                    Column {
+                        id: descriptionColumn
+                        width: parent.width - 30
+                        spacing: 10
+                        anchors {
+                            top: parent.top
+                            topMargin: 15
+                            horizontalCenter: parent.horizontalCenter
+                        }
+
+                        Text {
+                            text: "Description"
+                            font.pixelSize: 13
+                            font.bold: true
+                            color: "#2C3E50"
+                        }
+
+                        Text {
+                            text: selectedDescription || "No description available."
+                            font.pixelSize: 11
+                            color: "#5D6D7E"
+                            wrapMode: Text.Wrap
+                            width: parent.width
+                            lineHeight: 1.4
+                        }
+                    }
+                }
+            }
+        }
+
+        footer: Rectangle {
+            width: parent.width
+            height: 60
+            color: "#F8F9FA"
+            radius: 12
+
+            Rectangle {
+                width: parent.width
+                height: 12
+                color: "#F8F9FA"
+                anchors.top: parent.top
+            }
+
+            Rectangle {
+                width: parent.width
+                height: 1
+                color: "#E9ECEF"
+                anchors.top: parent.top
+            }
+
+            Row {
+                anchors{
+                    right:parent.right
+                    rightMargin: 20
+                    verticalCenter: parent.verticalCenter
+                }
+
+                spacing: 15
+
+                // // Close button
+                // Rectangle {
+                //     width: 100
+                //     height: 36
+                //     radius: 6
+                //     color: closeFooterMA.containsMouse ? "#2C3E50" : "#34495E"
+
+                //     Text {
+                //         text: "Close"
+                //         color: "white"
+                //         font.pixelSize: 12
+                //         font.bold: true
+                //         anchors.centerIn: parent
+                //     }
+
+                //     MouseArea {
+                //         id: closeFooterMA
+                //         anchors.fill: parent
+                //         hoverEnabled: true
+                //         cursorShape: Qt.PointingHandCursor
+                //         onClicked: bookDetailsDialog.close()
+                //     }
+                // }
+
+                Button{
+                    text: "Close"
+                    onClicked: {
+                        bookDetailsDialog.close()
+                    }
+                }
+            }
+        }
     }
 }

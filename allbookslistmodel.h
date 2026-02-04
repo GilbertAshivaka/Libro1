@@ -16,16 +16,22 @@ public:
     enum{
         TitleRole = Qt::UserRole,
         AuthorRole,
-        BookNumberRole,
+        CallNumberRole,
         PublisherRole,
-        EditionRole,
-        VolumeRole,
+        IsbnRole,
+        BarcodeRole,
+        YearPublishedRole,
         ShelfNumberRole,
         DescriptionRole,
+        LanguageRole,
         SubjectRole,
         GenreRole,
         ValueRole,
-        MethodRole
+        MethodRole,
+        DateAddedRole,
+        AvailabilityRole,
+        TimesBorrowedRole,
+        ConditionRole
     };
 
     // Basic functionality:

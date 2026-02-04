@@ -227,12 +227,9 @@ Item{
             }
             text: "Login"
             onClicked: {
-//                login.visible = !login.visible
-////                adminLogin.visible = false
-//                loginLabelRect.visible = !loginLabelRect.visible
-//                gausianItem.visible = false
-
-                mainLoader.source = "Page2.qml"
+                if(appManager.adminLogin(adminUsernameTextInput.text.trim(), adminPasswordTextInput.text.trim())){
+                  mainLoader.source = "Page2.qml"
+                }
             }
         }
 

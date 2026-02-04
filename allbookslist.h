@@ -106,10 +106,36 @@ public slots:
 
     void removeBook(const QString& callNumber);
 
+    // Search methods
+    bool searchBooks(const QString &searchTerm);
+    bool advancedSearchBooks(const QString &title,
+                             const QString &author,
+                             const QString &callNumber,
+                             const QString &isbn,
+                             const QString &publisher,
+                             const QString &yearFrom,
+                             const QString &yearTo,
+                             const QString &subject,
+                             const QString &genre,
+                             const QString &language,
+                             const QString &shelfNumber,
+                             const QString &availability,
+                             const QString &condition,
+                             const QString &method);
+
+    // Methods for dropdown population
+    Q_INVOKABLE QStringList getDistinctSubjects();
+    Q_INVOKABLE QStringList getDistinctGenres();
+    Q_INVOKABLE QStringList getDistinctLanguages();
+    Q_INVOKABLE QStringList getDistinctAvailability();
+    Q_INVOKABLE QStringList getDistinctConditions();
+    Q_INVOKABLE QStringList getDistinctMethods();
+
 signals:
     void booksUpdated();
     void preBookAppended();
     void postBookAppended();
+    void searchCompleted(int resultCount);
 
     //notify model reset
     void preModelReset();

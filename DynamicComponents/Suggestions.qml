@@ -165,7 +165,7 @@ Item {
 
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Be the first to share\nyour thoughts!"
+                    text: "Suggestions and feedback will show \nwhen available in the system."
                     font.pixelSize: 12
                     color: "#AAAAAA"
                     horizontalAlignment: Text.AlignHCenter

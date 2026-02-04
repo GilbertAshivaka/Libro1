@@ -13,7 +13,7 @@ Dialog {
     modal: true
 
     width: Math.min(450, parent.width - 40)
-    height: dialogContent.height + 140
+    height: 420 //dialogContent.height + 140
 
     anchors.centerIn: parent
 
@@ -51,12 +51,12 @@ Dialog {
         errorMessage = ""
     }
 
-    background: Rectangle {
-        color: "white"
-        radius: 12
-        border.color: "#E0E0E0"
-        border.width: 1
-    }
+    // background: Rectangle {
+    //     color: "white"
+    //     radius: 12
+    //     border.color: "#E0E0E0"
+    //     border.width: 1
+    // }
 
     header: Rectangle {
         height: 50
@@ -188,12 +188,12 @@ Dialog {
                 height: 40
                 placeholderText: "Choose a username"
 
-                background: Rectangle {
-                    color: "white"
-                    border.color: parent.activeFocus ? accentColor : "#CCCCCC"
-                    border.width: parent.activeFocus ? 2 : 1
-                    radius: 6
-                }
+                // background: Rectangle {
+                //     color: "white"
+                //     border.color: parent.activeFocus ? accentColor : "#CCCCCC"
+                //     border.width: parent.activeFocus ? 2 : 1
+                //     radius: 6
+                // }
 
                 onTextChanged: {
                     // Check username availability
@@ -241,12 +241,12 @@ Dialog {
                     placeholderText: "Min. 6 characters"
                     echoMode: TextInput.Password
 
-                    background: Rectangle {
-                        color: "white"
-                        border.color: parent.activeFocus ? accentColor : "#CCCCCC"
-                        border.width: parent.activeFocus ? 2 : 1
-                        radius: 6
-                    }
+                    // background: Rectangle {
+                    //     color: "white"
+                    //     border.color: parent.activeFocus ? accentColor : "#CCCCCC"
+                    //     border.width: parent.activeFocus ? 2 : 1
+                    //     radius: 6
+                    // }
                 }
             }
 
@@ -267,12 +267,12 @@ Dialog {
                     placeholderText: "Repeat password"
                     echoMode: TextInput.Password
 
-                    background: Rectangle {
-                        color: "white"
-                        border.color: parent.activeFocus ? accentColor : "#CCCCCC"
-                        border.width: parent.activeFocus ? 2 : 1
-                        radius: 6
-                    }
+                    // background: Rectangle {
+                    //     color: "white"
+                    //     border.color: parent.activeFocus ? accentColor : "#CCCCCC"
+                    //     border.width: parent.activeFocus ? 2 : 1
+                    //     radius: 6
+                    // }
                 }
             }
         }
