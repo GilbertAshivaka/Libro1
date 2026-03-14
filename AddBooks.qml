@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls.Windows
 import com.bookmanager 1.0
+import "DynamicComponentLoader.js" as CustomComponentLoader
 
 Rectangle {
     id: addBooksContainer
@@ -8,6 +9,8 @@ Rectangle {
     color: "white"
     radius: 8
     border.color: "#CDCACA"
+
+    property var importBooksPage: null
 
     signal closeClicked()
 
@@ -102,6 +105,56 @@ Rectangle {
                 text: "Add a new book"
                 font.bold: false
                 font.pointSize: 12
+            }
+        }
+
+        Rectangle{
+            id: menuRect
+            width: 60
+            height: 40
+            radius: 4
+            anchors{
+                right: parent.right
+                rightMargin: 30
+                top: parent.top
+                topMargin: 5
+            }
+
+            Image{
+                id: menuImg
+                anchors.fill: parent
+                fillMode: Image.PreserveAspectFit
+                source: "assets/menu.png"
+            }
+
+            MouseArea{
+                anchors.fill: parent
+                hoverEnabled: true
+
+                onEntered: {
+                    menuRect.color = "#E8E3E4"
+                }
+                onExited: {
+                    menuRect.color = "white"
+                }
+
+                onClicked: {
+                    menu.open()
+                }
+            }
+
+            Menu {
+                id: menu
+                width: 120
+                y: menuRect.height
+                x: menuRect.width - 60
+
+                MenuItem {
+                    text: "Import Books"
+                    onTriggered: {
+                       CustomComponentLoader.customCreateComponent(importBooksPage, "ImportBooks", addBooksContainer)
+                    }
+                }
             }
         }
     }

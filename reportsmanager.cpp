@@ -425,7 +425,7 @@ QVariantMap ReportsManager::createStatCard(const QString &label, const QVariant 
 
 QString ReportsManager::getDatabaseSize()
 {
-    QFile dbFile("library.db");
+    QFile dbFile(DatabaseManager::getDatabasePath());
     if (dbFile.exists()) {
         qint64 sizeBytes = dbFile.size();
         double sizeMB = sizeBytes / (1024.0 * 1024.0);

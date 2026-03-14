@@ -197,6 +197,42 @@ Item{
             }
         }
 
+        //toggle password visibility
+        Rectangle {
+            id: passwordToggleRect
+            height: staffPassword.height/2
+            width: height
+            color: "transparent"
+            anchors{
+                left: staffPassword.right
+                leftMargin: 8
+                verticalCenter: staffPassword.verticalCenter
+            }
+
+            property bool passwordVisible: false  // ← track state
+
+            Image {
+                id: passwordToggle
+                anchors.fill: parent
+                source: passwordToggleRect.passwordVisible ? "../assets/hidden.png" :  "../assets/eye.png"
+                fillMode: Image.PreserveAspectFit
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+
+                onClicked: {
+                    passwordToggleRect.passwordVisible = !passwordToggleRect.passwordVisible
+                    staffPasswordTextInput.echoMode = passwordToggleRect.passwordVisible
+                            ? TextInput.Normal
+                            : TextInput.Password
+                }
+            }
+        }
+
+
 
 
         Rectangle{

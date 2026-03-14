@@ -7,6 +7,7 @@
 #include <QSqlError>
 #include <QDateTime>
 #include <QDebug>
+#include <QRegularExpression>
 
 struct BookInfo{
     int issueId;

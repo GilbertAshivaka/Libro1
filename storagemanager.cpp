@@ -1,4 +1,5 @@
 #include "storagemanager.h"
+#include "databasemanager.h"
 
 StorageManager::StorageManager(QObject *parent)
     : QObject{parent}
@@ -114,6 +115,7 @@ qint64 StorageManager::calculateDatabaseSize()
 {
     //get all the possible places where the libary.db is located
     QStringList possiblePaths = {
+        DatabaseManager::getDatabasePath(),
         QApplication::applicationDirPath() + "/library.db",
         QDir::currentPath() + "library.db",
         QDir::homePath() + "library.db",

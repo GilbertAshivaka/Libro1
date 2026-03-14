@@ -9,11 +9,11 @@ import "DynamicComponentLoader.js" as CustomComponentLoader
 
 // import UserAddition 1.0
 
-Rectangle{
+Page{
     id: registrationForm
     anchors.fill: parent
-    radius: 8
-    border.color: "white" //"#CDCACA"
+    // radius: 8
+    // border.color: "white" //"#CDCACA"
 
     signal closeClicked()
 
@@ -48,12 +48,14 @@ Rectangle{
         height: parent.height* .95
         width: parent.width* .95
         anchors.centerIn: parent
+        color: "transparent"
 
         Rectangle{
             id: closeRect
             width: 40
             height: 40
             radius: 4
+            color: "transparent"
             anchors{
                 right: parent.right
                 top: parent.top
@@ -84,7 +86,7 @@ Rectangle{
                     closeRect.color = "#E8E3E4"
                 }
                 onExited: {
-                    closeRect.color = "white"
+                    closeRect.color = "transparent"
                 }
 
                 onClicked: {
@@ -98,6 +100,7 @@ Rectangle{
             width: 60
             height: 40
             radius: 4
+            color: "transparent"
             anchors{
                 right: closeRect.left
                 top: parent.top
@@ -118,7 +121,7 @@ Rectangle{
                     menuRect.color = "#E8E3E4"
                 }
                 onExited: {
-                    menuRect.color = "white"
+                    menuRect.color = "transparent"
                 }
 
                 onClicked: {
@@ -147,6 +150,7 @@ Rectangle{
             id: manyRect
             width: 40
             height: 40
+            color: "transparent"
             anchors{
                 right: menuRect.left
                 top: parent.top

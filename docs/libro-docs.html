@@ -1,0 +1,2673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Libro ILMS — User Documentation</title>
+  <link rel="stylesheet" href="libro-docs.css">
+</head>
+<body>
+
+<!-- ============================================================
+     SIDEBAR NAVIGATION
+     ============================================================ -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-scroll">
+  <div class="sidebar-search">
+    <input type="text" id="navSearch" placeholder="Search documentation…">
+  </div>
+
+  <!-- Getting Started -->
+  <div class="nav-group" id="grp-start">
+    <div class="nav-group-title" onclick="toggleGroup('grp-start')">
+      <span class="chevron">▼</span>
+      <span class="nav-icon"></span> Getting Started
+    </div>
+    <div class="nav-items">
+      <a class="nav-item" href="#welcome">Welcome</a>
+      <a class="nav-item" href="#system-requirements">System Requirements</a>
+      <a class="nav-item" href="#license-activation">License Activation</a>
+      <a class="nav-item" href="#first-time-setup">First-Time Setup</a>
+      <a class="nav-item" href="#logging-in">Logging In</a>
+      <a class="nav-item" href="#dashboard-overview">Dashboard Overview</a>
+    </div>
+  </div>
+
+  <!-- Book Management -->
+  <div class="nav-group" id="grp-books">
+    <div class="nav-group-title" onclick="toggleGroup('grp-books')">
+      <span class="chevron">▼</span>
+      <span class="nav-icon"></span> Book Management
+    </div>
+    <div class="nav-items">
+      <a class="nav-item" href="#add-single-book">Add a Single Book</a>
+      <a class="nav-item" href="#bulk-import-books">Bulk Import Books (CSV)</a>
+      <a class="nav-item" href="#browse-catalog">Browse the Catalog</a>
+      <a class="nav-item" href="#advanced-search">Advanced Search</a>
+      <a class="nav-item" href="#edit-book">Edit Book Details</a>
+      <a class="nav-item" href="#archive-delete">Archive &amp; Delete Books</a>
+    </div>
+  </div>
+
+  <!-- User Management -->
+  <div class="nav-group" id="grp-users">
+    <div class="nav-group-title" onclick="toggleGroup('grp-users')">
+      <span class="chevron">▼</span>
+      <span class="nav-icon"></span> User Management
+    </div>
+    <div class="nav-items">
+      <a class="nav-item" href="#add-single-user">Add a Single User</a>
+      <a class="nav-item" href="#bulk-import-users">Bulk Import Users (CSV)</a>
+      <a class="nav-item" href="#browse-users">Browse All Users</a>
+      <a class="nav-item" href="#user-types">User Types &amp; Roles</a>
+      <a class="nav-item" href="#admin-management">Admin Management</a>
+    </div>
+  </div>
+
+  <!-- Circulation -->
+  <div class="nav-group" id="grp-circ">
+    <div class="nav-group-title" onclick="toggleGroup('grp-circ')">
+      <span class="chevron">▼</span>
+      <span class="nav-icon"></span> Circulation
+    </div>
+    <div class="nav-items">
+      <a class="nav-item" href="#issue-book">Issue a Book</a>
+      <a class="nav-item" href="#return-book">Return a Book</a>
+      <a class="nav-item" href="#view-issued">View Issued Books</a>
+      <a class="nav-item" href="#fines-overdue">Fines &amp; Overdue</a>
+      <a class="nav-item" href="#reservations">Reservations</a>
+      <a class="nav-item" href="#pending-approvals">Pending Approvals</a>
+    </div>
+  </div>
+
+  <!-- Inventory -->
+  <div class="nav-group" id="grp-inventory">
+    <div class="nav-group-title" onclick="toggleGroup('grp-inventory')">
+      <span class="chevron">▼</span>
+      <span class="nav-icon"></span> Inventory Tracking
+    </div>
+    <div class="nav-items">
+      <a class="nav-item" href="#inventory-dashboard">Inventory Dashboard</a>
+      <a class="nav-item" href="#inventory-reports">Inventory Reports</a>
+      <a class="nav-item" href="#physical-tracking">Physical Tracking</a>
+    </div>
+  </div>
+
+  <!-- Digital Materials -->
+  <div class="nav-group" id="grp-digital">
+    <div class="nav-group-title" onclick="toggleGroup('grp-digital')">
+      <span class="chevron">▼</span>
+      <span class="nav-icon"></span> Digital Materials
+    </div>
+    <div class="nav-items">
+      <a class="nav-item" href="#digital-overview">Overview</a>
+      <a class="nav-item" href="#digital-add">Add Materials</a>
+      <a class="nav-item" href="#digital-issue-return">Issue &amp; Return</a>
+    </div>
+  </div>
+
+  <!-- Reports & Analytics -->
+  <div class="nav-group" id="grp-reports">
+    <div class="nav-group-title" onclick="toggleGroup('grp-reports')">
+      <span class="chevron">▼</span>
+      <span class="nav-icon"></span> Reports &amp; Analytics
+    </div>
+    <div class="nav-items">
+      <a class="nav-item" href="#reports-overview">Reports Overview</a>
+      <a class="nav-item" href="#report-categories">Report Categories</a>
+      <a class="nav-item" href="#export-reports">Export &amp; Print</a>
+    </div>
+  </div>
+
+  <!-- Tools -->
+  <div class="nav-group" id="grp-tools">
+    <div class="nav-group-title" onclick="toggleGroup('grp-tools')">
+      <span class="chevron">▼</span>
+      <span class="nav-icon"></span> Tools
+    </div>
+    <div class="nav-items">
+      <a class="nav-item" href="#barcode-tools">Barcode Generation</a>
+      <a class="nav-item" href="#barcode-scanning">Barcode Scanning</a>
+      <a class="nav-item" href="#email-notifications">Email Notifications</a>
+      <a class="nav-item" href="#pdf-reader">PDF / Ebook Reader</a>
+      <a class="nav-item" href="#online-bookshops">Online Bookshops</a>
+      <a class="nav-item" href="#clearance">User Clearance</a>
+      <a class="nav-item" href="#suggestions-feedback">Suggestions &amp; Feedback</a>
+      <a class="nav-item" href="#libro-ai">Libro AI</a>
+    </div>
+  </div>
+
+  <!-- Configuration -->
+  <div class="nav-group" id="grp-config">
+    <div class="nav-group-title" onclick="toggleGroup('grp-config')">
+      <span class="chevron">▼</span>
+      <span class="nav-icon"></span> Configuration
+    </div>
+    <div class="nav-items">
+      <a class="nav-item" href="#settings-overview">Settings Overview</a>
+      <a class="nav-item" href="#general-settings">General Settings</a>
+      <a class="nav-item" href="#circulation-settings">Circulation Settings</a>
+      <a class="nav-item" href="#reservation-settings">Reservation Settings</a>
+      <a class="nav-item" href="#email-settings">Email / SMTP Settings</a>
+      <a class="nav-item" href="#system-settings">System Settings</a>
+      <a class="nav-item" href="#opac-config">OPAC Configuration</a>
+      <a class="nav-item" href="#import-export-settings">Import / Export Settings</a>
+    </div>
+  </div>
+
+  <!-- Backup & Maintenance -->
+  <div class="nav-group" id="grp-backup">
+    <div class="nav-group-title" onclick="toggleGroup('grp-backup')">
+      <span class="chevron">▼</span>
+      <span class="nav-icon"></span> Backup &amp; Maintenance
+    </div>
+    <div class="nav-items">
+      <a class="nav-item" href="#backup-restore">Backup &amp; Restore</a>
+      <a class="nav-item" href="#scheduled-backups">Scheduled Backups</a>
+      <a class="nav-item" href="#activity-logs">Activity Logs</a>
+      <a class="nav-item" href="#storage-manager">Storage Manager</a>
+      <a class="nav-item" href="#app-manager">App Manager</a>
+    </div>
+  </div>
+
+  <!-- Reference -->
+  <div class="nav-group" id="grp-ref">
+    <div class="nav-group-title" onclick="toggleGroup('grp-ref')">
+      <span class="chevron">▼</span>
+      <span class="nav-icon"></span> Reference
+    </div>
+    <div class="nav-items">
+      <a class="nav-item" href="#default-settings-ref">Default Settings Reference</a>
+      <a class="nav-item" href="#csv-reference">CSV Format Reference</a>
+      <a class="nav-item" href="#keyboard-shortcuts">Keyboard Shortcuts</a>
+      <a class="nav-item" href="#troubleshooting">Troubleshooting</a>
+      <a class="nav-item" href="#faq">FAQ</a>
+      <a class="nav-item" href="#glossary">Glossary</a>
+    </div>
+  </div>
+  </div><!-- end sidebar-scroll -->
+
+  <!-- Sidebar branding footer -->
+  <div class="sidebar-brand">
+    <div class="sidebar-brand-icon">L</div>
+    <div class="sidebar-brand-text">Libro</div>
+    <div class="sidebar-brand-sub">Integrated Library Management System</div>
+    <div class="sidebar-brand-version">v 1.0.0</div>
+  </div>
+</nav>
+
+<!-- ============================================================
+     MAIN CONTENT
+     ============================================================ -->
+<main class="main-content" id="main-content">
+
+<!-- ==================== WELCOME ==================== -->
+<div class="hero" id="welcome">
+  <h1>Libro Documentation</h1>
+  <p class="hero-sub">The complete administrator guide to the Libro Integrated Library Management System. This documentation covers every feature, workflow, and configuration option available to library administrators.</p>
+  <div class="hero-meta">
+    <span>Version 1.0.0</span>
+    <span>Last Updated: March 12, 2026</span>
+    <span>Administrator Guide</span>
+  </div>
+</div>
+
+<div class="feature-grid">
+  <div class="feature-card">
+    <div class="feature-icon"><img src="booksSettingsIcon.png" alt="Book Management"></div>
+    <div class="feature-title">Book Management</div>
+    <div class="feature-desc">Add, import, search, edit, archive, and delete books from your catalog.</div>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon"><img src="userSettings.png" alt="User Management"></div>
+    <div class="feature-title">User Management</div>
+    <div class="feature-desc">Register students, staff, and other patrons individually or in bulk via CSV.</div>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon"><img src="exchange.png" alt="Circulation"></div>
+    <div class="feature-title">Circulation</div>
+    <div class="feature-desc">Issue and return books, track overdue items, manage fines and reservations.</div>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon"><img src="reportsIcon.png" alt="Reports &amp; Analytics"></div>
+    <div class="feature-title">Reports &amp; Analytics</div>
+    <div class="feature-desc">Ten comprehensive report categories with export to PDF, CSV, and image.</div>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon"><img src="cloudBackuprestore.png" alt="Backup &amp; Restore"></div>
+    <div class="feature-title">Backup &amp; Restore</div>
+    <div class="feature-desc">Local and cloud backups with scheduling, encryption, and compression.</div>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon"><img src="systemSettings.png" alt="Tools Hub"></div>
+    <div class="feature-title">Tools Hub</div>
+    <div class="feature-desc">Barcodes, email notifications, PDF reader, clearance, OPAC, and more.</div>
+  </div>
+</div>
+
+<hr>
+
+<!-- ==================== SYSTEM REQUIREMENTS ==================== -->
+<section class="section-card" id="system-requirements">
+  <h2>System Requirements</h2>
+  <p>Libro runs as a native desktop application built on the Qt 6 framework. To ensure optimal performance, your system should meet the following requirements:</p>
+  <table>
+    <thead><tr><th>Component</th><th>Requirement</th></tr></thead>
+    <tbody>
+      <tr><td>Operating System</td><td>Windows 10/11 (64-bit)</td></tr>
+      <tr><td>Display Resolution</td><td>Minimum 1080 × 500 pixels</td></tr>
+      <tr><td>Storage</td><td>Varies — monitor via the Storage Manager tool</td></tr>
+      <tr><td>Camera</td><td>Optional — required only for barcode scanning</td></tr>
+      <tr><td>Network</td><td>Required for license validation, OPAC sync, and cloud backups</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== LICENSE ACTIVATION ==================== -->
+<section class="section-card" id="license-activation">
+  <h2>License Activation</h2>
+  <p>When you launch Libro for the first time, the application will attempt to verify your license. If no valid license is found, you will be presented with the Activation screen.</p>
+
+  <h3>License Tiers</h3>
+  <table>
+    <thead><tr><th>Tier</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Trial</strong></td><td>A time-limited evaluation license to explore Libro's features.</td></tr>
+      <tr><td><strong>Basic</strong></td><td>Standard license with core library management features.</td></tr>
+      <tr><td><strong>Premium</strong></td><td>Full-featured license with all tools and integrations.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Activation Steps</h3>
+  <div class="steps-container">
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <div class="step-title">Obtain Credentials</div>
+        <div class="step-desc">Visit the Libro website to obtain your <strong>Organization ID</strong> and <strong>License Key</strong>. These are provided upon purchase or trial registration.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <div class="step-title">Enter Organization ID</div>
+        <div class="step-desc">On the Activation screen, enter your Organization ID in the first field.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <div class="step-title">Enter License Key</div>
+        <div class="step-desc">Enter your License Key in the second field.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">4</div>
+      <div class="step-content">
+        <div class="step-title">Click "Activate"</div>
+        <div class="step-desc">The system will validate your credentials with the licensing server. On success, you will proceed to the First-Time Setup or the Login screen.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="screenshot-placeholder">
+    <div class="placeholder-icon">🖼️</div>
+    Screenshot: Activation Page
+  </div>
+
+  <h3>Grace Period</h3>
+  <p>If your license expires, Libro enters a <strong>7-day grace period</strong>. During this time, all features remain functional, but a warning dialog will appear on each login showing the remaining grace days. After the grace period ends, the application will be blocked until the license is renewed.</p>
+
+  <div class="callout callout-warning">
+    <span class="callout-icon">⚠️</span>
+    <div class="callout-content">
+      <strong>License Blocked</strong>
+      If your license is blocked, you will see a screen displaying your organization details, license status, and expiry date. Click <strong>"Renew License"</strong> to visit the renewal page, or contact support for assistance.
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FIRST-TIME SETUP ==================== -->
+<section class="section-card" id="first-time-setup">
+  <h2>First-Time Setup</h2>
+  <p>After a successful license activation, if no administrator account exists, Libro will present the First-Time Setup screen. This is where you create the initial <strong>Super Admin</strong> account.</p>
+
+  <div class="callout callout-info">
+    <span class="callout-icon">ℹ️</span>
+    <div class="callout-content">
+      <strong>Super Admin</strong>
+      The first admin account created during setup is automatically designated as the <strong>Super Admin</strong>. This account has the highest level of privileges and cannot be deactivated by other admins.
+    </div>
+  </div>
+
+  <h3>Setup Steps</h3>
+  <div class="steps-container">
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <div class="step-title">Enter Personal Details</div>
+        <div class="step-desc">
+          <strong>Full Name</strong> <span class="badge badge-required">Required</span> — Your full name.<br>
+          <strong>Email</strong> <span class="badge badge-required">Required</span> — A valid email address (must contain <code>@</code>).<br>
+          <strong>Phone Number</strong> <span class="badge badge-optional">Optional</span> — Contact phone number.
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <div class="step-title">Enter Staff Details</div>
+        <div class="step-desc">
+          <strong>Staff Number</strong> <span class="badge badge-required">Required</span> — Your staff/employee ID.<br>
+          <strong>Department</strong> <span class="badge badge-required">Required</span> — Your department name.
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <div class="step-title">Create Login Credentials</div>
+        <div class="step-desc">
+          <strong>Username</strong> <span class="badge badge-required">Required</span> — Choose a unique username.<br>
+          <strong>Password</strong> <span class="badge badge-required">Required</span> — Minimum 6 characters.<br>
+          <strong>Confirm Password</strong> <span class="badge badge-required">Required</span> — Must match the password above.
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">4</div>
+      <div class="step-content">
+        <div class="step-title">Click "Create Account"</div>
+        <div class="step-desc">Libro will validate all fields and create your Super Admin account. The password is securely hashed using SHA-256 with a random salt. You will then be redirected to the Login screen.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== LOGGING IN ==================== -->
+<section class="section-card" id="logging-in">
+  <h2>Logging In</h2>
+  <p>The Login screen presents four role options. As an administrator, you will select <strong>Admin</strong> to access the full management dashboard.</p>
+
+  <h3>Login Roles</h3>
+  <table>
+    <thead><tr><th>Role</th><th>Username</th><th>Password</th><th>Access Level</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Admin</strong></td><td>Admin username</td><td>Admin password</td><td>Full system access</td></tr>
+      <tr><td><strong>Teacher / Staff</strong></td><td>Full name or email</td><td>Staff Number</td><td>Limited — personal profile, history, reservations</td></tr>
+      <tr><td><strong>Student</strong></td><td>Full name or email</td><td>Admission Number</td><td>Limited — personal profile, history, reservations</td></tr>
+      <tr><td><strong>Other User</strong></td><td>Full name or email</td><td>User Number</td><td>Limited — personal profile, history</td></tr>
+    </tbody>
+  </table>
+
+  <div class="steps-container">
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <div class="step-title">Select Your Role</div>
+        <div class="step-desc">Click the <strong>Admin</strong> button on the role selection screen.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <div class="step-title">Enter Credentials</div>
+        <div class="step-desc">Type your admin <strong>Username</strong> and <strong>Password</strong>.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <div class="step-title">Click "Login"</div>
+        <div class="step-desc">On success, you will be taken to the main Admin Dashboard.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== DASHBOARD OVERVIEW ==================== -->
+<section class="section-card" id="dashboard-overview">
+  <h2>Dashboard Overview</h2>
+  <p>The Admin Dashboard is the central hub of Libro. It is organized into three main zones:</p>
+
+  <h3>Layout</h3>
+  <table>
+    <thead><tr><th>Zone</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Top Toolbar</strong></td><td>Displays the library name, a global book search bar, Help button, Tools button (opens the Tools Hub), and an admin profile avatar (opens the profile drawer).</td></tr>
+      <tr><td><strong>Left Sidebar</strong></td><td>Primary navigation panel. Contains buttons for: All Books, Add Book, Add User, Add Books (bulk), Issue Book, Settings, Pending Approvals, All Users, and Logout.</td></tr>
+      <tr><td><strong>Main Content Area</strong></td><td>The central workspace where selected pages (catalogs, forms, tools, etc.) are displayed. By default, it shows the Quick Tools page.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Quick Tools (Default View)</h3>
+  <p>The Quick Tools page provides four action cards for the most common operations:</p>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-icon">📤</div>
+      <div class="feature-title">Check Out a Book</div>
+      <div class="feature-desc">Enter a User Number and Book Number/ID to issue a book directly.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📥</div>
+      <div class="feature-title">Check In a Book</div>
+      <div class="feature-desc">Enter a Book Number and select the book condition (Good, Fair, Damaged) to return it.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">➕</div>
+      <div class="feature-title">Add a New User</div>
+      <div class="feature-desc">Navigate to the Add User form to register a new patron.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🛠️</div>
+      <div class="feature-title">Show More Tools</div>
+      <div class="feature-desc">Open the full Tools Hub with 16 specialized tools.</div>
+    </div>
+  </div>
+
+  <h3>Profile Drawer</h3>
+  <p>Click the admin avatar in the top-right corner to open the profile drawer. This panel shows:</p>
+  <ul>
+    <li>Admin profile picture (changeable by clicking)</li>
+    <li>Admin name, username, and email</li>
+    <li><strong>Today's Activity</strong> chart — a bar chart showing the count of books <em>Borrowed</em>, <em>Returned</em>, and <em>Overdue</em> for the current day</li>
+    <li>Logout button</li>
+  </ul>
+</section>
+
+<hr>
+
+<!-- ==================== ADD SINGLE BOOK ==================== -->
+<section class="section-card" id="add-single-book">
+  <h2>Add a Single Book</h2>
+  <p>To add a new book to the library catalog, navigate to <strong>Add Book</strong> from the left sidebar.</p>
+
+  <h3>Form Fields</h3>
+  <h4>Book Details</h4>
+  <table>
+    <thead><tr><th>Field</th><th>Status</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>Title</td><td><span class="badge badge-required">Required</span></td><td>The full title of the book.</td></tr>
+      <tr><td>Author</td><td><span class="badge badge-required">Required</span></td><td>The author(s) of the book.</td></tr>
+      <tr><td>Call Number</td><td><span class="badge badge-required">Required</span></td><td>A unique identifier for the book in your library's classification system.</td></tr>
+      <tr><td>Publisher</td><td><span class="badge badge-optional">Optional</span></td><td>Publisher name.</td></tr>
+      <tr><td>ISBN</td><td><span class="badge badge-optional">Optional</span></td><td>International Standard Book Number.</td></tr>
+      <tr><td>Barcode</td><td><span class="badge badge-default">Auto-Generated</span></td><td>Automatically generated when the field receives focus. Format: <code>[XX][YYMMDD][RRRR]</code> where XX = first 2 characters of the subject (uppercase), YYMMDD = current date, RRRR = 4-digit random number.</td></tr>
+      <tr><td>Year Published</td><td><span class="badge badge-optional">Optional</span></td><td>Publication year.</td></tr>
+      <tr><td>Shelf Number</td><td><span class="badge badge-optional">Optional</span></td><td>The physical shelf location of the book.</td></tr>
+      <tr><td>Language</td><td><span class="badge badge-optional">Optional</span></td><td>Language of the book.</td></tr>
+      <tr><td>Description</td><td><span class="badge badge-optional">Optional</span></td><td>A brief description or summary of the book.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Classification</h4>
+  <table>
+    <thead><tr><th>Field</th><th>Status</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>Subject</td><td><span class="badge badge-required">Required</span></td><td>The subject/category of the book (e.g., Mathematics, History, Fiction). Also used as the first two characters of the auto-generated barcode.</td></tr>
+      <tr><td>Genre</td><td><span class="badge badge-optional">Optional</span></td><td>The genre of the book.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Acquisition</h4>
+  <table>
+    <thead><tr><th>Field</th><th>Status</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>Value</td><td><span class="badge badge-optional">Optional</span></td><td>The monetary value of the book in your configured currency (default: KES).</td></tr>
+      <tr><td>Method</td><td><span class="badge badge-optional">Optional</span></td><td>How the book was acquired (e.g., Purchase, Donation).</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Cover Image</h4>
+  <p>You may optionally upload a cover image by clicking the image area on the left side of the form. Supported formats: <code>.png</code>, <code>.jpg</code>, <code>.jpeg</code>.</p>
+
+  <div class="callout callout-tip">
+    <span class="callout-icon">💡</span>
+    <div class="callout-content">
+      <strong>Barcode Auto-Generation</strong>
+      The barcode is automatically generated using this pattern: the first two uppercase characters of the Subject field (or "BK" if empty) + the current date in YYMMDD format + a 4-digit random number. For example, if the subject is "Mathematics" and today is March 12, 2026, a generated barcode might be <code>MA2603125847</code>.
+    </div>
+  </div>
+</section>
+
+<!-- ==================== BULK IMPORT BOOKS ==================== -->
+<section class="section-card" id="bulk-import-books">
+  <h2>Bulk Import Books (CSV)</h2>
+  <p>To import a large number of books at once, navigate to <strong>Add Books</strong> from the left sidebar or use the Import Books option in the Inventory Tracking tool.</p>
+
+  <h3>Import Steps</h3>
+  <div class="steps-container">
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <div class="step-title">Prepare Your CSV File</div>
+        <div class="step-desc">Create a CSV file with exactly <strong>12 columns</strong> matching the required format (see below). The first row should be a header row.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <div class="step-title">Open the Import Screen</div>
+        <div class="step-desc">You can import a file in any of these ways:
+          <ul>
+            <li>Click the <strong>+</strong> button</li>
+            <li>Double-click the drop area</li>
+            <li>Press <kbd>Ctrl</kbd> + <kbd>O</kbd></li>
+            <li>Drag and drop a CSV file onto the import area</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <div class="step-title">Select Your CSV File</div>
+        <div class="step-desc">Use the file dialog to navigate to and select your <code>.csv</code> file.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">4</div>
+      <div class="step-content">
+        <div class="step-title">Wait for Import to Complete</div>
+        <div class="step-desc">A progress bar will display the import progress. Once complete, a summary dialog will show the number of books imported successfully and how many failed.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>CSV Format — Books</h3>
+  <p>Your CSV file must have <strong>12 columns</strong> in the following order:</p>
+  <table>
+    <thead><tr><th>#</th><th>Column</th><th>Status</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Title</td><td><span class="badge badge-required">Required</span></td><td>Book title — must not be empty</td></tr>
+      <tr><td>2</td><td>Author</td><td><span class="badge badge-required">Required</span></td><td>Author name — must not be empty</td></tr>
+      <tr><td>3</td><td>CallNumber</td><td><span class="badge badge-required">Required</span></td><td>Unique call number — must not be empty</td></tr>
+      <tr><td>4</td><td>Publisher</td><td><span class="badge badge-required">Required</span></td><td>Publisher name</td></tr>
+      <tr><td>5</td><td>ISBN</td><td><span class="badge badge-required">Required</span></td><td>ISBN identifier</td></tr>
+      <tr><td>6</td><td>ShelfNumber</td><td><span class="badge badge-optional">Optional</span></td><td>Shelf location — may be left blank</td></tr>
+      <tr><td>7</td><td>Description</td><td><span class="badge badge-optional">Optional</span></td><td>Book description — may be left blank</td></tr>
+      <tr><td>8</td><td>Language</td><td><span class="badge badge-required">Required</span></td><td>Language of the book</td></tr>
+      <tr><td>9</td><td>Subject</td><td><span class="badge badge-required">Required</span></td><td>Subject/category</td></tr>
+      <tr><td>10</td><td>Genre</td><td><span class="badge badge-required">Required</span></td><td>Genre classification</td></tr>
+      <tr><td>11</td><td>Value</td><td><span class="badge badge-required">Required</span></td><td>Monetary value — must be a valid integer</td></tr>
+      <tr><td>12</td><td>AcquisitionMethod</td><td><span class="badge badge-required">Required</span></td><td>How the book was acquired (e.g., Purchase, Donation)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Sample CSV — Books</h3>
+  <div class="csv-sample">
+    <button class="copy-btn" onclick="copyCSV('bookCsv')">Copy</button>
+    <pre id="bookCsv"><code>Title,Author,CallNumber,Publisher,ISBN,ShelfNumber,Description,Language,Subject,Genre,Value,AcquisitionMethod
+Introduction to Algorithms,Thomas H. Cormen,CS-001,MIT Press,978-0262033848,A-12,Comprehensive textbook on algorithms,English,Computer Science,Textbook,4500,Purchase
+Things Fall Apart,Chinua Achebe,LIT-042,Heinemann,978-0385474542,B-03,Classic African novel,English,Literature,Fiction,800,Donation
+Organic Chemistry,John McMurry,CH-015,Cengage Learning,978-1305080485,C-07,University-level chemistry textbook,English,Chemistry,Textbook,3200,Purchase
+A Brief History of Time,Stephen Hawking,PH-009,Bantam Books,978-0553380163,,Popular science classic,English,Physics,Non-Fiction,1500,Purchase</code></pre>
+  </div>
+
+  <a class="csv-download" onclick="downloadCSV('books')">📄 Download Sample CSV Template</a>
+
+  <div class="callout callout-info">
+    <span class="callout-icon">ℹ️</span>
+    <div class="callout-content">
+      <strong>Barcode Auto-Generation</strong>
+      You do not need to include a barcode column. Libro automatically generates a unique barcode for each imported book using the subject prefix and timestamp pattern. A barcode image (Code128 format) is also saved to the output folder.
+    </div>
+  </div>
+
+  <div class="callout callout-warning">
+    <span class="callout-icon">⚠️</span>
+    <div class="callout-content">
+      <strong>Quoted Fields</strong>
+      The CSV parser handles quoted fields correctly. If a field contains commas, enclose it in double quotes. For example: <code>"Cormen, Thomas H."</code>. To include a literal double-quote inside a quoted field, use two consecutive double-quotes: <code>"A ""Special"" Edition"</code>.
+    </div>
+  </div>
+</section>
+
+<!-- ==================== BROWSE CATALOG ==================== -->
+<section class="section-card" id="browse-catalog">
+  <h2>Browse the Catalog</h2>
+  <p>Navigate to <strong>All Books</strong> from the left sidebar to view the complete book catalog.</p>
+
+  <h3>Layout</h3>
+  <ul>
+    <li><strong>Left Sidebar</strong> — A list of subjects/categories. Click any category to filter the catalog.</li>
+    <li><strong>Top Bar</strong> — Contains a search field (with 400ms debounce), the current category label, total book count, a <strong>Refresh</strong> button, and an <strong>Advanced Search</strong> button.</li>
+    <li><strong>Main Area</strong> — A scrollable list of books showing title, author, and icon for each entry.</li>
+    <li><strong>Bottom</strong> — Pagination controls (100 books per page) with a draggable page navigation widget.</li>
+  </ul>
+
+  <h3>Quick Search</h3>
+  <p>Type in the search bar to filter books by title or author. The search activates automatically after you stop typing for 400 milliseconds.</p>
+
+  <h3>Book Details</h3>
+  <p>Click any book in the list to open the <strong>Book Details Dialog</strong>, which displays:</p>
+  <ul>
+    <li><strong>Header</strong> — Title and Author on a teal background</li>
+    <li><strong>Basic Info</strong> — Call Number, ISBN, Barcode, Publisher, Year Published</li>
+    <li><strong>Classification</strong> — Subject, Genre, Language, Shelf Number</li>
+    <li><strong>Status &amp; Value</strong> — Availability (green/orange badge), Condition (color-coded badge), Value, Times Borrowed, Acquisition Method, Date Added</li>
+    <li><strong>Description</strong> — Full book description</li>
+  </ul>
+
+  <h3>Delete a Book</h3>
+  <p>Hover over any book entry in the list to reveal a delete icon on the right. Click it and confirm to permanently remove the book from the catalog.</p>
+</section>
+
+<!-- ==================== ADVANCED SEARCH ==================== -->
+<section class="section-card" id="advanced-search">
+  <h2>Advanced Search</h2>
+  <p>Click the <strong>Advanced Search</strong> button in the All Books view to open the multi-field search dialog. You can search across up to <strong>14 different fields</strong> simultaneously:</p>
+
+  <table>
+    <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Title</td><td>Free text</td><td>Partial match supported</td></tr>
+      <tr><td>Author</td><td>Free text</td><td>Partial match supported</td></tr>
+      <tr><td>Call Number</td><td>Free text</td><td>Partial match supported</td></tr>
+      <tr><td>ISBN</td><td>Free text</td><td>Partial match supported</td></tr>
+      <tr><td>Publisher</td><td>Free text</td><td>Partial match supported</td></tr>
+      <tr><td>Shelf Number</td><td>Free text</td><td>Partial match supported</td></tr>
+      <tr><td>Year From</td><td>Free text</td><td>Minimum publication year</td></tr>
+      <tr><td>Year To</td><td>Free text</td><td>Maximum publication year</td></tr>
+      <tr><td>Subject</td><td>Dropdown</td><td>Populated from existing subjects in the database</td></tr>
+      <tr><td>Genre</td><td>Dropdown</td><td>Populated from existing genres</td></tr>
+      <tr><td>Language</td><td>Dropdown</td><td>Populated from existing languages</td></tr>
+      <tr><td>Availability</td><td>Dropdown</td><td>Available / Checked Out / etc.</td></tr>
+      <tr><td>Condition</td><td>Dropdown</td><td>Good / Excellent / Fair / Poor / Damaged</td></tr>
+      <tr><td>Acquisition Method</td><td>Dropdown</td><td>Purchase / Donation / etc.</td></tr>
+    </tbody>
+  </table>
+  <p>Leave any field blank to ignore it. All populated fields are combined with an OR logic — books matching <em>any</em> of the populated criteria will be shown.</p>
+</section>
+
+<!-- ==================== EDIT BOOK ==================== -->
+<section class="section-card" id="edit-book">
+  <h2>Edit Book Details</h2>
+  <p>To edit an existing book's details, open the <strong>Inventory Tracking</strong> tool from the Tools Hub, then click <strong>Edit Book</strong>.</p>
+
+  <div class="steps-container">
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <div class="step-title">Enter the Call Number</div>
+        <div class="step-desc">A popup will ask for the book's call number. Enter it and click <strong>Fetch</strong>.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <div class="step-title">Edit the Fields</div>
+        <div class="step-desc">The Edit Book dialog appears pre-filled with the book's current data. You can modify: Title, Author, Publisher, ISBN, Year Published, Shelf Number, Language, Subject, Genre, Value, Acquisition Method, Condition, and Description. Note that the <strong>Call Number</strong> and <strong>Barcode</strong> are read-only and cannot be changed.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <div class="step-title">Save Changes</div>
+        <div class="step-desc">Click <strong>Save Changes</strong> to update the book record. Title and Author remain required.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Book Conditions</h3>
+  <table>
+    <thead><tr><th>Condition</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>Excellent</td><td>Like new — no signs of wear</td></tr>
+      <tr><td>Good</td><td>Minor wear, fully functional</td></tr>
+      <tr><td>Fair</td><td>Moderate wear, still usable</td></tr>
+      <tr><td>Poor</td><td>Significant wear, may need repair</td></tr>
+      <tr><td>Damaged</td><td>Requires repair or replacement</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== ARCHIVE & DELETE ==================== -->
+<section class="section-card" id="archive-delete">
+  <h2>Archive &amp; Delete Books</h2>
+  <p>From the <strong>Inventory Tracking</strong> tool, you have three actions for removing books from active use:</p>
+
+  <h4>Archive a Book</h4>
+  <p>Archiving removes a book from the active catalog without deleting it. You can restore it later using <strong>Unarchive Book</strong>. Enter the book's call number when prompted and confirm the action.</p>
+
+  <h4>Unarchive a Book</h4>
+  <p>Restores a previously archived book back to the active catalog. Enter the book's call number when prompted.</p>
+
+  <h4>Delete a Book</h4>
+  <p>Permanently removes a book from the database. This action <strong>cannot be undone</strong>. Enter the book's call number when prompted and confirm.</p>
+
+  <div class="callout callout-danger">
+    <span class="callout-icon">🚨</span>
+    <div class="callout-content">
+      <strong>Irreversible Action</strong>
+      Deleting a book permanently removes it from the database. Consider archiving instead if you may need to restore it later. Always ensure you have a recent backup before performing bulk deletions.
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- ==================== ADD SINGLE USER ==================== -->
+<section class="section-card" id="add-single-user">
+  <h2>Add a Single User</h2>
+  <p>Navigate to <strong>Add User</strong> from the left sidebar. You will first be asked to select the user's role.</p>
+
+  <h3>User Role Selection</h3>
+  <p>A popup presents three role options: <strong>Student</strong>, <strong>Staff</strong>, and <strong>Other User</strong>. Each role has a different set of fields.</p>
+
+  <h3>Student Fields</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Status</th><th>Validation</th></tr></thead>
+    <tbody>
+      <tr><td>Full Name</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty</td></tr>
+      <tr><td>ADM NO (Admission Number)</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty — this is the student's login password</td></tr>
+      <tr><td>Branch / Wing</td><td><span class="badge badge-optional">Optional</span></td><td>—</td></tr>
+      <tr><td>Enrollment Year</td><td><span class="badge badge-optional">Optional</span></td><td>—</td></tr>
+      <tr><td>Email</td><td><span class="badge badge-optional">Optional</span></td><td>Must match email format if provided</td></tr>
+      <tr><td>Level of Study</td><td><span class="badge badge-optional">Optional</span></td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Staff Fields</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Status</th><th>Validation</th></tr></thead>
+    <tbody>
+      <tr><td>Full Name</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty</td></tr>
+      <tr><td>Staff ID</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty — this is the staff's login password</td></tr>
+      <tr><td>Department</td><td><span class="badge badge-optional">Optional</span></td><td>—</td></tr>
+      <tr><td>Start Year</td><td><span class="badge badge-optional">Optional</span></td><td>—</td></tr>
+      <tr><td>Category</td><td><span class="badge badge-optional">Optional</span></td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Other User Fields</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Status</th><th>Validation</th></tr></thead>
+    <tbody>
+      <tr><td>Full Name</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty</td></tr>
+      <tr><td>ID Number</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty — this is the user's login password</td></tr>
+      <tr><td>Residence</td><td><span class="badge badge-optional">Optional</span></td><td>—</td></tr>
+      <tr><td>Age</td><td><span class="badge badge-optional">Optional</span></td><td>—</td></tr>
+      <tr><td>Gender</td><td><span class="badge badge-optional">Optional</span></td><td>Dropdown: Male / Female / Other</td></tr>
+      <tr><td>Phone</td><td><span class="badge badge-optional">Optional</span></td><td>Must match phone format if provided (7–15 digits, optional +)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== BULK IMPORT USERS ==================== -->
+<section class="section-card" id="bulk-import-users">
+  <h2>Bulk Import Users (CSV)</h2>
+  <p>Navigate to <strong>Add Books</strong> → <strong>Import</strong> area, or use the Add Many Users option. You must first select the user type (Student, Staff, or Other User) before importing.</p>
+
+  <div class="callout callout-warning">
+    <span class="callout-icon">⚠️</span>
+    <div class="callout-content">
+      <strong>Important</strong>
+      The CSV header row is used to auto-detect the user type. The detected type <em>must</em> match the role you pre-selected. If there is a mismatch, the import will fail.
+    </div>
+  </div>
+
+  <h3>CSV Format — Students (8 columns)</h3>
+  <table>
+    <thead><tr><th>#</th><th>Column Header</th><th>Status</th><th>Validation</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>First Name</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty</td></tr>
+      <tr><td>2</td><td>Last Name</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty</td></tr>
+      <tr><td>3</td><td>Email</td><td><span class="badge badge-optional">Optional</span></td><td>—</td></tr>
+      <tr><td>4</td><td>Phone</td><td><span class="badge badge-optional">Optional</span></td><td>—</td></tr>
+      <tr><td>5</td><td>Admission No</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty</td></tr>
+      <tr><td>6</td><td>Branch</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty</td></tr>
+      <tr><td>7</td><td>Enrollment Year</td><td><span class="badge badge-required">Required</span></td><td>Integer greater than 1900</td></tr>
+      <tr><td>8</td><td>Level</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty</td></tr>
+    </tbody>
+  </table>
+
+  <div class="csv-sample">
+    <button class="copy-btn" onclick="copyCSV('studentCsv')">Copy</button>
+    <pre id="studentCsv"><code>First Name,Last Name,Email,Phone,Admission No,Branch,Enrollment Year,Level
+Jane,Wanjiku,jane.w@school.ac.ke,0712345678,ADM/2024/001,Main Campus,2024,Year 1
+Brian,Omondi,brian.o@school.ac.ke,,ADM/2024/002,Satellite,2024,Year 1
+Alice,Muthoni,,,ADM/2023/015,Main Campus,2023,Year 2</code></pre>
+  </div>
+  <a class="csv-download" onclick="downloadCSV('students')">📄 Download Student CSV Template</a>
+
+  <h3>CSV Format — Staff (8 columns)</h3>
+  <table>
+    <thead><tr><th>#</th><th>Column Header</th><th>Status</th><th>Validation</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>First Name</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty</td></tr>
+      <tr><td>2</td><td>Last Name</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty</td></tr>
+      <tr><td>3</td><td>Email</td><td><span class="badge badge-optional">Optional</span></td><td>—</td></tr>
+      <tr><td>4</td><td>Phone</td><td><span class="badge badge-optional">Optional</span></td><td>—</td></tr>
+      <tr><td>5</td><td>Staff No</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty</td></tr>
+      <tr><td>6</td><td>Department</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty</td></tr>
+      <tr><td>7</td><td>Start Year</td><td><span class="badge badge-required">Required</span></td><td>Integer greater than 1900</td></tr>
+      <tr><td>8</td><td>Category</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty</td></tr>
+    </tbody>
+  </table>
+
+  <div class="csv-sample">
+    <button class="copy-btn" onclick="copyCSV('staffCsv')">Copy</button>
+    <pre id="staffCsv"><code>First Name,Last Name,Email,Phone,Staff No,Department,Start Year,Category
+John,Kamau,john.k@school.ac.ke,0722111222,STF-001,Mathematics,2018,Teaching
+Mary,Njeri,mary.n@school.ac.ke,0733222333,STF-002,Library,2020,Non-Teaching
+Peter,Otieno,,,STF-003,Administration,2015,Non-Teaching</code></pre>
+  </div>
+  <a class="csv-download" onclick="downloadCSV('staff')">📄 Download Staff CSV Template</a>
+
+  <h3>CSV Format — Other Users (8 columns)</h3>
+  <table>
+    <thead><tr><th>#</th><th>Column Header</th><th>Status</th><th>Validation</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>First Name</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty</td></tr>
+      <tr><td>2</td><td>Last Name</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty</td></tr>
+      <tr><td>3</td><td>Email</td><td><span class="badge badge-optional">Optional</span></td><td>—</td></tr>
+      <tr><td>4</td><td>Phone</td><td><span class="badge badge-optional">Optional</span></td><td>—</td></tr>
+      <tr><td>5</td><td>User No</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty</td></tr>
+      <tr><td>6</td><td>Residence</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty</td></tr>
+      <tr><td>7</td><td>Age</td><td><span class="badge badge-required">Required</span></td><td>Integer between 1 and 120</td></tr>
+      <tr><td>8</td><td>Gender</td><td><span class="badge badge-required">Required</span></td><td>Must not be empty (e.g., Male, Female, Other)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="csv-sample">
+    <button class="copy-btn" onclick="copyCSV('otherCsv')">Copy</button>
+    <pre id="otherCsv"><code>First Name,Last Name,Email,Phone,User No,Residence,Age,Gender
+Grace,Akinyi,grace@email.com,0711223344,USR-001,Nairobi,28,Female
+Samuel,Mwangi,,,USR-002,Kisumu,35,Male
+Faith,Chebet,faith@email.com,0744556677,USR-003,Eldoret,22,Female</code></pre>
+  </div>
+  <a class="csv-download" onclick="downloadCSV('others')">📄 Download Other Users CSV Template</a>
+
+  <div class="callout callout-info">
+    <span class="callout-icon">ℹ️</span>
+    <div class="callout-content">
+      <strong>Header Detection</strong>
+      The system automatically detects the user type from the CSV header. It looks for specific column names:
+      <ul>
+        <li><strong>Student</strong>: detects when headers contain "Admission No" AND "Level"</li>
+        <li><strong>Staff</strong>: detects when headers contain "Staff No" AND "Category"</li>
+        <li><strong>Other User</strong>: detects when headers contain "User No" AND "Gender"</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== BROWSE USERS ==================== -->
+<section class="section-card" id="browse-users">
+  <h2>Browse All Users</h2>
+  <p>Navigate to <strong>All Users</strong> from the left sidebar to view all registered users.</p>
+
+  <h3>Layout</h3>
+  <ul>
+    <li><strong>Left Category Sidebar</strong> — Filter users by type: All Users, Students, Staff, or Other Users.</li>
+    <li><strong>Search Bar</strong> — Type to search users by name (300ms debounce).</li>
+    <li><strong>User List</strong> — Shows user name, icon, and role badge. 100 users per page with pagination controls.</li>
+  </ul>
+
+  <h3>Actions</h3>
+  <ul>
+    <li><strong>Click a user</strong> — View detailed user profile information.</li>
+    <li><strong>Hover → Delete icon</strong> — Remove a user from the system (with confirmation).</li>
+  </ul>
+</section>
+
+<!-- ==================== USER TYPES ==================== -->
+<section class="section-card" id="user-types">
+  <h2>User Types &amp; Roles</h2>
+  <p>Libro supports four distinct user types, each with different access levels and borrowing privileges:</p>
+
+  <table>
+    <thead><tr><th>User Type</th><th>Login Password</th><th>Default Loan Period</th><th>Default Max Books</th><th>Default Max Renewals</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Student</strong></td><td>Admission Number</td><td>14 days</td><td>3</td><td>2</td></tr>
+      <tr><td><strong>Staff</strong></td><td>Staff Number</td><td>30 days</td><td>10</td><td>3</td></tr>
+      <tr><td><strong>Other User</strong></td><td>User Number</td><td>7 days</td><td>2</td><td>1</td></tr>
+      <tr><td><strong>Admin</strong></td><td>Custom password</td><td colspan="3">Full system access — not a borrower role</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-info">
+    <span class="callout-icon">ℹ️</span>
+    <div class="callout-content">
+      <strong>Configurable Limits</strong>
+      All borrowing limits (loan days, max books, max renewals) can be customized in Settings → Circulation. The values shown above are the defaults.
+    </div>
+  </div>
+</section>
+
+<!-- ==================== ADMIN MANAGEMENT ==================== -->
+<section class="section-card" id="admin-management">
+  <h2>Admin Management</h2>
+  <p>Administrators are managed through the <strong>App Manager</strong> tool (Tools Hub → System Management).</p>
+
+  <h3>Adding a New Admin</h3>
+  <div class="steps-container">
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <div class="step-title">Open App Manager</div>
+        <div class="step-desc">Go to <strong>Tools Hub → System Management</strong> and find the <strong>Administrators</strong> card.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <div class="step-title">Click "+ Add Admin"</div>
+        <div class="step-desc">This opens the Add Admin dialog.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <div class="step-title">Select a Staff Member</div>
+        <div class="step-desc">Choose an existing staff member from the dropdown. Only staff members can be promoted to admin.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">4</div>
+      <div class="step-content">
+        <div class="step-title">Set Login Credentials</div>
+        <div class="step-desc">Enter a <strong>Username</strong> (checked for availability) and a <strong>Password</strong> (minimum 6 characters). Confirm the password.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">5</div>
+      <div class="step-content">
+        <div class="step-title">Create</div>
+        <div class="step-desc">The staff member is now an admin and can log in with the Admin role.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Managing Existing Admins</h3>
+  <p>In the Administrators list, each admin entry shows their name, username, department, staff number, and status. You can <strong>activate or deactivate</strong> other admin accounts using the action menu (⋮). The Super Admin account cannot be deactivated.</p>
+
+  <h3>Changing Your Password</h3>
+  <p>The <strong>Change Password</strong> card at the bottom of the App Manager page allows the currently logged-in admin to update their password. Enter your current password, then type and confirm a new password (minimum 6 characters).</p>
+</section>
+
+<hr>
+
+<!-- ==================== ISSUE A BOOK ==================== -->
+<section class="section-card" id="issue-book">
+  <h2>Issue a Book</h2>
+  <p>There are two ways to issue a book to a user:</p>
+
+  <h3>Method 1 — Quick Checkout (Dashboard)</h3>
+  <div class="steps-container">
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <div class="step-title">Open "Check Out a Book" Card</div>
+        <div class="step-desc">On the Quick Tools dashboard, click the <strong>Check out a book</strong> card.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <div class="step-title">Enter User Number</div>
+        <div class="step-desc">Type the user's identification number (Admission No, Staff No, or User No). The system will look up and display the user's name for verification.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <div class="step-title">Enter Book Number / Book ID</div>
+        <div class="step-desc">Type the book's call number or book ID.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">4</div>
+      <div class="step-content">
+        <div class="step-title">Click "Issue"</div>
+        <div class="step-desc">The system validates the request (checks book availability and user's borrowing limit) and issues the book. The due date is calculated based on the user's role-specific loan period.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Method 2 — Issue Book Screen</h3>
+  <p>Navigate to <strong>Issue Book</strong> from the left sidebar. This opens the full search interface where you can browse available books, search by title or author, and issue them to users.</p>
+
+  <div class="callout callout-info">
+    <span class="callout-icon">ℹ️</span>
+    <div class="callout-content">
+      <strong>Borrowing Validation</strong>
+      The system automatically checks whether:
+      <ul>
+        <li>The book is available (not already checked out)</li>
+        <li>The user has not exceeded their maximum allowed books</li>
+        <li>The due date is calculated based on the user's role-specific loan period (default: 14 days for students, 30 days for staff, 7 days for other users)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== RETURN A BOOK ==================== -->
+<section class="section-card" id="return-book">
+  <h2>Return a Book</h2>
+
+  <h3>Method 1 — Quick Check-In (Dashboard)</h3>
+  <div class="steps-container">
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <div class="step-title">Open "Check In a Book" Card</div>
+        <div class="step-desc">On the Quick Tools dashboard, click the <strong>Check in a book</strong> card.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <div class="step-title">Enter Book Number</div>
+        <div class="step-desc">Type the book's number or call number.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <div class="step-title">Select Condition</div>
+        <div class="step-desc">Choose the book's return condition from the dropdown: <strong>Good</strong>, <strong>Fair</strong>, or <strong>Damaged</strong>.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">4</div>
+      <div class="step-content">
+        <div class="step-title">Click "Return"</div>
+        <div class="step-desc">The system processes the return. If the book is overdue, a fine dialog will appear.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Method 2 — Full Return Screen</h3>
+  <p>For a more detailed return process with barcode scanning support, use the full Return Book screen.</p>
+
+  <h4>Manual Entry</h4>
+  <p>Type the book number in the search field. The system will display the book's details: Title, Author, Call Number, Borrower, Issue Date, and Due Date.</p>
+
+  <h4>Barcode Scanning</h4>
+  <p>If your device has a camera, toggle the barcode scanner on. Point the camera at the book's barcode. The system will automatically detect and fill in the book number.</p>
+
+  <h3>Overdue Fine Handling</h3>
+  <p>If a book is returned overdue, a <strong>Fine Dialog</strong> appears showing:</p>
+  <ul>
+    <li>Number of days overdue</li>
+    <li>Fine amount (calculated as days × fine rate per day)</li>
+    <li>Fine rate per day</li>
+  </ul>
+  <p>You can choose to either <strong>Pay Fine</strong> or <strong>Waive Fine</strong>.</p>
+</section>
+
+<!-- ==================== VIEW ISSUED BOOKS ==================== -->
+<section class="section-card" id="view-issued">
+  <h2>View Issued Books</h2>
+  <p>Navigate to <strong>Issued Books</strong> (accessible from various points in the application) to see all currently checked-out books.</p>
+
+  <h3>Table Columns</h3>
+  <table>
+    <thead><tr><th>Column</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>Name</td><td>The borrower's name</td></tr>
+      <tr><td>Book Number</td><td>The book's call number</td></tr>
+      <tr><td>Issue Date</td><td>Date the book was checked out</td></tr>
+      <tr><td>Status</td><td>Active (within loan period) or Overdue (red badge)</td></tr>
+      <tr><td>Checkbox</td><td>Select books for batch return</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Batch Return</h3>
+  <p>Use the checkboxes to select multiple books, then click <strong>Menu → "Return selected books"</strong> to return all selected books at once.</p>
+</section>
+
+<!-- ==================== FINES & OVERDUE ==================== -->
+<section class="section-card" id="fines-overdue">
+  <h2>Fines &amp; Overdue</h2>
+  <p>Libro automatically calculates overdue fines based on your configured settings.</p>
+
+  <h3>Default Fine Settings</h3>
+  <table class="settings-table">
+    <thead><tr><th>Setting</th><th>Default Value</th></tr></thead>
+    <tbody>
+      <tr><td>Fine Rate Per Day</td><td>10.00 KES</td></tr>
+      <tr><td>Maximum Fine Cap</td><td>500.00 KES</td></tr>
+      <tr><td>Currency Symbol</td><td>KES</td></tr>
+    </tbody>
+  </table>
+
+  <p>Fine calculation: <code>Fine = min(days_overdue × fine_rate_per_day, max_fine_amount)</code></p>
+
+  <div class="callout callout-info">
+    <span class="callout-icon">ℹ️</span>
+    <div class="callout-content">
+      <strong>Customization</strong>
+      Fine rates, the fine cap, and the currency symbol can all be changed in <strong>Settings → Circulation → Fine Settings</strong>.
+    </div>
+  </div>
+</section>
+
+<!-- ==================== RESERVATIONS ==================== -->
+<section class="section-card" id="reservations">
+  <h2>Reservations</h2>
+  <p>The reservation system allows users to reserve books that are currently available or checked out. Reservations can be placed by the admin on behalf of a user or by users themselves through the OPAC portal.</p>
+
+  <h3>Placing a Reservation</h3>
+  <div class="steps-container">
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <div class="step-title">Open the Reservation Page</div>
+        <div class="step-desc">Navigate to the Reservation Page from the Tools Hub or user profile pages.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <div class="step-title">Search and Select a Book</div>
+        <div class="step-desc">Browse or search the book list (100 per page with pagination). Click on a book to open the reservation popup.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <div class="step-title">Review Book Details</div>
+        <div class="step-desc">The popup shows the book's title, book number, location, and current status. If the book is currently borrowed, the expected return date is displayed.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">4</div>
+      <div class="step-content">
+        <div class="step-title">Enter User ID</div>
+        <div class="step-desc">Type the user's identification number. The system will look up the user (after a 1.5-second delay) and display their name in green if found, or red if not found. The user's current reservation count and maximum allowed reservations are also shown.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">5</div>
+      <div class="step-content">
+        <div class="step-title">Click "Reserve"</div>
+        <div class="step-desc">The reservation is created with an expiry date (default: 7 days).</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Reservation Defaults</h3>
+  <table class="settings-table">
+    <thead><tr><th>Setting</th><th>Default</th></tr></thead>
+    <tbody>
+      <tr><td>Pickup Deadline</td><td>3 days</td></tr>
+      <tr><td>Reservation Expiry</td><td>7 days</td></tr>
+      <tr><td>Max Reservations Per User</td><td>3</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== PENDING APPROVALS ==================== -->
+<section class="section-card" id="pending-approvals">
+  <h2>Pending Approvals</h2>
+  <p>Reservations made through the OPAC portal appear as pending approvals for the admin. Access this from the Quick Tools dashboard ("Pending Requests" section) or from the left sidebar.</p>
+
+  <h3>Filters</h3>
+  <p>Use the filter pills to view: <strong>All</strong>, <strong>Pending</strong>, <strong>Notified</strong>, or <strong>Expired</strong> reservations.</p>
+
+  <h3>Available Actions</h3>
+  <table>
+    <thead><tr><th>Action</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>View Details</strong></td><td>Opens the full reservation details dialog showing book info, user info, dates, and status.</td></tr>
+      <tr><td><strong>Issue Book</strong></td><td>Opens the Issue Book popup pre-filled with the reservation data. Approving issues the book and fulfills the reservation.</td></tr>
+      <tr><td><strong>Cancel</strong></td><td>Cancels the reservation after confirmation.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<hr>
+
+<!-- ==================== INVENTORY DASHBOARD ==================== -->
+<section class="section-card" id="inventory-dashboard">
+  <h2>Inventory Dashboard</h2>
+  <p>Open <strong>Inventory Tracking</strong> from the Tools Hub to access the comprehensive inventory management interface.</p>
+
+  <h3>Statistics Overview</h3>
+  <p>Five color-coded statistics cards are displayed at the top:</p>
+  <table>
+    <thead><tr><th>Card</th><th>Color</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>Total Books</td><td style="color:#3498DB">Blue</td><td>Total number of books in the catalog</td></tr>
+      <tr><td>Available</td><td style="color:#27AE60">Green</td><td>Books currently available for checkout</td></tr>
+      <tr><td>Checked Out</td><td style="color:#F39C12">Orange</td><td>Books currently on loan</td></tr>
+      <tr><td>Overdue</td><td style="color:#E74C3C">Red</td><td>Books past their due date + total overdue fees</td></tr>
+      <tr><td>Missing</td><td style="color:#95A5A6">Gray</td><td>Books marked as missing + total replacement cost</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Book Management Actions</h3>
+  <p>Six action buttons for direct book operations:</p>
+  <ul>
+    <li><strong>Add Book</strong> — Opens the Add Book form</li>
+    <li><strong>Import Books</strong> — Opens the bulk CSV import screen</li>
+    <li><strong>Edit Book</strong> — Enter a call number to edit book details</li>
+    <li><strong>Delete Book</strong> — Permanently delete a book by call number</li>
+    <li><strong>Archive Book</strong> — Move a book to the archive</li>
+    <li><strong>Unarchive Book</strong> — Restore an archived book</li>
+  </ul>
+</section>
+
+<!-- ==================== INVENTORY REPORTS ==================== -->
+<section class="section-card" id="inventory-reports">
+  <h2>Inventory Reports</h2>
+  <p>The Inventory Tracking tool provides several specialized reports:</p>
+
+  <h3>Get Count by Category</h3>
+  <p>Counts books grouped by a selected category. Choose from: <strong>Title</strong>, <strong>Author</strong>, <strong>Subject</strong>, <strong>Genre</strong>, or <strong>Publisher</strong>. Enter a search term to filter results.</p>
+
+  <h3>Recent Acquisitions</h3>
+  <p>Shows books added after a specified date. Enter the date in <code>yyyy-MM-dd</code> format (e.g., <code>2026-01-01</code>).</p>
+
+  <h3>Items Needing Attention</h3>
+  <p>Lists books that are in poor condition, damaged, or otherwise require maintenance.</p>
+
+  <h3>Under Maintenance</h3>
+  <p>Shows books currently flagged as being under maintenance or repair.</p>
+</section>
+
+<!-- ==================== PHYSICAL TRACKING ==================== -->
+<section class="section-card" id="physical-tracking">
+  <h2>Physical Tracking</h2>
+  <p>Two additional reports help with physical shelf management:</p>
+
+  <h3>Segment by Shelf</h3>
+  <p>Groups and displays books organized by their shelf number, helping you verify physical shelf arrangement against the database records.</p>
+
+  <h3>Number of Copies</h3>
+  <p>Shows how many copies of each title exist in the catalog, useful for collection management decisions.</p>
+</section>
+
+<hr>
+
+<!-- ==================== DIGITAL MATERIALS ==================== -->
+<section class="section-card" id="digital-overview">
+  <h2>Digital Materials — Overview</h2>
+  <p>The Digital Materials module manages non-book library resources such as DVDs, CDs, USB drives, tablets, projectors, laptops, cameras, headphones, and other equipment.</p>
+
+  <p>Access this module from <strong>Tools Hub → Digital Material</strong>.</p>
+
+  <h3>Item Table</h3>
+  <table>
+    <thead><tr><th>Column</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>Item Name</td><td>Name of the material/equipment</td></tr>
+      <tr><td>Type</td><td>Category of the item (DVD, Tablet, Projector, etc.)</td></tr>
+      <tr><td>Available</td><td>Number of available units</td></tr>
+      <tr><td>Status</td><td>Color-coded badge: Available (green), Borrowed (orange), Maintenance (blue), Out of Stock (red)</td></tr>
+      <tr><td>Actions</td><td>Edit, Issue, Return, Delete (visible on hover)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="section-card" id="digital-add">
+  <h2>Add Digital Materials</h2>
+  <p>Click the <strong>Add Item</strong> button to open the Add/Edit dialog:</p>
+
+  <table>
+    <thead><tr><th>Field</th><th>Status</th><th>Options / Validation</th></tr></thead>
+    <tbody>
+      <tr><td>Item Name</td><td><span class="badge badge-required">Required</span></td><td>—</td></tr>
+      <tr><td>Item Type</td><td><span class="badge badge-required">Required</span></td><td>DVD, CD, USB Drive, Tablet, Projector, Laptop, Camera, Headphones, Other</td></tr>
+      <tr><td>Quantity</td><td><span class="badge badge-required">Required</span></td><td>Must be at least 1</td></tr>
+      <tr><td>Location</td><td><span class="badge badge-optional">Optional</span></td><td>—</td></tr>
+      <tr><td>Condition</td><td><span class="badge badge-optional">Optional</span></td><td>Good, Fair, Poor, Excellent, New</td></tr>
+      <tr><td>Value</td><td><span class="badge badge-optional">Optional</span></td><td>Monetary value (decimal number)</td></tr>
+      <tr><td>Status</td><td><span class="badge badge-optional">Optional</span></td><td>Available, Borrowed, Maintenance, Out of Stock</td></tr>
+      <tr><td>Details</td><td><span class="badge badge-optional">Optional</span></td><td>Additional description</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="section-card" id="digital-issue-return">
+  <h2>Issue &amp; Return Digital Materials</h2>
+
+  <h3>Issuing a Material</h3>
+  <div class="steps-container">
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <div class="step-title">Click the Issue Button</div>
+        <div class="step-desc">Hover over the item row and click the <strong>Issue</strong> action icon.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <div class="step-title">Enter User Number</div>
+        <div class="step-desc">Type the user's identification number (Admission No, Staff No, or User No).</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <div class="step-title">Specify Quantity</div>
+        <div class="step-desc">Enter the number of units to issue (cannot exceed available count).</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">4</div>
+      <div class="step-content">
+        <div class="step-title">Confirm</div>
+        <div class="step-desc">Click <strong>Issue</strong> to complete. The available count will be updated.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Returning a Material</h3>
+  <div class="steps-container">
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <div class="step-title">Click the Return Button</div>
+        <div class="step-desc">Hover over the item row and click the <strong>Return</strong> action icon.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <div class="step-title">Enter User Number</div>
+        <div class="step-desc">Type the user's identification number. The system will verify (after 500ms) how many units this user has borrowed.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <div class="step-title">Specify Return Quantity</div>
+        <div class="step-desc">Enter the number of units being returned (cannot exceed the user's borrowed quantity).</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">4</div>
+      <div class="step-content">
+        <div class="step-title">Confirm</div>
+        <div class="step-desc">Click <strong>Return</strong> to complete. The available count and history are updated.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Viewing History</h3>
+  <p>Click the <strong>History</strong> button in the toolbar to view all digital material transactions. The history table shows: Item Name, User, Quantity, Issue Date, Return Date, and Status (Returned or Borrowed).</p>
+</section>
+
+<hr>
+
+<!-- ==================== REPORTS ==================== -->
+<section class="section-card" id="reports-overview">
+  <h2>Reports &amp; Analytics — Overview</h2>
+  <p>Access the Reports module from the <strong>Tools Hub → Reports and Analytics</strong> or the left sidebar.</p>
+
+  <h3>Key Statistics</h3>
+  <p>Six summary cards are displayed at the top of the Reports page:</p>
+  <ul>
+    <li><strong>Total Books</strong> — Total number of books in the collection</li>
+    <li><strong>Total Users</strong> — Total registered users</li>
+    <li><strong>Active Users</strong> — Users with current activity</li>
+    <li><strong>Books Due Today</strong> — Books that need to be returned today</li>
+    <li><strong>Overdue Books</strong> — Currently overdue items</li>
+    <li><strong>Lost Books</strong> — Books marked as lost</li>
+  </ul>
+</section>
+
+<section class="section-card" id="report-categories">
+  <h2>Report Categories</h2>
+  <p>Libro provides <strong>10 comprehensive report categories</strong>, each with detailed analytics and data visualization:</p>
+
+  <table>
+    <thead><tr><th>#</th><th>Category</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><strong>Collection Overview</strong></td><td>Summary of library holdings — total books, categories, conditions, recent acquisitions.</td></tr>
+      <tr><td>2</td><td><strong>Circulation Analysis</strong></td><td>Checkout/return patterns, daily activity, peak hours, most borrowed titles.</td></tr>
+      <tr><td>3</td><td><strong>User Engagement</strong></td><td>Active users, borrowing frequency, user demographics, most active borrowers.</td></tr>
+      <tr><td>4</td><td><strong>Popular Trends &amp; Insights</strong></td><td>Trending subjects, popular genres, author rankings, seasonal patterns.</td></tr>
+      <tr><td>5</td><td><strong>Reservation Analytics</strong></td><td>Reservation volume, fulfillment rates, most reserved titles, wait times.</td></tr>
+      <tr><td>6</td><td><strong>Overdue &amp; Compliance</strong></td><td>Overdue patterns, repeat offenders, average overdue duration, compliance rates.</td></tr>
+      <tr><td>7</td><td><strong>Financial Reports</strong></td><td>Fine collection, revenue trends, outstanding fines, collection rates.</td></tr>
+      <tr><td>8</td><td><strong>Lost &amp; Damaged Books</strong></td><td>Lost/damaged inventory, replacement costs, damage categories, recovery rates.</td></tr>
+      <tr><td>9</td><td><strong>Digital Material Analytics</strong></td><td>Digital material usage, most popular items, borrowing patterns.</td></tr>
+      <tr><td>10</td><td><strong>System Performance</strong></td><td>System activity logs, user sessions, peak usage times, error rates.</td></tr>
+    </tbody>
+  </table>
+
+  <p>Each report category includes multiple sub-reports with detailed charts, tables, and statistical data.</p>
+</section>
+
+<section class="section-card" id="export-reports">
+  <h2>Export &amp; Print Reports</h2>
+  <p>Reports can be exported in multiple formats from the Reports page toolbar:</p>
+  <table>
+    <thead><tr><th>Export Option</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Print — Whole Page</strong></td><td>Prints the entire report page</td></tr>
+      <tr><td><strong>Print — Only Charts</strong></td><td>Prints only the chart visualizations</td></tr>
+      <tr><td><strong>Export — PDF</strong></td><td>Saves the report as a PDF file</td></tr>
+      <tr><td><strong>Export — CSV/Excel</strong></td><td>Exports data in CSV format for spreadsheet analysis</td></tr>
+      <tr><td><strong>Export — Image</strong></td><td>Saves the report as an image file</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<hr>
+
+<!-- ==================== BARCODE TOOLS ==================== -->
+<section class="section-card" id="barcode-tools">
+  <h2>Barcode Generation</h2>
+  <p>Access barcode generation from <strong>Tools Hub → Barcode Writer</strong>.</p>
+
+  <h3>Single Barcode Generation</h3>
+  <div class="steps-container">
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <div class="step-title">Enter Text or Call Number</div>
+        <div class="step-desc">Type the text you want to encode as a barcode, or enter a book's call number and click <strong>Look up</strong> to retrieve the book's barcode value from the database.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <div class="step-title">Set Output Options</div>
+        <div class="step-desc">Choose the output folder and file name convention.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <div class="step-title">Generate</div>
+        <div class="step-desc">The barcode is generated in <strong>Code128</strong> format and saved as a PNG image to the selected output folder.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Bulk Barcode Generation</h3>
+  <div class="steps-container">
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <div class="step-title">Set Date Range</div>
+        <div class="step-desc">Enter a <strong>From</strong> and <strong>To</strong> date (DD-MM-YYYY format) to select which books to generate barcodes for. All books added within this date range will be included.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <div class="step-title">Choose PDF Sheet Option</div>
+        <div class="step-desc">Optionally enable <strong>Generate PDF Sheet</strong> to create a printable barcode sheet in addition to individual PNG files. The PDF uses A4 page size with a 3-column grid layout.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <div class="step-title">Generate</div>
+        <div class="step-desc">Progress is reported per barcode. Individual PNG files are saved, and if enabled, a PDF sheet is generated with barcodes labeled with book title, author, and call number.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-info">
+    <span class="callout-icon">ℹ️</span>
+    <div class="callout-content">
+      <strong>PDF Sheet Layout</strong>
+      The PDF barcode sheet uses an A4 page with 3 barcodes per row. Each barcode cell includes the barcode image (approximately 67×32 mm) and a text label below it. A page header reading "Library Barcode Sheet" is added to each page. The output file is named <code>Barcodes_YYYY-MM-DD.pdf</code>.
+    </div>
+  </div>
+</section>
+
+<!-- ==================== BARCODE SCANNING ==================== -->
+<section class="section-card" id="barcode-scanning">
+  <h2>Barcode Scanning</h2>
+  <p>Libro includes a built-in barcode reader powered by the ZXing library. It supports a wide range of barcode formats including Code128, QR Code, EAN-13, EAN-8, Code39, and many more.</p>
+
+  <h3>How to Scan</h3>
+  <div class="steps-container">
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <div class="step-title">Open a Barcode-Enabled Screen</div>
+        <div class="step-desc">Navigate to the Return Book screen or any other screen with barcode scanning support.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <div class="step-title">Toggle the Camera</div>
+        <div class="step-desc">Click the camera toggle to activate the barcode scanner. Your device's camera feed will appear on screen.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <div class="step-title">Point at Barcode</div>
+        <div class="step-desc">Hold the barcode in front of the camera. The system will automatically detect and decode the barcode, filling in the relevant field.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== EMAIL NOTIFICATIONS ==================== -->
+<section class="section-card" id="email-notifications">
+  <h2>Email Notifications</h2>
+  <p>Access from <strong>Tools Hub → Send Notifications</strong>. The email system sends automated notifications for overdue books and reserved book pickups.</p>
+
+  <h3>Notification Types</h3>
+  <table>
+    <thead><tr><th>Type</th><th>Subject Line</th><th>Trigger</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Overdue Notification</strong></td><td>"Library Book Overdue Notice — [Title]"</td><td>Sent to users with overdue books who have an email on file</td></tr>
+      <tr><td><strong>Reserved Book Pickup</strong></td><td>"Library Book Available for Pickup — [Title]"</td><td>Sent when a reserved book becomes available for collection</td></tr>
+      <tr><td><strong>Reservation Expiry Reminder</strong></td><td>"Reservation Expiring Soon — [Title]"</td><td>Sent when a reservation is about to expire (within 2 days)</td></tr>
+      <tr><td><strong>Test Email</strong></td><td>"Library Management System — Test Email"</td><td>Manual — for testing SMTP configuration</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Sending Notifications</h3>
+  <p>Use the sidebar action buttons:</p>
+  <ul>
+    <li><strong>Send Overdue Notifications</strong> — Scans for all overdue books and sends emails to users with valid email addresses.</li>
+    <li><strong>Send Reserved Notifications</strong> — Scans for reserved books that are ready for pickup and notifies the reserving users.</li>
+    <li><strong>Test Email</strong> — Send a test email to verify your SMTP configuration.</li>
+    <li><strong>Clear Queue</strong> — Remove all pending emails from the queue.</li>
+  </ul>
+
+  <h3>SMTP Configuration</h3>
+  <p>Before sending emails, you must configure your SMTP server. Click <strong>Configure SMTP</strong> to open the configuration dialog:</p>
+
+  <table>
+    <thead><tr><th>Field</th><th>Description</th><th>Default</th></tr></thead>
+    <tbody>
+      <tr><td>SMTP Server</td><td>The SMTP server hostname</td><td><code>smtp.gmail.com</code></td></tr>
+      <tr><td>Port</td><td>SMTP server port</td><td><code>587</code></td></tr>
+      <tr><td>Username / Email</td><td>Your email account for sending</td><td>—</td></tr>
+      <tr><td>Password</td><td>Your email account password or app password</td><td>—</td></tr>
+      <tr><td>Use SSL</td><td>Enable SSL encryption</td><td>Off</td></tr>
+      <tr><td>Use TLS</td><td>Enable TLS encryption (recommended)</td><td>On</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Common SMTP Server Settings</h3>
+  <table>
+    <thead><tr><th>Provider</th><th>Server</th><th>Port</th></tr></thead>
+    <tbody>
+      <tr><td>Gmail</td><td><code>smtp.gmail.com</code></td><td>587</td></tr>
+      <tr><td>Outlook / Office 365</td><td><code>smtp.office365.com</code></td><td>587</td></tr>
+      <tr><td>Yahoo Mail</td><td><code>smtp.mail.yahoo.com</code></td><td>465</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-warning">
+    <span class="callout-icon">⚠️</span>
+    <div class="callout-content">
+      <strong>Gmail Users</strong>
+      If using Gmail, you may need to create an <strong>App Password</strong> instead of using your regular Gmail password. Go to your Google Account → Security → 2-Step Verification → App Passwords to generate one.
+    </div>
+  </div>
+</section>
+
+<!-- ==================== PDF READER ==================== -->
+<section class="section-card" id="pdf-reader">
+  <h2>PDF / Ebook Reader</h2>
+  <p>Access from <strong>Tools Hub → Ebook Reader</strong>. This built-in PDF viewer allows you to read PDF documents directly within Libro.</p>
+
+  <h3>Opening a PDF</h3>
+  <ul>
+    <li>Click <strong>"Open PDF"</strong> or press <kbd>Ctrl</kbd> + <kbd>O</kbd></li>
+    <li>Drag and drop a PDF file onto the viewer</li>
+    <li>Select from <strong>Recent Files</strong> (last 10 opened files are remembered)</li>
+  </ul>
+
+  <h3>Viewer Features</h3>
+  <ul>
+    <li><strong>Multi-page view</strong> with smooth scrolling</li>
+    <li><strong>Left sidebar</strong> with four tabs: Info, Search Results, Bookmarks, and Page Thumbnails</li>
+    <li><strong>Floating toolbar</strong> (draggable) with Open, Zoom In/Out, Navigate Back/Forward, Select All, Copy</li>
+    <li><strong>Page navigation</strong> via direct page number input</li>
+    <li><strong>Encrypted PDF support</strong> — password dialog appears for protected files</li>
+  </ul>
+
+  <h3>Keyboard Shortcuts</h3>
+  <table>
+    <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td><kbd>Ctrl</kbd> + <kbd>O</kbd></td><td>Open PDF file</td></tr>
+      <tr><td><kbd>Ctrl</kbd> + <kbd>=</kbd></td><td>Zoom in</td></tr>
+      <tr><td><kbd>Ctrl</kbd> + <kbd>-</kbd></td><td>Zoom out</td></tr>
+      <tr><td><kbd>Alt</kbd> + <kbd>←</kbd></td><td>Navigate back</td></tr>
+      <tr><td><kbd>Alt</kbd> + <kbd>→</kbd></td><td>Navigate forward</td></tr>
+      <tr><td><kbd>Ctrl</kbd> + <kbd>A</kbd></td><td>Select all text</td></tr>
+      <tr><td><kbd>Ctrl</kbd> + <kbd>C</kbd></td><td>Copy selected text</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== ONLINE BOOKSHOPS ==================== -->
+<section class="section-card" id="online-bookshops">
+  <h2>Online Bookshops</h2>
+  <p>Access from <strong>Tools Hub → Online Bookshops</strong>. This module lets you maintain a directory of online bookshop links for quick reference when purchasing new books.</p>
+
+  <h3>Adding a Bookshop</h3>
+  <div class="steps-container">
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <div class="step-title">Click "Add Bookshop"</div>
+        <div class="step-desc">Opens the Add Bookshop dialog.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <div class="step-title">Enter Details</div>
+        <div class="step-desc"><strong>Bookshop Name</strong> (required) and <strong>Bookshop URL</strong> (required, must be a valid URL).</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <div class="step-title">Save</div>
+        <div class="step-desc">The bookshop card appears in the grid. Click it to open the website in your external browser.</div>
+      </div>
+    </div>
+  </div>
+
+  <p>To remove a bookshop, hover over its card and click the delete icon. Confirm the deletion in the dialog.</p>
+</section>
+
+<!-- ==================== CLEARANCE ==================== -->
+<section class="section-card" id="clearance">
+  <h2>User Clearance</h2>
+  <p>Access from <strong>Tools Hub → Clearance</strong>. The clearance system is used when a student, staff member, or other user is leaving the institution and needs to be cleared of all library obligations.</p>
+
+  <h3>Processing Clearance</h3>
+  <div class="steps-container">
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <div class="step-title">Select User Type</div>
+        <div class="step-desc">Choose <strong>Student</strong>, <strong>Staff</strong>, or <strong>Other User</strong> from the dropdown.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <div class="step-title">Enter User Number</div>
+        <div class="step-desc">Enter the user's identification number (Admission No, Staff No, or User No).</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <div class="step-title">Process Clearance</div>
+        <div class="step-desc">Click <strong>"Process Clearance"</strong>. The system performs four checks against the user's record.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">4</div>
+      <div class="step-content">
+        <div class="step-title">Review Results</div>
+        <div class="step-desc">The result shows either <strong>APPROVED</strong> (green) or <strong>REJECTED</strong> (red) along with detailed check results.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Clearance Checks</h3>
+  <table>
+    <thead><tr><th>Check</th><th>Cleared When</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Borrowed Books</strong></td><td>No unreturned books</td></tr>
+      <tr><td><strong>Digital Materials</strong></td><td>No unreturned digital materials</td></tr>
+      <tr><td><strong>Lost Books</strong></td><td>No unpaid lost book charges</td></tr>
+      <tr><td><strong>Unpaid Fines</strong></td><td>No outstanding fine balances</td></tr>
+    </tbody>
+  </table>
+
+  <p>All four checks must pass for the clearance to be <strong>APPROVED</strong>.</p>
+
+  <h3>Clearance Actions</h3>
+  <ul>
+    <li><strong>HTML</strong> — View and save the clearance receipt as an HTML file.</li>
+    <li><strong>Receipt</strong> — View a styled clearance certificate. Can be saved as an image (PNG).</li>
+    <li><strong>Complete</strong> (only if approved) — Finalizes the clearance and removes the user from the system.</li>
+    <li><strong>Clear</strong> — Resets the form for a new clearance check.</li>
+  </ul>
+
+  <div class="callout callout-danger">
+    <span class="callout-icon">🚨</span>
+    <div class="callout-content">
+      <strong>Complete Clearance</strong>
+      Clicking "Complete" on an approved clearance will <strong>permanently delete the user</strong> from the system. Ensure you have saved the clearance receipt before completing.
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SUGGESTIONS & FEEDBACK ==================== -->
+<section class="section-card" id="suggestions-feedback">
+  <h2>Suggestions &amp; Feedback</h2>
+  <p>Access from <strong>Tools Hub → Suggestions &amp; Feedback</strong>. This module allows administrators to review and manage suggestions and feedback submitted by library users.</p>
+
+  <h3>Filtering</h3>
+  <p>Use the filter dropdowns to narrow the list:</p>
+  <ul>
+    <li><strong>Type</strong>: All, Suggestions, Feedback</li>
+    <li><strong>Status</strong>: All, Pending, Reviewed, Addressed</li>
+  </ul>
+
+  <h3>Managing Items</h3>
+  <p>Each suggestion or feedback entry shows the type badge, status badge, user name, role, content preview, and submission date. Available actions:</p>
+  <ul>
+    <li><strong>View Details</strong> — Opens a detailed popup with the full message.</li>
+    <li><strong>Mark Reviewed</strong> — Changes status from Pending to Reviewed.</li>
+    <li><strong>Mark Addressed</strong> — Changes status to Addressed (indicating action has been taken).</li>
+    <li><strong>Delete</strong> — Permanently removes the entry (with confirmation).</li>
+  </ul>
+</section>
+
+<!-- ==================== LIBRO AI ==================== -->
+<section class="section-card" id="libro-ai">
+  <h2>Libro AI</h2>
+  <p>Access from <strong>Tools Hub → Libro AI</strong>. This module provides an AI-powered assistant embedded as a web view within the application.</p>
+  <p>The AI assistant loads from a server endpoint and can help with library management queries, recommendations, and general assistance.</p>
+</section>
+
+<hr>
+
+<!-- ==================== SETTINGS OVERVIEW ==================== -->
+<section class="section-card" id="settings-overview">
+  <h2>Settings Overview</h2>
+  <p>Access Settings from the <strong>left sidebar</strong> or through the Settings section. The Settings page has a Windows 11-inspired design with a left navigation panel and right content area.</p>
+
+  <h3>Settings Categories</h3>
+  <table>
+    <thead><tr><th>Category</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>General</strong></td><td>Library information and branding — application title, organization name, library contact info</td></tr>
+      <tr><td><strong>Circulation</strong></td><td>Loan rules and fine settings for each user type</td></tr>
+      <tr><td><strong>Reservations</strong></td><td>Reservation policies — pickup deadlines, expiry periods, maximum reservations</td></tr>
+      <tr><td><strong>Email</strong></td><td>SMTP configuration and email notification templates</td></tr>
+      <tr><td><strong>System</strong></td><td>Maintenance settings — log retention, auto-backup configuration</td></tr>
+      <tr><td><strong>About</strong></td><td>Application information, version, and organization details</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Settings Actions</h3>
+  <ul>
+    <li><strong>Export Settings</strong> — Save all settings to a JSON file for backup or migration.</li>
+    <li><strong>Import Settings</strong> — Load settings from a previously exported JSON file.</li>
+    <li><strong>Reset All to Defaults</strong> — Restore all settings to factory defaults (requires confirmation).</li>
+  </ul>
+</section>
+
+<!-- ==================== GENERAL SETTINGS ==================== -->
+<section class="section-card" id="general-settings">
+  <h2>General Settings</h2>
+
+  <h3>Application</h3>
+  <table>
+    <thead><tr><th>Setting</th><th>Description</th><th>Default</th></tr></thead>
+    <tbody>
+      <tr><td>Application Title</td><td>The name displayed in the application header</td><td><code>Libro Integrated Library Management System</code></td></tr>
+      <tr><td>Organization Name</td><td>Your institution's name</td><td><code>Libro</code></td></tr>
+      <tr><td>Database File</td><td>Database filename (read-only)</td><td>Auto-configured</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Library Information</h3>
+  <table>
+    <thead><tr><th>Setting</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>Library Name</td><td>The name of your library</td></tr>
+      <tr><td>Address</td><td>Physical address</td></tr>
+      <tr><td>Phone</td><td>Contact phone number</td></tr>
+      <tr><td>Email</td><td>Library contact email</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== CIRCULATION SETTINGS ==================== -->
+<section class="section-card" id="circulation-settings">
+  <h2>Circulation Settings</h2>
+  <p>Configure borrowing rules for each user type independently.</p>
+
+  <h3>Student Borrowing Rules</h3>
+  <table class="settings-table">
+    <thead><tr><th>Setting</th><th>Default</th><th>Range</th></tr></thead>
+    <tbody>
+      <tr><td>Max Loan Days</td><td>14</td><td>1–90 days</td></tr>
+      <tr><td>Max Books Allowed</td><td>3</td><td>1–20 books</td></tr>
+      <tr><td>Max Renewals</td><td>2</td><td>0–10</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Staff Borrowing Rules</h3>
+  <table class="settings-table">
+    <thead><tr><th>Setting</th><th>Default</th><th>Range</th></tr></thead>
+    <tbody>
+      <tr><td>Max Loan Days</td><td>30</td><td>1–180 days</td></tr>
+      <tr><td>Max Books Allowed</td><td>10</td><td>1–50 books</td></tr>
+      <tr><td>Max Renewals</td><td>3</td><td>0–10</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Other Users Borrowing Rules</h3>
+  <table class="settings-table">
+    <thead><tr><th>Setting</th><th>Default</th><th>Range</th></tr></thead>
+    <tbody>
+      <tr><td>Max Loan Days</td><td>7</td><td>1–30 days</td></tr>
+      <tr><td>Max Books Allowed</td><td>2</td><td>1–10 books</td></tr>
+      <tr><td>Max Renewals</td><td>1</td><td>0–5</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Fine Settings</h3>
+  <table class="settings-table">
+    <thead><tr><th>Setting</th><th>Default</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>Currency Symbol</td><td>KES</td><td>Currency used throughout the application</td></tr>
+      <tr><td>Fine Rate Per Day</td><td>10.00</td><td>Amount charged per day for overdue books</td></tr>
+      <tr><td>Maximum Fine</td><td>500.00</td><td>Fine cap — fines will not exceed this amount</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== RESERVATION SETTINGS ==================== -->
+<section class="section-card" id="reservation-settings">
+  <h2>Reservation Settings</h2>
+  <table class="settings-table">
+    <thead><tr><th>Setting</th><th>Default</th><th>Range</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>Pickup Deadline</td><td>3 days</td><td>1–14</td><td>Number of days a user has to pick up a reserved book after notification</td></tr>
+      <tr><td>Reservation Expiry</td><td>7 days</td><td>1–30</td><td>Number of days before an uncollected reservation automatically expires</td></tr>
+      <tr><td>Max Reservations Per User</td><td>3</td><td>1–10</td><td>Maximum number of simultaneous reservations a single user can hold</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== EMAIL SETTINGS ==================== -->
+<section class="section-card" id="email-settings">
+  <h2>Email / SMTP Settings</h2>
+
+  <h3>Notification Toggle</h3>
+  <p><strong>Enable Email Notifications</strong> — Master switch. When disabled, all SMTP fields are grayed out and no emails will be sent. Default: <strong>Off</strong>.</p>
+
+  <h3>SMTP Configuration</h3>
+  <table class="settings-table">
+    <thead><tr><th>Setting</th><th>Default</th></tr></thead>
+    <tbody>
+      <tr><td>SMTP Server</td><td>smtp.gmail.com</td></tr>
+      <tr><td>Port</td><td>587</td></tr>
+      <tr><td>Username</td><td>(empty)</td></tr>
+      <tr><td>Password</td><td>(empty)</td></tr>
+      <tr><td>Use TLS</td><td>On</td></tr>
+      <tr><td>Use SSL</td><td>Off</td></tr>
+      <tr><td>Sender Email</td><td>(empty)</td></tr>
+      <tr><td>Sender Name</td><td>Libro Library System</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Email Templates</h3>
+  <p>Three email templates can be customized with placeholder variables:</p>
+
+  <h4>Overdue Template Placeholders</h4>
+  <p><code>{USER_NAME}</code>, <code>{BOOK_TITLE}</code>, <code>{DUE_DATE}</code>, <code>{DAYS_OVERDUE}</code>, <code>{FINE_AMOUNT}</code></p>
+
+  <h4>Pickup Template Placeholders</h4>
+  <p><code>{USER_NAME}</code>, <code>{BOOK_TITLE}</code>, <code>{BOOK_AUTHOR}</code>, <code>{PICKUP_DAYS}</code></p>
+
+  <h4>Welcome Template Placeholders</h4>
+  <p><code>{USER_NAME}</code>, <code>{MAX_BOOKS}</code>, <code>{LOAN_DAYS}</code>, <code>{MAX_RENEWALS}</code></p>
+
+  <p>A <strong>Test Connection</strong> button is available to verify your SMTP setup.</p>
+</section>
+
+<!-- ==================== SYSTEM SETTINGS ==================== -->
+<section class="section-card" id="system-settings">
+  <h2>System Settings</h2>
+
+  <h3>Logging</h3>
+  <table class="settings-table">
+    <thead><tr><th>Setting</th><th>Default</th><th>Range</th></tr></thead>
+    <tbody>
+      <tr><td>Log Retention Period</td><td>90 days</td><td>7–365 days</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Backup</h3>
+  <table class="settings-table">
+    <thead><tr><th>Setting</th><th>Default</th></tr></thead>
+    <tbody>
+      <tr><td>Auto Backup</td><td>Off</td></tr>
+      <tr><td>Backup Interval</td><td>7 days (range: 1–30)</td></tr>
+      <tr><td>Backup Location</td><td>(empty — use "Browse..." to set)</td></tr>
+    </tbody>
+  </table>
+
+  <p>A <strong>"Backup Now"</strong> button allows you to trigger an immediate backup from the settings page.</p>
+</section>
+
+<!-- ==================== OPAC CONFIG ==================== -->
+<section class="section-card" id="opac-config">
+  <h2>OPAC Configuration</h2>
+  <p>Access from <strong>Tools Hub → OPAC Configuration</strong>. OPAC (Online Public Access Catalog) allows your library catalog to be accessible online, enabling users to search for books and place reservations remotely.</p>
+
+  <h3>Initial Setup</h3>
+  <div class="steps-container">
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <div class="step-title">Enter OPAC Server URL</div>
+        <div class="step-desc">Provide the URL of your OPAC server instance.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <div class="step-title">Enter API Key</div>
+        <div class="step-desc">Enter the API key for authentication. Use the show/hide toggle to verify the key.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <div class="step-title">Test Connection</div>
+        <div class="step-desc">Click <strong>"Test Connection"</strong> to verify that Libro can communicate with the OPAC server. The connection status indicator will show green (connected) or red (failed).</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">4</div>
+      <div class="step-content">
+        <div class="step-title">Save Configuration</div>
+        <div class="step-desc">Click <strong>Save</strong> to store the OPAC configuration.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Sync Settings</h3>
+  <table>
+    <thead><tr><th>Setting</th><th>Description</th><th>Range</th></tr></thead>
+    <tbody>
+      <tr><td>Auto-Sync</td><td>Enable automatic synchronization</td><td>On / Off</td></tr>
+      <tr><td>Sync Interval</td><td>How often to sync with the OPAC server</td><td>15–1440 minutes</td></tr>
+      <tr><td>Pickup Deadline</td><td>Days allowed for book pickup</td><td>1–7 days</td></tr>
+      <tr><td>Reservation Expiry</td><td>Days before a reservation expires</td><td>3–30 days</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Manual Sync Options</h3>
+  <ul>
+    <li><strong>Sync Now (Full)</strong> — Synchronizes all data: books, users, and reservations.</li>
+    <li><strong>Sync Books Only</strong> — Synchronizes only the book catalog.</li>
+    <li><strong>Sync Users Only</strong> — Synchronizes only user data.</li>
+    <li><strong>Check Reservations</strong> — Checks for new or updated reservations from the OPAC portal.</li>
+  </ul>
+
+  <h3>Sync History</h3>
+  <p>Click <strong>"View Sync History"</strong> to see a log of all synchronization operations including: status, type, direction, number of records affected, timestamp, and any error messages. You can clear the history if needed.</p>
+</section>
+
+<!-- ==================== IMPORT / EXPORT SETTINGS ==================== -->
+<section class="section-card" id="import-export-settings">
+  <h2>Import / Export Settings</h2>
+  <p>Libro allows you to export all application settings to a JSON file and import them back. This is useful for:</p>
+  <ul>
+    <li>Backing up your configuration</li>
+    <li>Migrating settings to another Libro installation</li>
+    <li>Sharing standardized settings across multiple library branches</li>
+  </ul>
+
+  <h3>Export</h3>
+  <p>Click <strong>"Export"</strong> in the Settings navigation. Choose a location and filename for the JSON file. All current settings will be saved.</p>
+
+  <h3>Import</h3>
+  <p>Click <strong>"Import"</strong> and select a previously exported JSON settings file. All settings will be loaded and applied.</p>
+</section>
+
+<hr>
+
+<!-- ==================== BACKUP & RESTORE ==================== -->
+<section class="section-card" id="backup-restore">
+  <h2>Backup &amp; Restore</h2>
+  <p>Access from <strong>Tools Hub → Backup and Restore</strong> or from the left sidebar. Libro supports both local and cloud backups of your database.</p>
+
+  <h3>Backup Types</h3>
+  <table>
+    <thead><tr><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Local Backup</strong></td><td>Saves the database file to your local file system</td></tr>
+      <tr><td><strong>Cloud Backup</strong></td><td>Saves to a cloud provider: Google Drive, Amazon S3, Dropbox, OneDrive, or a generic endpoint</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Creating a Backup</h3>
+  <div class="steps-container">
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <div class="step-title">Select Backup Type</div>
+        <div class="step-desc">Choose between <strong>Local Backup</strong> or <strong>Cloud Backup</strong>.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <div class="step-title">Set Destination</div>
+        <div class="step-desc">For local backups, click <strong>"Browse"</strong> to choose the backup folder. For cloud backups, select the provider.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <div class="step-title">Configure Options</div>
+        <div class="step-desc">Optionally enable <strong>Encryption</strong> to password-protect your backup. Compression is enabled by default.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">4</div>
+      <div class="step-content">
+        <div class="step-title">Click "Backup Now"</div>
+        <div class="step-desc">The backup process begins. Status cards show the progress and result.</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Restoring a Backup</h3>
+  <div class="steps-container">
+    <div class="step">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <div class="step-title">Click "Restore"</div>
+        <div class="step-desc">In the Quick Actions section, click <strong>Restore</strong>.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <div class="step-title">Select Backup File</div>
+        <div class="step-desc">Use the file dialog to select the backup file you want to restore.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <div class="step-title">Confirm</div>
+        <div class="step-desc">A confirmation dialog warns that <strong>this will replace your current database</strong>. Click confirm to proceed.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-danger">
+    <span class="callout-icon">🚨</span>
+    <div class="callout-content">
+      <strong>Database Replacement</strong>
+      Restoring a backup replaces your entire current database with the backup. All data entered since the backup was created will be lost. Always create a fresh backup before restoring an older one.
+    </div>
+  </div>
+
+  <h3>Backup History</h3>
+  <p>Click <strong>"View History"</strong> to see a list of all past backups. Each entry shows: timestamp, type (Local/Cloud), compression and encryption flags, status, and file size. You can <strong>restore</strong> from any completed backup or <strong>delete</strong> backup records.</p>
+
+  <h3>Test Backup</h3>
+  <p>The <strong>"Test Backup"</strong> button estimates the backup file size and checks available storage space, without actually creating a backup.</p>
+</section>
+
+<!-- ==================== SCHEDULED BACKUPS ==================== -->
+<section class="section-card" id="scheduled-backups">
+  <h2>Scheduled Backups</h2>
+  <p>Click <strong>"Schedule"</strong> in the Quick Actions to open the scheduling dialog.</p>
+
+  <table>
+    <thead><tr><th>Frequency</th><th>Interval</th></tr></thead>
+    <tbody>
+      <tr><td>Every 6 hours</td><td>6 hours</td></tr>
+      <tr><td>Every 12 hours</td><td>12 hours</td></tr>
+      <tr><td>Daily</td><td>24 hours</td></tr>
+      <tr><td>Every 2 days</td><td>48 hours</td></tr>
+      <tr><td>Weekly</td><td>168 hours</td></tr>
+    </tbody>
+  </table>
+
+  <p>Toggle the <strong>Enable</strong> switch to activate or deactivate scheduled backups. The "Next Scheduled" status card on the main backup page shows when the next automatic backup will occur.</p>
+</section>
+
+<!-- ==================== ACTIVITY LOGS ==================== -->
+<section class="section-card" id="activity-logs">
+  <h2>Activity Logs</h2>
+  <p>Access from <strong>Tools Hub → Activity Logger</strong>. This module provides a comprehensive audit trail of all system activity.</p>
+
+  <h3>Filters</h3>
+  <table>
+    <thead><tr><th>Filter</th><th>Options</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Level</strong></td><td>ALL, INFO, WARNING, ERROR, DEBUG, CRITICAL</td></tr>
+      <tr><td><strong>Category</strong></td><td>ALL, USER_MANAGEMENT, BOOK_OPERATIONS, AUTHENTICATION, SYSTEM</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Log Entry Details</h3>
+  <p>Each log entry displays:</p>
+  <ul>
+    <li><strong>Level</strong> — Color-coded dot indicator (blue = INFO, amber = WARNING, red = ERROR, gray = DEBUG, dark red = CRITICAL)</li>
+    <li><strong>Category</strong> — The functional area of the system</li>
+    <li><strong>Timestamp</strong> — Formatted as <code>yyyy-MM-dd hh:mm:ss</code></li>
+    <li><strong>Message</strong> — Two-line preview. Click to expand.</li>
+  </ul>
+
+  <p>Click any log entry to open the <strong>Log Detail Dialog</strong> showing the full message, user, and additional details.</p>
+  <p>Logs are paginated at 100 entries per page with a draggable pagination widget.</p>
+</section>
+
+<!-- ==================== STORAGE MANAGER ==================== -->
+<section class="section-card" id="storage-manager">
+  <h2>Storage Manager</h2>
+  <p>Access from <strong>Tools Hub → Storage Manager</strong>. Monitors the application's storage usage.</p>
+
+  <h3>Displayed Information</h3>
+  <table>
+    <thead><tr><th>Metric</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>App Size</strong></td><td>Total size of the application and its data</td></tr>
+      <tr><td><strong>Device Size</strong></td><td>Total storage capacity of the device</td></tr>
+      <tr><td><strong>Database Size</strong></td><td>Current size of the SQLite database</td></tr>
+      <tr><td><strong>Recommended Storage</strong></td><td>Suggested storage allocation</td></tr>
+      <tr><td><strong>Storage Percentage</strong></td><td>Visual ring showing the percentage of device storage used</td></tr>
+      <tr><td><strong>Storage Status</strong></td><td>"Normal" (blue, under 70%) or "High Usage" (red, 70% and above)</td></tr>
+    </tbody>
+  </table>
+
+  <p>Click <strong>"Refresh"</strong> to update the storage metrics.</p>
+</section>
+
+<!-- ==================== APP MANAGER ==================== -->
+<section class="section-card" id="app-manager">
+  <h2>App Manager</h2>
+  <p>Access from <strong>Tools Hub → System Management</strong>. The App Manager provides three management cards:</p>
+
+  <h3>License Status</h3>
+  <p>Displays your current license information:</p>
+  <ul>
+    <li><strong>Status Badge</strong> — Active (green), Trial (blue), Grace Period (orange), Expired/Blocked (red)</li>
+    <li><strong>Organization Name &amp; Location</strong></li>
+    <li><strong>Plan</strong> — Trial, Basic, or Premium</li>
+    <li><strong>Expiry Date</strong> with days remaining (or grace days left)</li>
+    <li><strong>Last Validated</strong> timestamp</li>
+    <li><strong>Organization ID</strong></li>
+  </ul>
+  <p>Click the <strong>Refresh</strong> button (⟳) to manually re-validate your license.</p>
+
+  <h3>Administrators</h3>
+  <p>Lists all admin accounts with name, username, department, staff number, Super Admin badge (if applicable), and active/inactive status. See <a href="#admin-management">Admin Management</a> for details on adding and managing admins.</p>
+
+  <h3>Change Password</h3>
+  <p>Allows the currently logged-in admin to change their password. Requires the current password, a new password (minimum 6 characters), and confirmation.</p>
+</section>
+
+<hr>
+
+<!-- ==================== DEFAULT SETTINGS REFERENCE ==================== -->
+<section class="section-card" id="default-settings-ref">
+  <h2>Default Settings Reference</h2>
+  <p>A complete reference of all default settings values in Libro.</p>
+
+  <table class="settings-table">
+    <thead><tr><th>Setting</th><th>Default Value</th></tr></thead>
+    <tbody>
+      <tr><td colspan="2" style="background:var(--color-accent-bg);font-weight:600">General</td></tr>
+      <tr><td>Application Title</td><td>Libro Integrated Library Management System</td></tr>
+      <tr><td>Organization Name</td><td>Libro</td></tr>
+      <tr><td colspan="2" style="background:var(--color-accent-bg);font-weight:600">Circulation — Student</td></tr>
+      <tr><td>Max Loan Days</td><td>14</td></tr>
+      <tr><td>Max Books</td><td>3</td></tr>
+      <tr><td>Max Renewals</td><td>2</td></tr>
+      <tr><td colspan="2" style="background:var(--color-accent-bg);font-weight:600">Circulation — Staff</td></tr>
+      <tr><td>Max Loan Days</td><td>30</td></tr>
+      <tr><td>Max Books</td><td>10</td></tr>
+      <tr><td>Max Renewals</td><td>3</td></tr>
+      <tr><td colspan="2" style="background:var(--color-accent-bg);font-weight:600">Circulation — Other Users</td></tr>
+      <tr><td>Max Loan Days</td><td>7</td></tr>
+      <tr><td>Max Books</td><td>2</td></tr>
+      <tr><td>Max Renewals</td><td>1</td></tr>
+      <tr><td colspan="2" style="background:var(--color-accent-bg);font-weight:600">Fines</td></tr>
+      <tr><td>Fine Rate Per Day</td><td>10.00</td></tr>
+      <tr><td>Maximum Fine Cap</td><td>500.00</td></tr>
+      <tr><td>Currency Symbol</td><td>KES</td></tr>
+      <tr><td colspan="2" style="background:var(--color-accent-bg);font-weight:600">Reservations</td></tr>
+      <tr><td>Pickup Deadline</td><td>3 days</td></tr>
+      <tr><td>Reservation Expiry</td><td>7 days</td></tr>
+      <tr><td>Max Per User</td><td>3</td></tr>
+      <tr><td colspan="2" style="background:var(--color-accent-bg);font-weight:600">Email</td></tr>
+      <tr><td>SMTP Server</td><td>smtp.gmail.com</td></tr>
+      <tr><td>SMTP Port</td><td>587</td></tr>
+      <tr><td>Use TLS</td><td>true</td></tr>
+      <tr><td>Sender Name</td><td>Libro Library System</td></tr>
+      <tr><td>Notifications Enabled</td><td>false</td></tr>
+      <tr><td colspan="2" style="background:var(--color-accent-bg);font-weight:600">System</td></tr>
+      <tr><td>Log Retention</td><td>90 days</td></tr>
+      <tr><td>Auto Backup</td><td>false</td></tr>
+      <tr><td>Backup Interval</td><td>7 days</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== CSV FORMAT REFERENCE ==================== -->
+<section class="section-card" id="csv-reference">
+  <h2>CSV Format Reference</h2>
+  <p>A consolidated reference of all CSV formats used in Libro for bulk imports.</p>
+
+  <h3>Books — 12 Columns</h3>
+  <pre><code>Title,Author,CallNumber,Publisher,ISBN,ShelfNumber,Description,Language,Subject,Genre,Value,AcquisitionMethod</code></pre>
+
+  <h3>Students — 8 Columns</h3>
+  <pre><code>First Name,Last Name,Email,Phone,Admission No,Branch,Enrollment Year,Level</code></pre>
+  <p>Header must contain "Admission No" AND "Level" for auto-detection.</p>
+
+  <h3>Staff — 8 Columns</h3>
+  <pre><code>First Name,Last Name,Email,Phone,Staff No,Department,Start Year,Category</code></pre>
+  <p>Header must contain "Staff No" AND "Category" for auto-detection.</p>
+
+  <h3>Other Users — 8 Columns</h3>
+  <pre><code>First Name,Last Name,Email,Phone,User No,Residence,Age,Gender</code></pre>
+  <p>Header must contain "User No" AND "Gender" for auto-detection.</p>
+
+  <div class="callout callout-info">
+    <span class="callout-icon">ℹ️</span>
+    <div class="callout-content">
+      <strong>CSV Tips</strong>
+      <ul>
+        <li>The first row must be a header row.</li>
+        <li>Book CSVs support quoted fields with commas inside (RFC-compliant parsing). User CSVs use simple comma splitting.</li>
+        <li>For user imports, the pre-selected user type must match the auto-detected type from the header.</li>
+        <li>Leave optional fields blank but keep the comma delimiter: <code>Jane,,jane@mail.com,,ADM-001,Main,2024,Year 1</code></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== KEYBOARD SHORTCUTS ==================== -->
+<section class="section-card" id="keyboard-shortcuts">
+  <h2>Keyboard Shortcuts</h2>
+
+  <h3>General</h3>
+  <table>
+    <thead><tr><th>Shortcut</th><th>Action</th><th>Context</th></tr></thead>
+    <tbody>
+      <tr><td><kbd>Ctrl</kbd> + <kbd>O</kbd></td><td>Open file / Import</td><td>Import screens, PDF Reader</td></tr>
+    </tbody>
+  </table>
+
+  <h3>PDF Reader</h3>
+  <table>
+    <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td><kbd>Ctrl</kbd> + <kbd>O</kbd></td><td>Open PDF file</td></tr>
+      <tr><td><kbd>Ctrl</kbd> + <kbd>=</kbd></td><td>Zoom in</td></tr>
+      <tr><td><kbd>Ctrl</kbd> + <kbd>-</kbd></td><td>Zoom out</td></tr>
+      <tr><td><kbd>Alt</kbd> + <kbd>←</kbd></td><td>Navigate back</td></tr>
+      <tr><td><kbd>Alt</kbd> + <kbd>→</kbd></td><td>Navigate forward</td></tr>
+      <tr><td><kbd>Ctrl</kbd> + <kbd>A</kbd></td><td>Select all text</td></tr>
+      <tr><td><kbd>Ctrl</kbd> + <kbd>C</kbd></td><td>Copy selected text</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ==================== TROUBLESHOOTING ==================== -->
+<section class="section-card" id="troubleshooting">
+  <h2>Troubleshooting</h2>
+
+  <div class="accordion open" onclick="toggleAccordion(this)">
+    <div class="accordion-header">
+      <span class="acc-chevron">▶</span>
+      License activation fails
+    </div>
+    <div class="accordion-body">
+      <ul>
+        <li>Ensure your device is connected to the internet — license validation requires network access.</li>
+        <li>Double-check your Organization ID and License Key for typos.</li>
+        <li>Ensure your license has not expired. Contact support if unsure.</li>
+        <li>Network timeout is 30 seconds. If your connection is slow, try again.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="accordion" onclick="toggleAccordion(this)">
+    <div class="accordion-header">
+      <span class="acc-chevron">▶</span>
+      CSV import reports many failures
+    </div>
+    <div class="accordion-body">
+      <ul>
+        <li>Verify that your CSV has the correct number of columns (12 for books, 8 for users).</li>
+        <li>Ensure required fields are not empty.</li>
+        <li>For book imports, the Value column must be a valid integer.</li>
+        <li>For user imports, enrollment/start year must be greater than 1900, and age must be 1–120.</li>
+        <li>Ensure the header row matches the expected format for the user type you selected.</li>
+        <li>Check for encoding issues — use UTF-8 encoding for your CSV files.</li>
+        <li>For book CSVs, if a field contains commas, enclose it in double quotes.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="accordion" onclick="toggleAccordion(this)">
+    <div class="accordion-header">
+      <span class="acc-chevron">▶</span>
+      Emails are not being sent
+    </div>
+    <div class="accordion-body">
+      <ul>
+        <li>Verify email notifications are <strong>enabled</strong> in Settings → Email.</li>
+        <li>Check your SMTP configuration — server, port, username, and password.</li>
+        <li>Use the <strong>Test Email</strong> feature to diagnose SMTP issues.</li>
+        <li>For Gmail: ensure you are using an <strong>App Password</strong> if 2-Step Verification is enabled.</li>
+        <li>Ensure TLS is enabled (port 587) or SSL (port 465) as appropriate for your provider.</li>
+        <li>Check the Activity Logs (category: EMAIL) for error details.</li>
+        <li>Ensure users have valid email addresses in their profiles.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="accordion" onclick="toggleAccordion(this)">
+    <div class="accordion-header">
+      <span class="acc-chevron">▶</span>
+      Barcode scanner not working
+    </div>
+    <div class="accordion-body">
+      <ul>
+        <li>Ensure your device has a camera and it is not being used by another application.</li>
+        <li>Grant camera permissions to Libro if prompted.</li>
+        <li>Ensure adequate lighting — barcodes are difficult to scan in low light.</li>
+        <li>Hold the barcode steady within the camera viewfinder.</li>
+        <li>Try adjusting the distance between the camera and the barcode.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="accordion" onclick="toggleAccordion(this)">
+    <div class="accordion-header">
+      <span class="acc-chevron">▶</span>
+      Backup or restore fails
+    </div>
+    <div class="accordion-body">
+      <ul>
+        <li>Check that you have sufficient disk space (use the Storage Manager to verify).</li>
+        <li>Ensure the backup destination folder exists and is writable.</li>
+        <li>For cloud backups, verify your internet connection and provider credentials.</li>
+        <li>If restoring, ensure the backup file is not corrupted — check the file size against the backup history.</li>
+        <li>Try using the <strong>Test Backup</strong> feature before creating an actual backup.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="accordion" onclick="toggleAccordion(this)">
+    <div class="accordion-header">
+      <span class="acc-chevron">▶</span>
+      OPAC sync is failing
+    </div>
+    <div class="accordion-body">
+      <ul>
+        <li>Use <strong>Test Connection</strong> to verify connectivity to the OPAC server.</li>
+        <li>Check that the API Key is correct and has not expired.</li>
+        <li>Verify the OPAC Server URL is correct and accessible from this machine.</li>
+        <li>Network timeout is 30 seconds — try again if the connection is slow.</li>
+        <li>The system retries up to 3 times with batches of 500 records.</li>
+        <li>Check the Sync History for detailed error messages.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="accordion" onclick="toggleAccordion(this)">
+    <div class="accordion-header">
+      <span class="acc-chevron">▶</span>
+      Storage usage is high
+    </div>
+    <div class="accordion-body">
+      <ul>
+        <li>Open the <strong>Storage Manager</strong> to view current storage breakdown.</li>
+        <li>Reduce log retention period in <strong>Settings → System</strong> (default is 90 days).</li>
+        <li>Clean up old backup records in the Backup History.</li>
+        <li>Archive rarely-used books instead of keeping them active.</li>
+        <li>Consider clearing the barcode output folder if you have generated many barcode images.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FAQ ==================== -->
+<section class="section-card" id="faq">
+  <h2>Frequently Asked Questions</h2>
+
+  <div class="faq-item">
+    <div class="faq-question">How do non-admin users log in?</div>
+    <div class="faq-answer">Non-admin users (Students, Staff, Other Users) log in using their <strong>full name or email</strong> as the username and their <strong>identification number</strong> (Admission No, Staff No, or User No) as the password. They select their appropriate role on the login screen.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-question">Can I have multiple admin accounts?</div>
+    <div class="faq-answer">Yes. Additional admins can be created from the <strong>App Manager → Administrators</strong> section. Only existing staff members can be promoted to admin. The first admin created during setup is the Super Admin.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-question">What happens when a user's loan period expires?</div>
+    <div class="faq-answer">The book is marked as <strong>overdue</strong> in the system. Fines accrue daily at the configured rate (default: 10 KES/day) up to the maximum fine cap (default: 500 KES). When the book is returned, the admin is prompted to collect or waive the fine.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-question">Can I change the currency from KES?</div>
+    <div class="faq-answer">Yes. Go to <strong>Settings → Circulation → Fine Settings</strong> and change the <strong>Currency Symbol</strong> field to your preferred currency code.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-question">How are barcodes generated?</div>
+    <div class="faq-answer">Barcodes are auto-generated using the pattern: <code>[2-char subject prefix][YYMMDD date][4-digit random number]</code>. They are created in <strong>Code128</strong> format. You can also generate barcodes in bulk by date range from the Barcode Writer tool.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-question">What is OPAC?</div>
+    <div class="faq-answer"><strong>OPAC</strong> (Online Public Access Catalog) is a system that makes your library catalog accessible online. Users can search for books and place reservations through a web portal, which then syncs with your Libro desktop application.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-question">How does the clearance system work?</div>
+    <div class="faq-answer">Clearance checks whether a user has any outstanding library obligations: unreturned books, unreturned digital materials, lost books with unpaid charges, and unpaid fines. All four checks must pass for clearance to be approved. A clearance receipt can be saved as HTML or image.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-question">Is my data encrypted?</div>
+    <div class="faq-answer">Admin passwords are hashed using <strong>SHA-256 with random salt</strong>. Database backups can optionally be encrypted. The database itself is stored locally in the application data directory.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-question">What is the grace period?</div>
+    <div class="faq-answer">When your license expires, you have a <strong>7-day grace period</strong> during which all features remain available. A warning dialog shows how many days remain. After the grace period, the application is blocked until you renew your license.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-question">Can I use Libro offline?</div>
+    <div class="faq-answer">Libro stores all data locally in an SQLite database, so most features work offline. However, these features require network connectivity: license validation, OPAC synchronization, cloud backups, and sending email notifications.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-question">How do I reset the application to factory defaults?</div>
+    <div class="faq-answer">Go to <strong>Settings</strong> and click <strong>"Reset All to Defaults"</strong>. This resets all settings to their default values. Note: this does <em>not</em> delete your book or user data — only configuration settings are reset.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-question">What user data can non-admin users see and do?</div>
+    <div class="faq-answer">Non-admin users have limited access. They can: view their profile, see their borrowing history, place book reservations, submit suggestions and feedback, and view their currently borrowed books count. They cannot modify the catalog, manage other users, or access administrative tools.</div>
+  </div>
+</section>
+
+<!-- ==================== GLOSSARY ==================== -->
+<section class="section-card" id="glossary">
+  <h2>Glossary</h2>
+
+  <div class="glossary-grid">
+    <div class="glossary-item">
+      <div class="glossary-term">ADM NO</div>
+      <div class="glossary-def">Admission Number — a unique identifier assigned to each student. Used as the student's login password.</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">Barcode</div>
+      <div class="glossary-def">A machine-readable code (Code128 format) assigned to each book for scanning and identification.</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">Call Number</div>
+      <div class="glossary-def">A unique identifier assigned to a book within the library's classification system. Used to locate the physical book on the shelf.</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">Checkout</div>
+      <div class="glossary-def">The process of lending a book to a user. Also referred to as "issuing" a book.</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">Circulation</div>
+      <div class="glossary-def">The system of lending and returning books. Includes issuing, returning, renewals, and overdue management.</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">Clearance</div>
+      <div class="glossary-def">The process of verifying that a departing user has returned all library materials and paid all outstanding fines.</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">CSV</div>
+      <div class="glossary-def">Comma-Separated Values — a plain text file format used for bulk importing books and users into Libro.</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">Fine Cap</div>
+      <div class="glossary-def">The maximum fine amount that can be charged for an overdue book, regardless of how many days overdue. Default: 500 KES.</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">Grace Period</div>
+      <div class="glossary-def">A 7-day window after license expiry during which Libro remains fully functional with a warning displayed.</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">ILMS</div>
+      <div class="glossary-def">Integrated Library Management System — the full name of the Libro application.</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">ISBN</div>
+      <div class="glossary-def">International Standard Book Number — a unique numeric commercial book identifier.</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">OPAC</div>
+      <div class="glossary-def">Online Public Access Catalog — a web-based interface allowing users to search the library catalog and place reservations remotely.</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">SMTP</div>
+      <div class="glossary-def">Simple Mail Transfer Protocol — the standard protocol for sending emails. Required for Libro's email notification features.</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">Super Admin</div>
+      <div class="glossary-def">The first administrator account created during initial setup. Has the highest privileges and cannot be deactivated by other admins.</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">Sync</div>
+      <div class="glossary-def">Synchronization between the Libro desktop application and the OPAC server. Can be automatic or manual.</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">TLS / SSL</div>
+      <div class="glossary-def">Transport Layer Security / Secure Sockets Layer — encryption protocols used to secure email communications.</div>
+    </div>
+    <div class="glossary-item">
+      <div class="glossary-term">ZXing</div>
+      <div class="glossary-def">An open-source barcode scanning library used by Libro for reading and generating barcodes.</div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<footer class="doc-footer">
+  <p>Libro Integrated Library Management System — Documentation v1.0.0</p>
+  <p>© 2026 Libro. All rights reserved.</p>
+</footer>
+
+<!-- Back to top button -->
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+// --- Sidebar collapse/expand ---
+function toggleGroup(id) {
+  const grp = document.getElementById(id);
+  grp.classList.toggle('collapsed');
+}
+
+// --- Accordion toggle ---
+function toggleAccordion(el) {
+  el.classList.toggle('open');
+}
+
+// --- Copy CSV to clipboard ---
+function copyCSV(id) {
+  const el = document.getElementById(id);
+  const text = el.textContent || el.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = el.parentElement.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+  });
+}
+
+// --- Download CSV template ---
+function downloadCSV(type) {
+  const templates = {
+    books: 'Title,Author,CallNumber,Publisher,ISBN,ShelfNumber,Description,Language,Subject,Genre,Value,AcquisitionMethod\n,,,,,,,,,,,',
+    students: 'First Name,Last Name,Email,Phone,Admission No,Branch,Enrollment Year,Level\n,,,,,,,',
+    staff: 'First Name,Last Name,Email,Phone,Staff No,Department,Start Year,Category\n,,,,,,,',
+    others: 'First Name,Last Name,Email,Phone,User No,Residence,Age,Gender\n,,,,,,,'
+  };
+  const csv = templates[type];
+  if (!csv) return;
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = type + '_template.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// --- Back to top visibility ---
+window.addEventListener('scroll', function() {
+  const btn = document.getElementById('backToTop');
+  btn.classList.toggle('visible', window.scrollY > 400);
+});
+
+// --- Sidebar active item tracking ---
+window.addEventListener('scroll', function() {
+  const sections = document.querySelectorAll('section[id], div[id]');
+  const navItems = document.querySelectorAll('.nav-item');
+  let currentId = '';
+  sections.forEach(section => {
+    const rect = section.getBoundingClientRect();
+    if (rect.top <= 60) {
+      currentId = section.id;
+    }
+  });
+  navItems.forEach(item => {
+    item.classList.toggle('active', item.getAttribute('href') === '#' + currentId);
+  });
+});
+
+// --- Sidebar search ---
+document.getElementById('navSearch').addEventListener('input', function(e) {
+  const query = e.target.value.toLowerCase();
+  document.querySelectorAll('.nav-item').forEach(item => {
+    const text = item.textContent.toLowerCase();
+    item.style.display = text.includes(query) || query === '' ? '' : 'none';
+  });
+  document.querySelectorAll('.nav-group').forEach(grp => {
+    const visibleItems = grp.querySelectorAll('.nav-item:not([style*="display: none"])');
+    grp.style.display = visibleItems.length > 0 || query === '' ? '' : 'none';
+    if (query !== '' && visibleItems.length > 0) {
+      grp.classList.remove('collapsed');
+    }
+  });
+});
+</script>
+
+</body>
+</html>

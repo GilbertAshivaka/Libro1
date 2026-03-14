@@ -23,7 +23,7 @@ BackupManager::BackupManager(QObject *parent)
     //initialize paths
     applicationDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     defaultBackupPath = applicationDataPath + "/Backups";
-    databasePath = QApplication::applicationDirPath() + "/library.db";
+    databasePath = DatabaseManager::getDatabasePath(); //QApplication::applicationDirPath() + "/library.db";
 
     QDir().mkpath(defaultBackupPath);
 

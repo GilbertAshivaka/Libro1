@@ -218,8 +218,10 @@ bool AllBooksList::addBook(const QString &title,
         qWarning() << "There was an error adding book to the database: " + query.lastError().text();
     }
 
-    BarcodeWriter barcodeWriter;
-    barcodeWriter.writeAndSaveBarcode("Code128", barcode, title, author);
+    // BarcodeWriter barcodeWriter;
+    // barcodeWriter.writeAndSaveBarcode("Code128", barcode, title, author);
+
+    BarcodeWriter::instance()->writeAndSaveBarcode("Code128", barcode, title, author);
 
     return true;
 }

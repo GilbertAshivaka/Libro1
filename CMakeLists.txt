@@ -235,6 +235,13 @@ qt_add_qml_module(appLibro1
     QML_FILES FirstTimeSetupPage.qml
     QML_FILES ActivationPage.qml
     RESOURCES assets/management.png
+    RESOURCES assets/barcodeWriter.png assets/barcodeWriter2.png
+    RESOURCES assets/eye.png assets/hidden.png
+    RESOURCES assets/idea.png
+    RESOURCES docs/libro-docs.css docs/libro-docs.html
+    QML_FILES Documentation.qml
+    RESOURCES docs/booksSettingsIcon.png docs/cloudBackuprestore.png docs/libro-docs.css docs/libro-docs.html docs/libroIcon.ico docs/reload.png docs/reportsIcon.png docs/systemSettings.png docs/userSettings.png
+    RESOURCES docs/exchange.png
 )
 
 # Include directories for ZXing

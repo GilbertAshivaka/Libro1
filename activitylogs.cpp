@@ -1,4 +1,5 @@
 #include "activitylogs.h"
+#include "settingsmanager.h"
 
 // Define the static mutex
 QMutex ActivityLogs::logsMutex;
@@ -7,7 +8,10 @@ ActivityLogs::ActivityLogs(QObject *parent)
     : QObject{parent}
 {
     db = DatabaseManager::getConnection();
-    // executeSystemLogsInsert();
+    // executeSystemLogsInsert(); //for testing
+
+    //delete old logs
+    // deleteLogs(SettingsManager::instance()->logRetentionDays());
 }
 
 ActivityLogs::~ActivityLogs()

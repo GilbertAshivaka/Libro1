@@ -156,7 +156,16 @@ bool SingleBookReturn::searchByCallNumber(const QString &callNumber)
         return false;
     }
 
-    return loadBookFromDatabase("b.callNumber", callNumber.trimmed());
+    QString value = callNumber.trimmed();
+
+    //for physical scanners that scan barcode
+    // Barcode pattern: 2 uppercase letters + 6 digit date + 4 digit random = 12 chars
+    static const QRegularExpression barcodePattern("^[A-Z]{2}\\d{10}$");
+
+    if (barcodePattern.match(value).hasMatch())
+        return loadBookFromDatabase("b.barcode", value);
+
+    return loadBookFromDatabase("b.callNumber", value);
 }
 
 bool SingleBookReturn::searchByBarcode(const QString &barcode)
@@ -419,6 +428,7 @@ bool SingleBookReturn::addToLostBooks(const BookInfo &bookInfo)
         return false;
     }
 
+    checkQuery.next();
     if(checkQuery.value(0).toInt() > 0){
         return true;
     }
@@ -439,7 +449,7 @@ bool SingleBookReturn::addToLostBooks(const BookInfo &bookInfo)
     double replacementCost = bookInfo.bookValue;
     double totalDue = bookInfo.fineAmount + replacementCost;
 
-    insertQuery.addBindValue(bookInfo.issueDate);
+    insertQuery.addBindValue(bookInfo.issueId);
     insertQuery.addBindValue(bookInfo.bookId);
     insertQuery.addBindValue(bookInfo.userId);
     insertQuery.addBindValue(bookInfo.bookTitle);

@@ -57,14 +57,14 @@ ColumnLayout {
             return parseFloat(cleanText) * root.multiplier
         }
 
-        background: Rectangle {
-            implicitHeight: 40
-            implicitWidth: 140
-            radius: 6
-            color: spinBox.activeFocus ? "#FFFFFF" : "#F5F5F5"
-            border.color: spinBox.activeFocus ? "#0078D4" : "#E0E0E0"
-            border.width: spinBox.activeFocus ? 2 : 1
-        }
+        // background: Rectangle {
+        //     implicitHeight: 40
+        //     implicitWidth: 140
+        //     radius: 6
+        //     color: spinBox.activeFocus ? "#FFFFFF" : "#F5F5F5"
+        //     border.color: spinBox.activeFocus ? "#0078D4" : "#E0E0E0"
+        //     border.width: spinBox.activeFocus ? 2 : 1
+        // }
 
         contentItem: TextInput {
             z: 2

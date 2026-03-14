@@ -29,6 +29,7 @@
 #include "loginmanager.h"
 
 #include "appmanager.h"
+#include "barcodewriter.h"
 
 
 #include "issuebookslist.h"// for issuing books
@@ -145,6 +146,8 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty("suggestionsManager", suggestionsManager);
     engine.rootContext()->setContextProperty("loginManager", loginManager);
     engine.rootContext()->setContextProperty("userManager", userManager);
+
+    engine.rootContext()->setContextProperty("barcodeWriter", BarcodeWriter::instance());
 
 
     //Register BackupManager as QML singleton.

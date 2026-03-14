@@ -1,12 +1,25 @@
 #include "databasemanager.h"
 #include <QDebug>
 #include <QMutexLocker>
+#include <QStandardPaths>
+#include <QDir>
+#include <QFile>
+#include <QCoreApplication>
 
 QMutex DatabaseManager::dbMutex;  // initialize the static mutex
 
 DatabaseManager::DatabaseManager(QObject *parent) : QObject(parent)
 {
-    // ensure that the database connection is only created once and set it to dbInitialised variable so that the isdbInitialised fucntion can be called from different parts of the application
+    // Resolve the ApplicationData path once at construction
+    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir().mkpath(appDataPath); // ensure the directory exists
+    dbPath = appDataPath + "/library.db";
+
+    // One-time migration from old location (next to .exe) to AppData
+    migrateExistingDatabase(appDataPath);
+
+    // ensure that the database connection is only created once and set it to dbInitialised variable
+    // so that the isdbInitialised function can be called from different parts of the application
     dbInitalized = createDatabase();
 }
 
@@ -15,6 +28,24 @@ DatabaseManager::~DatabaseManager()
     // Close the database connection when the object is destroyed
     if (db.isOpen()) {
         db.close();
+    }
+}
+
+void DatabaseManager::migrateExistingDatabase(const QString &appDataPath)
+{
+    QString newPath = appDataPath + "/library.db";
+    QString oldPath = QCoreApplication::applicationDirPath() + "/library.db";
+
+    // Only migrate if new location doesn't exist yet but old one does
+    if (!QFile::exists(newPath) && QFile::exists(oldPath)) {
+        if (QFile::copy(oldPath, newPath)) {
+            qDebug() << "Database migrated from" << oldPath << "to" << newPath;
+            // Rename old file as a backup rather than deleting it
+            QFile::rename(oldPath, oldPath + ".bak");
+        } else {
+            qWarning() << "Failed to migrate database from" << oldPath << "to" << newPath;
+            emit errorOccured("Failed to migrate database to new location.");
+        }
     }
 }
 
@@ -33,7 +64,7 @@ bool DatabaseManager::createDatabase()
         db = QSqlDatabase::database("libraryConnection");
     } else {
         db = QSqlDatabase::addDatabase("QSQLITE", "libraryConnection");
-        db.setDatabaseName("library.db");
+        db.setDatabaseName(dbPath); // use resolved AppData path
     }
 
     if (!db.open()) {
@@ -122,30 +153,30 @@ bool DatabaseManager::createDatabase()
 
     //Creating the issued_books table
     if(!query.exec("CREATE TABLE IF NOT EXISTS issued_books ("
-            "issue_id INTEGER PRIMARY KEY AUTOINCREMENT,"
-            "book_id INTEGER NOT NULL,"
-            "user_id INTEGER NOT NULL,"
-            "issue_date DATETIME DEFAULT CURRENT_TIMESTAMP,"
-            "due_date DATETIME NOT NULL,"
-            "return_date DATETIME,"
-            "fine_amount DECIMAL(10,2) DEFAULT 0.00,"
-            "fine_paid DECIMAL(10,2) DEFAULT 0.00,"
-            "fine_paid_date DATETIME,"
-            "renewal_count INTEGER DEFAULT 0,"
-            "last_renewal_date DATETIME,"
-            "status TEXT DEFAULT 'Borrowed',"
-            "condition_before TEXT,"
-            "condition_after TEXT,"
-            "notes TEXT,"
-            "issued_by INTEGER,"
-            "received_by INTEGER,"
-            "reservation_id INTEGER,"
-            "FOREIGN KEY (book_id) REFERENCES books(bookID) ON DELETE CASCADE,"
-            "FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,"
-            "FOREIGN KEY (issued_by) REFERENCES users(user_id),"
-            "FOREIGN KEY (received_by) REFERENCES users(user_id)"
-            // Add FOREIGN KEY for reservation_id later
-            ")")){
+                    "issue_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    "book_id INTEGER NOT NULL,"
+                    "user_id INTEGER NOT NULL,"
+                    "issue_date DATETIME DEFAULT CURRENT_TIMESTAMP,"
+                    "due_date DATETIME NOT NULL,"
+                    "return_date DATETIME,"
+                    "fine_amount DECIMAL(10,2) DEFAULT 0.00,"
+                    "fine_paid DECIMAL(10,2) DEFAULT 0.00,"
+                    "fine_paid_date DATETIME,"
+                    "renewal_count INTEGER DEFAULT 0,"
+                    "last_renewal_date DATETIME,"
+                    "status TEXT DEFAULT 'Borrowed',"
+                    "condition_before TEXT,"
+                    "condition_after TEXT,"
+                    "notes TEXT,"
+                    "issued_by INTEGER,"
+                    "received_by INTEGER,"
+                    "reservation_id INTEGER,"
+                    "FOREIGN KEY (book_id) REFERENCES books(bookID) ON DELETE CASCADE,"
+                    "FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,"
+                    "FOREIGN KEY (issued_by) REFERENCES users(user_id),"
+                    "FOREIGN KEY (received_by) REFERENCES users(user_id)"
+                    // Add FOREIGN KEY for reservation_id later
+                    ")")){
         emit errorOccured("Error creating issued_books table: " + query.lastError().text());
         qDebug() << "Error creating issued_books table: " + query.lastError().text();
         return false;
@@ -320,7 +351,6 @@ bool DatabaseManager::createDatabase()
     query.exec("CREATE INDEX IF NOT EXISTS idx_reserved_book_id ON reserved_books(book_id)");
     query.exec("CREATE INDEX IF NOT EXISTS idx_reserved_user_id ON reserved_books(user_id)");
 
-
     // Create opac_sync_log table
     if (!query.exec(
             "CREATE TABLE IF NOT EXISTS opac_sync_log ("
@@ -343,7 +373,6 @@ bool DatabaseManager::createDatabase()
     query.exec("CREATE INDEX IF NOT EXISTS idx_sync_type ON opac_sync_log(sync_type)");
     query.exec("CREATE INDEX IF NOT EXISTS idx_sync_started ON opac_sync_log(started_at)");
 
-
     // Create opac_configuration table
     if (!query.exec(
             "CREATE TABLE IF NOT EXISTS opac_configuration ("
@@ -364,7 +393,6 @@ bool DatabaseManager::createDatabase()
         emit errorOccured("Failed to create opac_configuration table: " + query.lastError().text());
         return false;
     }
-
 
     // Create app_settings table
     if (!query.exec(
@@ -410,13 +438,6 @@ bool DatabaseManager::createDatabase()
     query.exec("CREATE INDEX IF NOT EXISTS idx_suggestions_status ON suggestions_feedback(status)");
     query.exec("CREATE INDEX IF NOT EXISTS idx_suggestions_created ON suggestions_feedback(created_at)");
 
-
-    // Create indexes for suggestions_feedback
-    query.exec("CREATE INDEX IF NOT EXISTS idx_suggestions_type ON suggestions_feedback(type)");
-    query.exec("CREATE INDEX IF NOT EXISTS idx_suggestions_status ON suggestions_feedback(status)");
-    query.exec("CREATE INDEX IF NOT EXISTS idx_suggestions_created ON suggestions_feedback(created_at)");
-
-
     // Create admins table for system administrators
     // First admin is set up during initial app configuration
     // Subsequent admins must be staff members first, then promoted by existing admin
@@ -449,11 +470,9 @@ bool DatabaseManager::createDatabase()
     query.exec("CREATE INDEX IF NOT EXISTS idx_admins_staff_id ON admins(staff_id)");
     query.exec("CREATE INDEX IF NOT EXISTS idx_admins_active ON admins(is_active)");
 
-
     qDebug() << "Tables created successfully";
     return true;
 }
-
 
 
 // Static method to return a database connection (optionally for multiple classes)
@@ -461,13 +480,23 @@ QSqlDatabase DatabaseManager::getConnection()
 {
     QMutexLocker locker(&dbMutex);  // lock to ensure thread safety
     if (!QSqlDatabase::contains("libraryConnection")) {
+        QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+        QDir().mkpath(appDataPath);
+
         QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", "libraryConnection");
-        db.setDatabaseName("library.db");
+        db.setDatabaseName(appDataPath + "/library.db"); // use resolved AppData path
         if (!db.open()) {
             qWarning() << "Failed to open database: " + db.lastError().text();
         }
     }
     return QSqlDatabase::database("libraryConnection");
+}
+
+QString DatabaseManager::getDatabasePath()
+{
+    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir().mkpath(appDataPath);
+    return appDataPath + "/library.db";
 }
 
 
@@ -504,13 +533,12 @@ int DatabaseManager::getTotalUsersCount(const QString &userType)
 //this was a temporary function to delete a corrupted database
 void DatabaseManager::deleteTables()
 {
-
     // Check if the connection already exists before creating
     if (QSqlDatabase::contains("libraryConnection")) {
         db = QSqlDatabase::database("libraryConnection");
     } else {
         db = QSqlDatabase::addDatabase("QSQLITE", "libraryConnection");
-        db.setDatabaseName("library.db");
+        db.setDatabaseName(dbPath); // use resolved AppData path
     }
 
     if (!db.open()) {
@@ -527,4 +555,3 @@ void DatabaseManager::deleteTables()
     query.exec("DROP TABLE IF EXISTS books");
     qDebug() << "Tables dropped successfully.";
 }
-

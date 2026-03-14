@@ -20,7 +20,7 @@ bool UserManager::addUser(const QString &firstName, const QString &lastName, con
 {
     if (!QSqlDatabase::contains("user_db")) {
         QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", "user_db");
-        db.setDatabaseName("library.db");
+        db.setDatabaseName(DatabaseManager::getDatabasePath());
 
         if (!db.open()) {
             qDebug() <<"Failed to open database: " + db.lastError().text();

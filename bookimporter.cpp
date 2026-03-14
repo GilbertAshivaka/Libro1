@@ -8,6 +8,7 @@
 #include <QDebug>
 #include <QUuid>
 #include <QUrl>
+#include "databasemanager.h"
 
 #include "barcodewriter.h"
 
@@ -95,8 +96,10 @@ QString BookImporter::generateBarcode(const QString &category = "", const QStrin
     QString barcode = prefix +timeStamp + random;
 
     //generate and save barcode image for printing
-    BarcodeWriter barcodeWriter;
-    barcodeWriter.writeAndSaveBarcode("Code128", barcode, title, author);
+    // BarcodeWriter barcodeWriter;
+    // barcodeWriter.writeAndSaveBarcode("Code128", barcode, title, author);
+
+    BarcodeWriter::instance()->writeAndSaveBarcode("Code128", barcode, title, author);
 
     return barcode;
 }
@@ -106,7 +109,7 @@ BookImportResult BookImporter::processImport(const QString &filePath, const std:
     BookImportResult result;
     const QString connectionName = "book_import_thread_connection";
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connectionName);
-    db.setDatabaseName("library.db");
+    db.setDatabaseName(DatabaseManager::getDatabasePath());
 
     if (!db.open()) {
         result.errors.append("Failed to open database: " + db.lastError().text());

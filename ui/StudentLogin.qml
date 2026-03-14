@@ -200,6 +200,42 @@ Item{
             }
         }
 
+        //toggle password visibility
+        Rectangle {
+            id: passwordToggleRect
+            height: studentPassword.height/2
+            width: height
+            color: "transparent"
+            anchors{
+                left: studentPassword.right
+                leftMargin: 8
+                verticalCenter: studentPassword.verticalCenter
+            }
+
+            property bool passwordVisible: false  // ← track state
+
+            Image {
+                id: passwordToggle
+                anchors.fill: parent
+                source: passwordToggleRect.passwordVisible ? "../assets/hidden.png" :  "../assets/eye.png"
+                fillMode: Image.PreserveAspectFit
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+
+                onClicked: {
+                    passwordToggleRect.passwordVisible = !passwordToggleRect.passwordVisible
+                    studentPasswordTextInput.echoMode = passwordToggleRect.passwordVisible
+                            ? TextInput.Normal
+                            : TextInput.Password
+                }
+            }
+        }
+
+
         Rectangle{
             id: studentCancel
             width: parent.width* .5

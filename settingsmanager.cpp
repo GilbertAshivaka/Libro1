@@ -18,7 +18,7 @@ QMutex SettingsManager::m_mutex;
 namespace Defaults {
 // General
 const QString APPLICATION_TITLE = "Libro Integrated Library Management System";
-const QString DATABASE_FILE_NAME = "library.db";
+const QString DATABASE_FILE_NAME = DatabaseManager::getDatabasePath();
 const QString ORGANIZATION_NAME = "Libro";
 const QString LIBRARY_NAME = "";
 const QString LIBRARY_ADDRESS = "";

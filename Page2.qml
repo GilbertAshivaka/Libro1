@@ -22,11 +22,188 @@ Rectangle {
     property string toolBarAdminProfilePic: "assets/userImage.png"
     property var moreTools: null
     property var settingsPage: null
+    property var documentationPage: null
+
+    // Tool page properties
+    property var reportsPage: null
+    property var inventoryTracking: null
+    property var backupPage: null
+    property var activityLogs: null
+    property var libroAIPage: null
+    property var pdfRoot: null
+    property var digitalMaterialPage: null
+    property var bookshopScreen: null
+    property var storageManagerScreen: null
+    property var emailNotifications: null
+    property var opacConfigurationView: null
+    property var clearancePage: null
+    property var appManagerPage: null
+    property var suggestionsAdminPage: null
+    property var barcodeWriterPage: null
+
+    ListModel {
+        id: faqModel
+
+        ListElement {
+            question: "How do non-admin users log in?"
+            answer: "Non-admin users (Students, Staff, Other Users) log in using their full name or email as the username and their identification number (Admission No, Staff No, or User No) as the password. They select their appropriate role on the login screen."
+        }
+        ListElement {
+            question: "Can I have multiple admin accounts?"
+            answer: "Yes. Additional admins can be created from the App Manager → Administrators section. Only existing staff members can be promoted to admin. The first admin created during setup is the Super Admin."
+        }
+        ListElement {
+            question: "What happens when a user's loan period expires?"
+            answer: "The book is marked as overdue in the system. Fines accrue daily at the configured rate (default: 10 KES/day) up to the maximum fine cap (default: 500 KES). When the book is returned, the admin is prompted to collect or waive the fine."
+        }
+        ListElement {
+            question: "Can I change the currency from KES?"
+            answer: "Yes. Go to Settings → Circulation → Fine Settings and change the Currency Symbol field to your preferred currency code."
+        }
+        ListElement {
+            question: "How are barcodes generated?"
+            answer: "Barcodes are auto-generated using the pattern: [2-char subject prefix][YYMMDD date][4-digit random number]. They are created in Code128 format. You can also generate barcodes in bulk by date range from the Barcode Writer tool."
+        }
+        ListElement {
+            question: "What is OPAC?"
+            answer: "OPAC (Online Public Access Catalog) is a system that makes your library catalog accessible online. Users can search for books and place reservations through a web portal, which then syncs with your Libro desktop application."
+        }
+        ListElement {
+            question: "How does the clearance system work?"
+            answer: "Clearance checks whether a user has any outstanding library obligations: unreturned books, unreturned digital materials, lost books with unpaid charges, and unpaid fines. All four checks must pass for clearance to be approved. A clearance receipt can be saved as HTML or image."
+        }
+        ListElement {
+            question: "Is my data encrypted?"
+            answer: "Admin passwords are hashed using SHA-256 with random salt. Database backups can optionally be encrypted. The database itself is stored locally in the application data directory."
+        }
+        ListElement {
+            question: "What is the grace period?"
+            answer: "When your license expires, you have a 7-day grace period during which all features remain available. A warning dialog shows how many days remain. After the grace period, the application is blocked until you renew your license."
+        }
+        ListElement {
+            question: "Can I use Libro offline?"
+            answer: "Libro stores all data locally in an SQLite database, so most features work offline. However, these features require network connectivity: license validation, OPAC synchronization, cloud backups, and sending email notifications."
+        }
+        ListElement {
+            question: "How do I reset the application to factory defaults?"
+            answer: "Go to Settings and click \"Reset All to Defaults\". This resets all settings to their default values. Note: this does not delete your book or user data — only configuration settings are reset."
+        }
+        ListElement {
+            question: "What user data can non-admin users see and do?"
+            answer: "Non-admin users have limited access. They can: view their profile, see their borrowing history, place book reservations, submit suggestions and feedback, and view their currently borrowed books count. They cannot modify the catalog, manage other users, or access administrative tools."
+        }
+    }
+
+    ListModel {
+        id: filteredFaqModel
+    }
+
+    ListModel {
+        id: filteredToolsModel
+    }
+
+    function getToolsList() {
+        return [
+            { name: "Reports and analytics",   icon: "assets/reports.png",            component: "ReportsPage",               useMainContainer: true  },
+            { name: "Inventory tracking",       icon: "assets/inventory2.png",         component: "InventoryTracking",         useMainContainer: true  },
+            { name: "Backup and restore",       icon: "assets/cloudBackuprestore.png", component: "BackupPage",                useMainContainer: false },
+            { name: "Activity logger",          icon: "assets/logging.png",            component: "ActivityLogs",              useMainContainer: false },
+            { name: "Libro AI",                 icon: "assets/genAI.png",              component: "LibroAIPage",               useMainContainer: false },
+            { name: "Ebook reader",             icon: "assets/pdf.png",                component: "PDFReaderScreen",           useMainContainer: false },
+            { name: "Digital material",         icon: "assets/digitalContent.png",     component: "DigitalMaterials",          useMainContainer: false },
+            { name: "Online Bookshops",         icon: "assets/bookstore.png",          component: "BookshopScreen",            useMainContainer: false },
+            { name: "Storage manager",          icon: "assets/storage.png",            component: "StorageManager",            useMainContainer: false },
+            { name: "Send Notifications",       icon: "assets/emailNotification.png",  component: "EmailNotifications",        useMainContainer: false },
+            { name: "Opac Configuration",       icon: "assets/opac.png",               component: "OpacConfigurationView",     useMainContainer: false },
+            { name: "Clearance",                icon: "assets/clearance.png",          component: "Clearance/ClearancePage",   useMainContainer: false },
+            { name: "System Management",        icon: "assets/management.png",         component: "AppManagerPage",            useMainContainer: false },
+            { name: "Suggestions and Feedback", icon: "assets/suggestion.png",         component: "SuggestionsAdminPage",      useMainContainer: false },
+            { name: "Barcode Writer",           icon: "assets/barcodeWriter2.png",     component: "BarcodeWriter",             useMainContainer: false },
+            { name: "Help and documentation",   icon: "assets/documentation.png",      component: "Documentation",             useMainContainer: true  }
+        ]
+    }
+
+    function getPageVar(component) {
+        switch (component) {
+            case "ReportsPage":             return reportsPage
+            case "InventoryTracking":       return inventoryTracking
+            case "BackupPage":              return backupPage
+            case "ActivityLogs":            return activityLogs
+            case "LibroAIPage":             return libroAIPage
+            case "PDFReaderScreen":         return pdfRoot
+            case "DigitalMaterials":        return digitalMaterialPage
+            case "BookshopScreen":          return bookshopScreen
+            case "StorageManager":          return storageManagerScreen
+            case "EmailNotifications":      return emailNotifications
+            case "OpacConfigurationView":   return opacConfigurationView
+            case "Clearance/ClearancePage": return clearancePage
+            case "AppManagerPage":          return appManagerPage
+            case "SuggestionsAdminPage":    return suggestionsAdminPage
+            case "BarcodeWriter":           return barcodeWriterPage
+            case "Documentation":           return documentationPage
+            default:                        return null
+        }
+    }
+
+    function openTool(component, useMainContainer) {
+        var pageVar = getPageVar(component)
+        var target = useMainContainer ? mainContainer : mainPageContainer
+        CustomComponentLoader.customCreateComponent(pageVar, component, target)
+    }
+
+    function rebuildFaqResults() {
+        var query = navigationTextInput.text.trim().toLowerCase()
+        filteredToolsModel.clear()
+        filteredFaqModel.clear()
+
+        if (query.length === 0) {
+            if (faqSearchPopup.visible)
+                faqSearchPopup.close()
+            return
+        }
+
+        // Populate tools
+        var tools = getToolsList()
+        for (var t = 0; t < tools.length; t++) {
+            if (tools[t].name.toLowerCase().indexOf(query) !== -1) {
+                filteredToolsModel.append({
+                    name:             tools[t].name,
+                    icon:             tools[t].icon,
+                    component:        tools[t].component,
+                    useMainContainer: tools[t].useMainContainer
+                })
+            }
+        }
+
+        // Populate FAQs
+        for (var i = 0; i < faqModel.count; i++) {
+            var faq = faqModel.get(i)
+            if (faq.question.toLowerCase().indexOf(query) !== -1 ||
+                faq.answer.toLowerCase().indexOf(query) !== -1) {
+                filteredFaqModel.append({
+                    question: faq.question,
+                    answer:   faq.answer,
+                    expanded: false
+                })
+            }
+        }
+
+        if (!faqSearchPopup.visible)
+            faqSearchPopup.open()
+    }
+
+    function toggleFaqExpansion(index) {
+        if (index < 0 || index >= filteredFaqModel.count)
+            return
+
+        var faq = filteredFaqModel.get(index)
+        filteredFaqModel.setProperty(index, "expanded", !faq.expanded)
+    }
 
     Settings {
         id: appSettings
         category: "UserProfile"
-        property string profilePicturePath: "assets/userImage.png" // default image
+        property string profilePicturePath: "assets/userImage.png"
     }
 
     ToolBar {
@@ -67,14 +244,11 @@ Rectangle {
                 Text {
                     id: libraryName
                     anchors.verticalCenter: parent.verticalCenter
-                    // text: SettingsManager.libraryName //qsTr("Libro Integrated Library Management System")
-                    //using binding component so the binding don't break
                     Binding {
                         target: libraryName
                         property: "text"
                         value: SettingsManager.libraryName
                     }
-
                     font.pointSize: 12
                     verticalAlignment: Text.AlignVCenter
                 }
@@ -147,7 +321,6 @@ Rectangle {
                     cursorShape: "PointingHandCursor"
                     onClicked: {
                         mainDrawer.open()
-                        // fileDialog.open()
                     }
                     hoverEnabled: true
                 }
@@ -237,20 +410,289 @@ Rectangle {
                         helpRect.color = "white"
                     }
 
-                    onClicked: {
-
+                    onClicked: function() {
+                        CustomComponentLoader.customCreateComponent(documentationPage,"Documentation", mainContainer)
                     }
                 }
             }
 
-            Searchbox{
+            Rectangle{
                 id: mainScreenSearchbox
                 width: 400
                 height: 30
+                z: 3
+                radius: 4
                 anchors{
                     right: helpRect.left
                     rightMargin: 10
                     verticalCenter: parent.verticalCenter
+                }
+
+                color: "transparent"
+                border.color: "blue"
+
+                signal textChanged()
+
+                property string placeHolderText: "Search for tools and FAQs"
+
+                Image {
+                    id: searchIcon
+
+                    anchors{
+                        left: parent.left
+                        leftMargin: 15
+                        verticalCenter: parent.verticalCenter
+                    }
+
+                    height: parent.height *.45
+                    fillMode: Image.PreserveAspectFit
+
+                    source: "assets/searchIcon.png"
+                }
+
+                Text{
+                    id: searchBoxPlaceHolder
+                    visible: navigationTextInput.text === ""
+                    color: "#585757"
+                    text: mainScreenSearchbox.placeHolderText
+                    anchors{
+                        left: searchIcon.right
+                        verticalCenter: parent.verticalCenter
+                        leftMargin: 20
+                    }
+                }
+
+                MouseArea{
+                    id: toolBarSearchBoxMA
+                    cursorShape: "IBeamCursor"
+                    anchors{
+                        right: parent.right
+                        top: parent.top
+                        bottom: parent.bottom
+                        left: searchIcon.right
+                        leftMargin: 20
+                    }
+
+                    TextInput{
+                        id: navigationTextInput
+                        clip: true
+                        anchors{
+                            right: parent.right
+                            rightMargin: 5
+                            top: parent.top
+                            bottom: parent.bottom
+                            left: parent.left
+                        }
+
+                        verticalAlignment: Text.AlignVCenter
+                        font.pixelSize: 11
+
+                        onTextChanged: page2.rebuildFaqResults()
+                        onActiveFocusChanged: {
+                            if (!activeFocus && text.trim() === "" && faqSearchPopup.visible)
+                                faqSearchPopup.close()
+                        }
+                    }
+                }
+
+                Popup {
+                    id: faqSearchPopup
+                    parent: page2
+                    modal: false
+                    focus: false
+                    padding: 0
+                    z: 3
+                    x: mainScreenSearchbox.x
+                    y: mainScreenSearchbox.y + mainScreenSearchbox.height + 6
+                    width: mainScreenSearchbox.width
+                    height: Math.min(page2.height * 0.6, popupFlickable.contentHeight + 16)
+                    visible: false
+                    closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+                    background: Rectangle {
+                        radius: 8
+                        color: "white"
+                        border.color: "#CBD5E1"
+                        border.width: 1
+                    }
+
+                    contentItem: Flickable {
+                        id: popupFlickable
+                        clip: true
+                        contentWidth: width
+                        contentHeight: popupMainColumn.implicitHeight + 16
+                        boundsBehavior: Flickable.StopAtBounds
+
+                        ScrollBar.vertical: ScrollBar {
+                            policy: ScrollBar.AsNeeded
+                        }
+
+                        Column {
+                            id: popupMainColumn
+                            width: popupFlickable.width - 16
+                            x: 8
+                            y: 8
+                            spacing: 4
+
+                            // ── Tools section ──────────────────────────────
+                            Text {
+                                visible: filteredToolsModel.count > 0
+                                text: "Tools"
+                                font.pixelSize: 12
+                                font.bold: true
+                                color: "#334155"
+                                topPadding: 4
+                                bottomPadding: 4
+                            }
+
+                            Repeater {
+                                model: filteredToolsModel
+
+                                delegate: Rectangle {
+                                    width: popupMainColumn.width
+                                    height: 40
+                                    radius: 6
+                                    color: toolMA.containsMouse ? "#EFF6FF" : "#F8FAFC"
+                                    border.color: toolMA.containsMouse ? "#BFDBFE" : "#E2E8F0"
+                                    border.width: 1
+
+                                    Row {
+                                        spacing: 10
+                                        anchors {
+                                            left: parent.left
+                                            leftMargin: 10
+                                            verticalCenter: parent.verticalCenter
+                                        }
+
+                                        Image {
+                                            width: 20
+                                            height: 20
+                                            source: icon
+                                            fillMode: Image.PreserveAspectFit
+                                            anchors.verticalCenter: parent.verticalCenter
+                                        }
+
+                                        Text {
+                                            text: name
+                                            font.pixelSize: 12
+                                            color: "#1E293B"
+                                            anchors.verticalCenter: parent.verticalCenter
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: toolMA
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        hoverEnabled: true
+                                        onClicked: {
+                                            faqSearchPopup.close()
+                                            page2.openTool(component, useMainContainer)
+                                        }
+                                    }
+
+                                    Behavior on color { ColorAnimation { duration: 100 } }
+                                }
+                            }
+
+                            // ── Divider ────────────────────────────────────
+                            Rectangle {
+                                visible: filteredToolsModel.count > 0 && filteredFaqModel.count > 0
+                                width: popupMainColumn.width
+                                height: 1
+                                color: "#E2E8F0"
+                            }
+
+                            // ── FAQs section ───────────────────────────────
+                            Text {
+                                visible: filteredFaqModel.count > 0
+                                text: "FAQs"
+                                font.pixelSize: 12
+                                font.bold: true
+                                color: "#334155"
+                                topPadding: 4
+                                bottomPadding: 4
+                            }
+
+                            Repeater {
+                                model: filteredFaqModel
+
+                                delegate: Rectangle {
+                                    width: popupMainColumn.width
+                                    height: faqItemCol.implicitHeight + 16
+                                    radius: 6
+                                    color: "#F8FAFC"
+                                    border.color: "#E2E8F0"
+                                    border.width: 1
+
+                                    Column {
+                                        id: faqItemCol
+                                        width: parent.width - 20
+                                        spacing: 8
+                                        anchors {
+                                            left: parent.left
+                                            right: parent.right
+                                            top: parent.top
+                                            margins: 10
+                                        }
+
+                                        Row {
+                                            width: parent.width
+                                            spacing: 8
+
+                                            Text {
+                                                text: expanded ? "▾" : "▸"
+                                                font.pixelSize: 12
+                                                color: "#3B82F6"
+                                                anchors.verticalCenter: qText.verticalCenter
+                                            }
+
+                                            Text {
+                                                id: qText
+                                                width: parent.width - 20
+                                                text: question
+                                                font.pixelSize: 12
+                                                font.bold: true
+                                                color: "#1E293B"
+                                                wrapMode: Text.WordWrap
+                                            }
+                                        }
+
+                                        Text {
+                                            width: parent.width
+                                            visible: expanded
+                                            text: answer
+                                            font.pixelSize: 11
+                                            color: "#475569"
+                                            wrapMode: Text.WordWrap
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: page2.toggleFaqExpansion(index)
+                                    }
+                                }
+                            }
+
+                            // ── No results ─────────────────────────────────
+                            Rectangle {
+                                visible: filteredToolsModel.count === 0 && filteredFaqModel.count === 0
+                                width: popupMainColumn.width
+                                height: 48
+                                color: "transparent"
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "No matching tools or FAQs found"
+                                    font.pixelSize: 12
+                                    font.bold: true
+                                    color: "#334155"
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -274,7 +716,6 @@ Rectangle {
             anchors {
                 left: buttonsRect.right
                 leftMargin: 20
-                //                top: toolBar.bottom
                 top: parent.top
                 topMargin: 10
                 right: parent.right
@@ -322,7 +763,7 @@ Rectangle {
         id: mainDrawer
         edge: Qt.RightEdge
         width: parent.width* .25
-        height: parent.height //* .88
+        height: parent.height
 
         Rectangle{
             id: rightPane
@@ -330,24 +771,6 @@ Rectangle {
             radius: 8
             color: "#DBE0E7"
             clip: true
-
-            // Image {
-            //     id: notificationIcon
-            //     source: "assets/bell.png"
-            //     width: 24
-            //     height: 24
-            //     anchors{
-            //         top: parent.top
-            //         topMargin: 20
-            //         left: parent.left
-            //         leftMargin: 20
-            //     }
-            //     fillMode: Image.PreserveAspectFit
-            //     MouseArea{
-            //         anchors.fill: parent
-            //         cursorShape: "PointingHandCursor"
-            //     }
-            // }
 
             Image {
                 id: settingsIcon
@@ -389,18 +812,17 @@ Rectangle {
 
                 Image {
                     id: sourceItem2
-                    source: appSettings.profilePicturePath  // Load from Settings
+                    source: appSettings.profilePicturePath
                     anchors.centerIn: parent
                     width: parent.width
                     height: width
                     visible: false
                     fillMode: Image.PreserveAspectCrop
 
-                    // Fallback if image fails to load
                     onStatusChanged: {
                         if (status === Image.Error) {
                             console.log("Failed to load profile picture, using default")
-                            source = "assets/userImage.png" // default image
+                            source = "assets/userImage.png"
                         }
                     }
                 }
@@ -434,13 +856,8 @@ Rectangle {
                         if (fileDialog2.currentFile) {
                             var fileUrl = fileDialog2.currentFile.toString()
                             console.log("Selected file:", fileUrl)
-
-                            // Save to Settings
                             appSettings.profilePicturePath = fileUrl
                             console.log("Profile picture saved to settings")
-
-                            // Optional: Show confirmation
-                            // showNotification("Profile picture updated successfully")
                         }
                     }
                     onRejected: {
@@ -454,7 +871,6 @@ Rectangle {
                     onClicked: fileDialog2.open()
                     hoverEnabled: true
 
-                    // Optional: Add hover effect
                     onEntered: {
                         userProfileRect.opacity = 0.8
                     }
@@ -463,7 +879,6 @@ Rectangle {
                     }
                 }
 
-                // Optional: Add a camera icon overlay to indicate it's clickable
                 Rectangle {
                     width: 32
                     height: 32
@@ -496,7 +911,7 @@ Rectangle {
 
             Text {
                 id:adminLabel
-                text: "Admin: " + appManager.currentAdminName //"Noel Nonstein" //the name should be dynamically fetched from the database
+                text: "Admin: " + appManager.currentAdminName
                 color: "#1E293B"
                 font.pixelSize: 12
                 font.weight: Font.Bold
@@ -519,8 +934,9 @@ Rectangle {
                     topMargin: 10
                 }
 
-                onClicked: {
-
+                onClicked: function() {
+                    mainDrawer.close()
+                    CustomComponentLoader.customCreateComponent(documentationPage,"Documentation", mainContainer)
                 }
             }
 
@@ -635,7 +1051,6 @@ Rectangle {
                     Behavior on rotation { NumberAnimation { duration: 500; easing.type: Easing.OutCubic } }
                 }
 
-                // No data message
                 Text {
                     visible: activitySeries.count === 0
                     text: "No activity recorded today"
@@ -652,20 +1067,15 @@ Rectangle {
                 }
             }
 
-            // Footer with copyright
             Rectangle {
                 id: footerSection
                 width: parent.width * 0.9
                 height: 50
                 radius: 8
                 color: "transparent"
-                // border.color: "#E2E8F0"
-                // border.width: 1
                 anchors {
                     bottom: parent.bottom
                     bottomMargin: 10
-                    // right: parent.right
-                    // rightMargin: 10
                     horizontalCenter: parent.horizontalCenter
                 }
 
@@ -707,38 +1117,30 @@ Rectangle {
         }
     }
 
-    //update the activity chart
     function updateChartData() {
         activitySeries.clear()
 
         var data = analyticsManager.todayActivityData
         var maxCount = 0
 
-        // Find max count for Y axis scaling
         for (var i = 0; i < data.length; i++) {
             if (data[i].count > maxCount) {
                 maxCount = data[i].count
             }
         }
 
-        // Set Y axis max to a nice round number
         yAxis.max = Math.max(10, Math.ceil(maxCount * 1.2))
 
-        // Add data points
         for (var j = 0; j < data.length; j++) {
             activitySeries.append(data[j].hour, data[j].count)
         }
 
-        // Update X axis range based on data
         if (data.length > 0) {
             var minHour = data[0].hour
             var maxHour = data[data.length - 1].hour
-
-            // Add padding to X axis
             xAxis.min = Math.max(0, minHour - 1)
             xAxis.max = Math.min(23, maxHour + 1)
         } else {
-            // Default to full day if no data
             xAxis.min = 0
             xAxis.max = 23
         }
@@ -746,17 +1148,3 @@ Rectangle {
         console.log("Chart updated with", data.length, "data points")
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

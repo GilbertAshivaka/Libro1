@@ -1059,7 +1059,7 @@ void AppManager::handleValidationResponse(const QJsonObject &response)
         emit validationCompleted(false, error);
         logValidation("periodic", true, "invalid", QJsonDocument(response).toJson(), error);
 
-        ActivityLogs::logActivity("WARNING", "SYSTEM", "License validation failed", "License validation fialed.");
+        ActivityLogs::logActivity("WARNING", "SYSTEM", "License validation failed", "License validation failed.");
     }
 }
 

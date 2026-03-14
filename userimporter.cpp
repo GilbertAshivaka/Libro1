@@ -5,6 +5,7 @@
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlError>
+#include "databasemanager.h"
 
 UserImporter::UserImporter(QObject *parent)
     : QObject{parent}
@@ -105,7 +106,7 @@ ImportResult UserImporter::processImport(const QString &filePath, const std::fun
 
     const QString connectionName = "import_thread_connection";
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connectionName);
-    db.setDatabaseName("library.db");
+    db.setDatabaseName(DatabaseManager::getDatabasePath());
 
     if (!db.open()) {
         result.errors.append("Failed to open database: " + db.lastError().text());

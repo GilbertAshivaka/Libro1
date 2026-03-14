@@ -587,7 +587,7 @@ Rectangle {
                     top: parent.top
                     topMargin: 20
                 }
-                text: qsTr("Please enter the book number")
+                text: qsTr("Please enter the book number or scan barcode")
                 elide: Text.ElideRight
                 font.pointSize: 10
             }
@@ -971,17 +971,6 @@ Rectangle {
                     successDialog.open()
                 }
             }
-        }
-    }
-
-    Dialog {
-        id: successDialog
-        title: "Success"
-        modal: true
-        standardButtons: Dialog.Ok
-
-        Label {
-            text: "Book returned successfully!"
         }
     }
 

@@ -36,13 +36,13 @@ ColumnLayout {
         echoMode: isPassword ? TextInput.Password : TextInput.Normal
         font.pixelSize: 14
 
-        background: Rectangle {
-            implicitHeight: 40
-            radius: 6
-            color: textField.activeFocus ? "#FFFFFF" : "#F5F5F5"
-            border.color: textField.activeFocus ? "#0078D4" : "#E0E0E0"
-            border.width: textField.activeFocus ? 2 : 1
-        }
+        // background: Rectangle {
+        //     implicitHeight: 40
+        //     radius: 6
+        //     color: textField.activeFocus ? "#FFFFFF" : "#F5F5F5"
+        //     border.color: textField.activeFocus ? "#0078D4" : "#E0E0E0"
+        //     border.width: textField.activeFocus ? 2 : 1
+        // }
 
         onTextChanged: {
             if (text !== root.value) {

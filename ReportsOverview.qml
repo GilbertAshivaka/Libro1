@@ -246,53 +246,5 @@ Item {
                 }
             }
         }
-
-        Rectangle{
-            id: lineChartRect
-            width: 600
-            height: 400
-            radius: 8
-            border.color: "lightgray"
-
-            ChartView{
-                id: usageChart
-                anchors.fill: parent
-                title: "Usage over the past six months"
-                LineSeries{
-                    name: "Students"
-                    color: "red"
-                    XYPoint { x: 0; y: 0 }
-                    XYPoint { x: 1.1; y: 2.1 }
-                    XYPoint { x: 1.9; y: 3.3 }
-                    XYPoint { x: 2.1; y: 2.1 }
-                    XYPoint { x: 2.9; y: 4.9 }
-                    XYPoint { x: 3.4; y: 3.0 }
-                    XYPoint { x: 4.1; y: 4.0 }
-                }
-
-                LineSeries{
-                    name: "Staff"
-                    XYPoint { x: 0; y: 0 }
-                    XYPoint { x: 1.0; y: 2.7 }
-                    XYPoint { x: 1.4; y: 1.9 }
-                    XYPoint { x: 2.1; y: 2.6 }
-                    XYPoint { x: 2.9; y: 4.0 }
-                    XYPoint { x: 3.2; y: 3.8 }
-                    XYPoint { x: 4.1; y: 3.4 }
-                }
-
-                LineSeries{
-                    name: "Other users"
-                    color: "blue"
-                    XYPoint { x: 0; y: 0 }
-                    XYPoint { x: 0.5; y: 1.0 }
-                    XYPoint { x: 1.2; y: 3.0 }
-                    XYPoint { x: 2.5; y: 1.2 }
-                    XYPoint { x: 3.1; y: 2.5 }
-                    XYPoint { x: 3.3; y: 2.0 }
-                    XYPoint { x: 4.1; y: 0.7 }
-                }
-            }
-        }
     }
 }

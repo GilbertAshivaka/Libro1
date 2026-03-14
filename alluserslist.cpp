@@ -1,5 +1,7 @@
 #include "alluserslist.h"
 #include <QFuture>
+#include <QStandardPaths>
+#include <QDir>
 
 AllUsersList::AllUsersList(QObject *parent)
     : QObject{parent}
@@ -15,6 +17,14 @@ AllUsersList::~AllUsersList()
 {
     // if (db.isOpen()) //closing the database affects other modules
     //     db.close();
+}
+
+// Helper to get the resolved AppData database path
+static QString libraryDbPath()
+{
+    QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir().mkpath(appDataPath);
+    return appDataPath + "/library.db";
 }
 
 QVector<User> AllUsersList::getUsers() const
@@ -165,7 +175,7 @@ bool AllUsersList::fetchUsers(QString userRole, int page, int pageSize) {
         int offset = (page - 1) * pageSize;
         const QString connectionName = "fetchUsersConnection";
         QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", connectionName);
-        db.setDatabaseName("library.db");
+        db.setDatabaseName(libraryDbPath()); // ← use resolved AppData path
 
         if (!db.open()) {
             emit errorOccured("Database connection failed: " + db.lastError().text());
@@ -338,7 +348,7 @@ bool AllUsersList::searchUsers(const QString &searchTerm)
         }
 
         QSqlDatabase searchDb = QSqlDatabase::addDatabase("QSQLITE", connectionName);
-        searchDb.setDatabaseName("library.db");
+        searchDb.setDatabaseName(libraryDbPath()); // ← use resolved AppData path
 
         if (!searchDb.open()) {
             emit errorOccured("Database connection failed: " + searchDb.lastError().text());

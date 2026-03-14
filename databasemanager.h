@@ -6,6 +6,10 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QMutex>
+#include <QStandardPaths>
+#include <QDir>
+#include <QFile>
+#include <QCoreApplication>
 
 class DatabaseManager : public QObject
 {
@@ -22,6 +26,9 @@ public:
     // static method to obtain a thread-safe database connection
     static QSqlDatabase getConnection();
 
+    //get databasePath since it now lives in the AppData directory
+    static QString getDatabasePath();
+
     bool createDatabase();
 
 
@@ -36,6 +43,10 @@ private:
 
     QSqlDatabase db;
     static QMutex dbMutex;   // mutex for thread safety
+
+    QString dbPath;
+    //utility to handle migration, database was initially created in the Application directory instead of ApplicationData directory
+    void migrateExistingDatabase(const QString &appDataPath);
 
 };
 

@@ -42,6 +42,8 @@ Rectangle {
     property var clearancePage: null
     property var suggestionsAdminPage: null
     property var appManagerPage: null
+    property var barcodeWriterPage: null
+    property var documentationPage: null
 
     property var reportsMainPage: null
 
@@ -182,7 +184,9 @@ Rectangle {
                 CustomComponentLoader.customCreateComponent(reportsPage,"ReportsPage", mainContainer)
             }
 
-//            instruction2:
+            instruction2: function() {
+                CustomComponentLoader.customCreateComponent(documentationPage,"Documentation", mainContainer)
+            }
         }
 
         ToolsTemplate{
@@ -192,7 +196,10 @@ Rectangle {
             instruction1: function() {
                 CustomComponentLoader.customCreateComponent(inventoryTracking,"InventoryTracking", mainContainer)
             }
-//            instruction2:
+
+            instruction2: function() {
+                CustomComponentLoader.customCreateComponent(documentationPage,"Documentation", mainContainer)
+            }
         }
 
 
@@ -205,7 +212,7 @@ Rectangle {
             }
 
             instruction2: function() {
-                console.log("Instruction 2")
+                CustomComponentLoader.customCreateComponent(documentationPage,"Documentation", mainContainer)
             }
         }
 
@@ -219,7 +226,7 @@ Rectangle {
             }
 
             instruction2: function() {
-                console.log("Instruction 2")
+                CustomComponentLoader.customCreateComponent(documentationPage,"Documentation", mainContainer)
             }
         }
 
@@ -232,9 +239,9 @@ Rectangle {
                 CustomComponentLoader.customCreateComponent(libroAIPage,"LibroAIPage", mainPageContainer)
             }
 
-           instruction2:{
-               console.log("Instruction 2")
-           }
+            instruction2: function() {
+                CustomComponentLoader.customCreateComponent(documentationPage,"Documentation", mainContainer)
+            }
         }
 
         ToolsTemplate{
@@ -246,8 +253,8 @@ Rectangle {
                CustomComponentLoader.customCreateComponent(pdfRoot,"PDFReaderScreen", mainPageContainer)
             }
 
-           instruction2:{
-               console.log("Instruction 2")
+           instruction2: function() {
+               CustomComponentLoader.customCreateComponent(documentationPage,"Documentation", mainContainer)
            }
         }
 
@@ -260,7 +267,9 @@ Rectangle {
                 CustomComponentLoader.customCreateComponent(digitalMaterialPage,"DigitalMaterials", mainPageContainer)
             }
 
-            //            instruction2:
+            instruction2: function() {
+                CustomComponentLoader.customCreateComponent(documentationPage,"Documentation", mainContainer)
+            }
         }
 
         ToolsTemplate{
@@ -270,7 +279,10 @@ Rectangle {
            instruction1: function() {
                CustomComponentLoader.customCreateComponent(bookshopScreen,"BookshopScreen", mainPageContainer)
            }
-//            instruction2:
+
+           instruction2: function() {
+               CustomComponentLoader.customCreateComponent(documentationPage,"Documentation", mainContainer)
+           }
         }
 
         ToolsTemplate{
@@ -281,7 +293,9 @@ Rectangle {
                 CustomComponentLoader.customCreateComponent(storageManagerScreen,"StorageManager", mainPageContainer)
             }
 
-            //            instruction2:
+            instruction2: function() {
+                CustomComponentLoader.customCreateComponent(documentationPage,"Documentation", mainContainer)
+            }
         }
 
         ToolsTemplate{
@@ -292,7 +306,9 @@ Rectangle {
                CustomComponentLoader.customCreateComponent(emailNotifications,"EmailNotifications", mainPageContainer)
            }
 
-//            instruction2:
+           instruction2: function() {
+               CustomComponentLoader.customCreateComponent(documentationPage,"Documentation", mainContainer)
+           }
         }
 
         ToolsTemplate{
@@ -301,9 +317,11 @@ Rectangle {
             description: "Opac Configuration"
            instruction1:function(){
                CustomComponentLoader.customCreateComponent(opacConfigurationView,"OpacConfigurationView", mainPageContainer)
-           }
+            }
 
-//            instruction2:
+           instruction2: function() {
+               CustomComponentLoader.customCreateComponent(documentationPage,"Documentation", mainContainer)
+           }
         }
 
         ToolsTemplate{
@@ -314,7 +332,9 @@ Rectangle {
                 CustomComponentLoader.customCreateComponent(clearancePage,"Clearance/ClearancePage", mainPageContainer)
             }
 
-//            instruction2:
+            instruction2: function() {
+                CustomComponentLoader.customCreateComponent(documentationPage,"Documentation", mainContainer)
+            }
         }
 
         ToolsTemplate{
@@ -325,7 +345,9 @@ Rectangle {
                 CustomComponentLoader.customCreateComponent(appManagerPage,"AppManagerPage", mainPageContainer)
             }
 
-//            instruction2:
+            instruction2: function() {
+                CustomComponentLoader.customCreateComponent(documentationPage,"Documentation", mainContainer)
+            }
         }
 
         ToolsTemplate{
@@ -336,15 +358,34 @@ Rectangle {
                 CustomComponentLoader.customCreateComponent(suggestionsAdminPage,"SuggestionsAdminPage", mainPageContainer)
             }
 
-//            instruction2:
+            instruction2: function() {
+                CustomComponentLoader.customCreateComponent(documentationPage,"Documentation", mainContainer)
+            }
+        }
+
+        ToolsTemplate{
+            id: barcode
+            icon: "assets/barcodeWriter2.png"
+            description: "Barcode Writer"
+            instruction1: function() {
+                CustomComponentLoader.customCreateComponent(barcodeWriterPage,"BarcodeWriter", mainPageContainer)
+            }
+
+            instruction2: function() {
+                CustomComponentLoader.customCreateComponent(documentationPage,"Documentation", mainContainer)
+            }
         }
 
         ToolsTemplate{
             id: documentation
             icon: "assets/documentation.png"
             description: "Help and documentation"
-//            instruction1:
-//            instruction2:
-        }   
+            instruction1: function() {
+                CustomComponentLoader.customCreateComponent(documentationPage,"Documentation", mainContainer)
+            }
+            instruction2: function() {
+                CustomComponentLoader.customCreateComponent(documentationPage,"Documentation", mainContainer)
+            }
+        }
     }
 }

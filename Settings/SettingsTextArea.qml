@@ -48,12 +48,12 @@ ColumnLayout {
 
         clip: true
 
-        background: Rectangle {
-            radius: 6
-            color: textArea.activeFocus ? "#FFFFFF" : "#F5F5F5"
-            border.color: textArea.activeFocus ? "#0078D4" : "#E0E0E0"
-            border.width: textArea.activeFocus ? 2 : 1
-        }
+        // background: Rectangle {
+        //     radius: 6
+        //     color: textArea.activeFocus ? "#FFFFFF" : "#F5F5F5"
+        //     border.color: textArea.activeFocus ? "#0078D4" : "#E0E0E0"
+        //     border.width: textArea.activeFocus ? 2 : 1
+        // }
 
         TextArea {
             id: textArea
