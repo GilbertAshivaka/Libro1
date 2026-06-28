@@ -36,6 +36,7 @@ Rectangle {
 
 
     ScrollView {
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         id: contentSV
         anchors.fill: parent
         contentWidth: availableWidth

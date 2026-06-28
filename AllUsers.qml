@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls.Material
+import QtQuick.Layouts
 import QtQuick.Dialogs
 import QtQuick.Effects
 import Qt5Compat.GraphicalEffects
@@ -397,6 +398,7 @@ Rectangle {
 
 
     ListView {
+        boundsBehavior: Flickable.StopAtBounds
         id: listView
         clip: true
         anchors{
@@ -543,6 +545,7 @@ Rectangle {
                     id: delegateItemMA
                     anchors.fill: parent
                     hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
 
                     onEntered: {
                         delegateItemRect.color = "#F5F5F5"
@@ -552,6 +555,33 @@ Rectangle {
                     onExited: {
                         delegateItemRect.color = "transparent"
                         deleteIconRect.visible = false
+                    }
+
+                    // Open a details popup for easy viewing of the user's data.
+                    onClicked: {
+                        userDetailsPopup.userData = {
+                            userId: model.userId,
+                            firstName: model.firstName,
+                            lastName: model.lastName,
+                            email: model.email,
+                            phone: model.phoneNo,
+                            role: model.userRole,
+                            status: model.status,
+                            admNo: model.admNo,
+                            branch: model.branch,
+                            enrollmentYear: model.enrollmentYear,
+                            level: model.level,
+                            staffNo: model.staffNo,
+                            department: model.department,
+                            startYear: model.startYear,
+                            category: model.category,
+                            userNo: model.userNO,
+                            residence: model.residence,
+                            age: model.age,
+                            gender: model.gender,
+                            createdAt: model.createdAt
+                        }
+                        userDetailsPopup.open()
                     }
                 }
 
@@ -587,7 +617,7 @@ Rectangle {
                             deleteIcon.source = "assets/deleteClosed.png"
                         }
                         onClicked: {
-                            allUsersList.removeUser(index)//to be changed
+                            allUsersList.removeUser(index)
                         }
                     }
                 }
@@ -774,5 +804,130 @@ Rectangle {
         resetPagination()
         fetchCurrentPageData()
         totalPages= Math.ceil(allUsersList.getTotalUsersCount(currentUserType)/itemsPerPage)
+    }
+
+    // User details popup — opened by clicking a row, for quick viewing.
+    Popup {
+        id: userDetailsPopup
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        width: 440
+        height: 520
+        modal: true
+        focus: true
+        padding: 0
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+        property var userData: ({})
+
+        function fmtDate(d) {
+            if (!d) return "-"
+            var s = Qt.formatDateTime(d, "yyyy-MM-dd")
+            return s ? s : "-"
+        }
+
+        background: Rectangle {
+            color: "white"
+            radius: 12
+            border.color: "#E0E0E0"
+            border.width: 1
+        }
+
+        contentItem: Item {
+            // Header
+            Rectangle {
+                id: popupHeader
+                anchors { top: parent.top; left: parent.left; right: parent.right }
+                height: 56
+                color: "#3498db"
+                radius: 12
+                Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 14; color: "#3498db" }
+
+                Text {
+                    anchors { left: parent.left; leftMargin: 16; verticalCenter: parent.verticalCenter }
+                    width: parent.width - 70
+                    text: (userDetailsPopup.userData.firstName || "") + " " + (userDetailsPopup.userData.lastName || "")
+                    color: "white"
+                    font.pixelSize: 18
+                    font.bold: true
+                    elide: Text.ElideRight
+                }
+
+                Rectangle {
+                    anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
+                    width: 28; height: 28; radius: 14
+                    color: closeUserMA.containsMouse ? "#2980b9" : "transparent"
+                    Text { anchors.centerIn: parent; text: "×"; color: "white"; font.pixelSize: 18 }
+                    MouseArea {
+                        id: closeUserMA
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: userDetailsPopup.close()
+                    }
+                }
+            }
+
+            ScrollView {
+                Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
+                anchors { top: popupHeader.bottom; left: parent.left; right: parent.right; bottom: parent.bottom; margins: 16 }
+                clip: true
+
+                GridLayout {
+                    width: userDetailsPopup.width - 64
+                    columns: 2
+                    columnSpacing: 16
+                    rowSpacing: 10
+
+                    Text { text: "Role"; color: "#888"; font.pixelSize: 12 }
+                    Text { text: userDetailsPopup.userData.role || "-"; font.pixelSize: 13; Layout.fillWidth: true; elide: Text.ElideRight }
+
+                    Text { text: "User ID"; color: "#888"; font.pixelSize: 12 }
+                    Text { text: userDetailsPopup.userData.userId !== undefined ? String(userDetailsPopup.userData.userId) : "-"; font.pixelSize: 13 }
+
+                    Text { text: "Email"; color: "#888"; font.pixelSize: 12 }
+                    Text { text: userDetailsPopup.userData.email || "-"; font.pixelSize: 13; Layout.fillWidth: true; elide: Text.ElideRight }
+
+                    Text { text: "Phone"; color: "#888"; font.pixelSize: 12 }
+                    Text { text: userDetailsPopup.userData.phone || "-"; font.pixelSize: 13 }
+
+                    Text { text: "Status"; color: "#888"; font.pixelSize: 12 }
+                    Text { text: userDetailsPopup.userData.status || "-"; font.pixelSize: 13 }
+
+                    // Student-specific
+                    Text { visible: userDetailsPopup.userData.role === "Student"; text: "Admission No"; color: "#888"; font.pixelSize: 12 }
+                    Text { visible: userDetailsPopup.userData.role === "Student"; text: userDetailsPopup.userData.admNo || "-"; font.pixelSize: 13 }
+                    Text { visible: userDetailsPopup.userData.role === "Student"; text: "Branch"; color: "#888"; font.pixelSize: 12 }
+                    Text { visible: userDetailsPopup.userData.role === "Student"; text: userDetailsPopup.userData.branch || "-"; font.pixelSize: 13 }
+                    Text { visible: userDetailsPopup.userData.role === "Student"; text: "Level"; color: "#888"; font.pixelSize: 12 }
+                    Text { visible: userDetailsPopup.userData.role === "Student"; text: userDetailsPopup.userData.level || "-"; font.pixelSize: 13 }
+                    Text { visible: userDetailsPopup.userData.role === "Student"; text: "Enrollment Year"; color: "#888"; font.pixelSize: 12 }
+                    Text { visible: userDetailsPopup.userData.role === "Student"; text: userDetailsPopup.userData.enrollmentYear ? String(userDetailsPopup.userData.enrollmentYear) : "-"; font.pixelSize: 13 }
+
+                    // Staff-specific
+                    Text { visible: userDetailsPopup.userData.role === "Staff"; text: "Staff No"; color: "#888"; font.pixelSize: 12 }
+                    Text { visible: userDetailsPopup.userData.role === "Staff"; text: userDetailsPopup.userData.staffNo || "-"; font.pixelSize: 13 }
+                    Text { visible: userDetailsPopup.userData.role === "Staff"; text: "Department"; color: "#888"; font.pixelSize: 12 }
+                    Text { visible: userDetailsPopup.userData.role === "Staff"; text: userDetailsPopup.userData.department || "-"; font.pixelSize: 13 }
+                    Text { visible: userDetailsPopup.userData.role === "Staff"; text: "Category"; color: "#888"; font.pixelSize: 12 }
+                    Text { visible: userDetailsPopup.userData.role === "Staff"; text: userDetailsPopup.userData.category || "-"; font.pixelSize: 13 }
+                    Text { visible: userDetailsPopup.userData.role === "Staff"; text: "Start Year"; color: "#888"; font.pixelSize: 12 }
+                    Text { visible: userDetailsPopup.userData.role === "Staff"; text: userDetailsPopup.userData.startYear ? String(userDetailsPopup.userData.startYear) : "-"; font.pixelSize: 13 }
+
+                    // Other-user-specific
+                    Text { visible: userDetailsPopup.userData.role === "Other user"; text: "User No"; color: "#888"; font.pixelSize: 12 }
+                    Text { visible: userDetailsPopup.userData.role === "Other user"; text: userDetailsPopup.userData.userNo || "-"; font.pixelSize: 13 }
+                    Text { visible: userDetailsPopup.userData.role === "Other user"; text: "Residence"; color: "#888"; font.pixelSize: 12 }
+                    Text { visible: userDetailsPopup.userData.role === "Other user"; text: userDetailsPopup.userData.residence || "-"; font.pixelSize: 13 }
+                    Text { visible: userDetailsPopup.userData.role === "Other user"; text: "Age"; color: "#888"; font.pixelSize: 12 }
+                    Text { visible: userDetailsPopup.userData.role === "Other user"; text: userDetailsPopup.userData.age ? String(userDetailsPopup.userData.age) : "-"; font.pixelSize: 13 }
+                    Text { visible: userDetailsPopup.userData.role === "Other user"; text: "Gender"; color: "#888"; font.pixelSize: 12 }
+                    Text { visible: userDetailsPopup.userData.role === "Other user"; text: userDetailsPopup.userData.gender || "-"; font.pixelSize: 13 }
+
+                    Text { text: "Joined"; color: "#888"; font.pixelSize: 12 }
+                    Text { text: userDetailsPopup.fmtDate(userDetailsPopup.userData.createdAt); font.pixelSize: 13 }
+                }
+            }
+        }
     }
 }

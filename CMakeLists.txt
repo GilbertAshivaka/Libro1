@@ -10,6 +10,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(Qt6 6.4 REQUIRED COMPONENTS Quick)
 find_package(Qt6 6.4 REQUIRED COMPONENTS Core Gui Qml Widgets Sql Concurrent Core5Compat)
 find_package(Qt6 6.4 REQUIRED COMPONENTS QuickControls2 Multimedia Pdf WebEngineQuick WebView)
+find_package(Qt6 6.4 REQUIRED COMPONENTS PrintSupport WebEngineCore)
 
 
 qt_standard_project_setup()
@@ -203,6 +204,7 @@ qt_add_qml_module(appLibro1
     QML_FILES OpacConfigurationView.qml
     RESOURCES assets/opac.png
     SOURCES reportsmanager.h reportsmanager.cpp
+    SOURCES reportexporter.h reportexporter.cpp
     QML_FILES Reports/ReportsMainPage.qml
     QML_FILES Reports/ChartContainer.qml Reports/DateRangePicker.qml Reports/ExportButton.qml Reports/FilterPanel.qml Reports/LoadingIndicator.qml Reports/StatCard.qml
     QML_FILES Reports/CirculationReportsPage.qml Reports/CollectionReportsPage.qml Reports/DigitalMaterialsPage.qml Reports/FinancialReportsPage.qml Reports/LostDamagedReportsPage.qml Reports/OverdueReportsPage.qml Reports/ReservationReportsPage.qml Reports/SystemPerformancePage.qml Reports/TrendsInsightsPage.qml Reports/UserEngagementPage.qml
@@ -292,8 +294,17 @@ target_link_libraries(appLibro1
     PRIVATE Qt6::Multimedia
     PRIVATE Qt6::Pdf
     PRIVATE Qt6::WebEngineQuick
+    PRIVATE Qt6::WebEngineCore
     PRIVATE Qt6::WebView
+    PRIVATE Qt6::PrintSupport
     PRIVATE Qt6::Core5Compat
+)
+
+# Bundle Chart.js for offline, in-document chart rendering in printed/exported
+# reports. Exposed at qrc:/resources/chartjs/chart.umd.js (read by ReportExporter).
+qt_add_resources(appLibro1 "report_assets"
+    PREFIX "/"
+    FILES resources/chartjs/chart.umd.js
 )
 
 

@@ -32,9 +32,15 @@
  * - not_activated: No license entered yet
  * - trial: 7-day trial period active
  * - active: Valid paid subscription (basic/premium)
- * - expired: License expiry date has passed
- * - grace_period: 1-7 days after expiry (full function with warning)
- * - blocked: More than 7 days after expiry (app unusable)
+ * - grace_period: OFFLINE TOLERANCE - license is still within its expiry date,
+ *                 but the app couldn't reach the licensing server to re-verify.
+ *                 Full function for up to GRACE_PERIOD_DAYS (7) since the last
+ *                 successful online validation. Silent (no warning).
+ * - reverify_required: Still within validity, but offline for more than
+ *                 GRACE_PERIOD_DAYS. Not expired - just needs a fresh online
+ *                 check. The app prompts the user to verify online to continue.
+ * - blocked: License genuinely invalid per the server, or its expiry date has
+ *            passed. Needs a renewal/payment. App unusable until renewed.
  */
 class AppManager : public QObject
 {
@@ -223,6 +229,11 @@ public:
      */
     static bool verifyPassword(const QString &password, const QString &storedHash);
 
+    Q_INVOKABLE void openRenewalPage();
+    QString renewalUrl() const;
+
+    Q_INVOKABLE void refreshLicense();
+
 signals:
     // License signals
     void licenseStatusChanged();
@@ -294,16 +305,25 @@ private:
                        const QString &serverResponse = QString(), const QString &errorMessage = QString());
     QString buildApiUrl(const QString &endpoint) const;
 
+    void applyServerStatus(const QString &serverStatus);
+    QString getMachineId() const;
+    QString m_renewalUrl;
+
     // Network request types
     enum RequestType {
         ActivationRequest,
-        ValidationRequest
+        ValidationRequest,
+        RefreshRequest
     };
+
     QMap<QNetworkReply*, RequestType> m_pendingRequests;
 
     void handleActivationResponse(const QJsonObject &response);
     void handleValidationResponse(const QJsonObject &response);
     void handleNetworkError(QNetworkReply *reply, const QString &context);
+
+    void handleRefreshResponse(const QJsonObject &response);
+
 };
 
 #endif // APPMANAGER_H

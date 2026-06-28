@@ -235,6 +235,7 @@ Rectangle {
         }
 
         ListView {
+            boundsBehavior: Flickable.StopAtBounds
             id: listView
             anchors.top: titleBar.bottom
             anchors.left: parent.left

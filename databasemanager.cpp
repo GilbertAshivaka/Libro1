@@ -226,6 +226,66 @@ bool DatabaseManager::createDatabase()
         return false;
     }
 
+    // Persistent ledger of outstanding fines. A returned book's late fee is
+    // recorded here (instead of being lost when the issued_books row is deleted),
+    // so it can be paid (partially) or waived during clearance.
+    if (!query.exec("CREATE TABLE IF NOT EXISTS outstanding_fines ("
+                    "fine_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    "user_id INTEGER NOT NULL,"
+                    "book_id INTEGER,"
+                    "original_issue_id INTEGER,"
+                    "book_title TEXT,"
+                    "book_call_number TEXT,"
+                    "fine_type TEXT DEFAULT 'overdue',"
+                    "fine_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,"
+                    "amount_paid DECIMAL(10,2) NOT NULL DEFAULT 0.00,"
+                    "amount_waived DECIMAL(10,2) NOT NULL DEFAULT 0.00,"
+                    "status TEXT NOT NULL DEFAULT 'outstanding',"   // outstanding | paid | waived
+                    "waiver_reason TEXT,"
+                    "settled_by INTEGER,"
+                    "settled_at DATETIME,"
+                    "created_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
+                    "updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,"
+                    "FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE)")) {
+        emit errorOccured("Error creating outstanding_fines table: " + query.lastError().text());
+        qDebug() << "Error creating outstanding_fines table: " + query.lastError().text();
+        return false;
+    }
+    query.exec("CREATE INDEX IF NOT EXISTS idx_outstanding_fines_user ON outstanding_fines(user_id, status)");
+
+    // Audit trail for every payment / waiver action (fines and lost books).
+    if (!query.exec("CREATE TABLE IF NOT EXISTS fine_settlements ("
+                    "settlement_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    "source_type TEXT NOT NULL,"      // 'fine' | 'lost_book'
+                    "source_id INTEGER NOT NULL,"     // fine_id or lost_id
+                    "user_id INTEGER,"
+                    "action TEXT NOT NULL,"           // 'payment' | 'waiver'
+                    "amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,"
+                    "reason TEXT,"
+                    "admin_user_id INTEGER,"
+                    "created_at DATETIME DEFAULT CURRENT_TIMESTAMP)")) {
+        emit errorOccured("Error creating fine_settlements table: " + query.lastError().text());
+        qDebug() << "Error creating fine_settlements table: " + query.lastError().text();
+        return false;
+    }
+
+    // Persistent clearance certificate, saved at completion BEFORE the user is
+    // removed, so the cleared-status record survives the user's deletion.
+    if (!query.exec("CREATE TABLE IF NOT EXISTS clearances ("
+                    "clearance_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    "user_id INTEGER,"
+                    "user_name TEXT,"
+                    "user_number TEXT,"
+                    "user_type TEXT,"
+                    "status TEXT,"
+                    "summary TEXT,"
+                    "cleared_by INTEGER,"
+                    "clearance_date DATETIME DEFAULT CURRENT_TIMESTAMP)")) {
+        emit errorOccured("Error creating clearances table: " + query.lastError().text());
+        qDebug() << "Error creating clearances table: " + query.lastError().text();
+        return false;
+    }
+
     if (!query.exec("CREATE TABLE IF NOT EXISTS book_return_log ("
                     "log_id INTEGER PRIMARY KEY AUTOINCREMENT,"
                     "original_issue_id INTEGER,"
@@ -471,6 +531,8 @@ bool DatabaseManager::createDatabase()
     query.exec("CREATE INDEX IF NOT EXISTS idx_admins_active ON admins(is_active)");
 
     qDebug() << "Tables created successfully";
+    qDebug() << "Tables created successfully";
+
     return true;
 }
 
@@ -527,6 +589,18 @@ int DatabaseManager::getTotalUsersCount(const QString &userType)
     }
 
     return 0;
+}
+
+void getKey() {
+    QSqlQuery query(QSqlDatabase::database("libraryConnection"));  // named connection
+    if (!query.exec("SELECT organization_id, license_key FROM license_info;")) {
+        qWarning() << "Query failed:" << query.lastError().text();
+        return;
+    }
+    while (query.next()) {
+        qDebug() << "ID: "  << query.value(0).toString();
+        qDebug() << "Key: " << query.value(1).toString();
+    }
 }
 
 

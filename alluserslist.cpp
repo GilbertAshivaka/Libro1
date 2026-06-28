@@ -59,26 +59,28 @@ int AllUsersList::getTotalUsersCount(const QString &userType)
     return 0;
 }
 
-void AllUsersList::removeUser(QString UserID)
+void AllUsersList::removeUser(int index)
 {
-    QSqlQuery query(db);
-    query.prepare("DELETE FROM users WHERE userID = ?");
-    query.addBindValue(UserID);
-
-    if (query.exec()){
-        for(int i = 0; i < users.size(); ++i){
-            if(users[i].email == UserID){
-                emit preUserRemoved(i);
-                users.removeAt(i);
-                emit postUserRemoved();
-                emit usersUpdated();
-
-                break;
-            }
-        }
-    }else {
-        emit errorOccured("Error removing user: " + db.lastError().text());
+    if (index < 0 || index >= users.size()) {
+        emit errorOccured("Invalid user selected for removal.");
+        return;
     }
+
+    int userId = users[index].userId;
+
+    QSqlQuery query(db);
+    query.prepare("DELETE FROM users WHERE user_id = ?");
+    query.addBindValue(userId);
+
+    if (!query.exec()) {
+        emit errorOccured("Error removing user: " + query.lastError().text());
+        return;
+    }
+
+    emit preUserRemoved(index);
+    users.removeAt(index);
+    emit postUserRemoved();
+    emit usersUpdated();
 }
 
 bool AllUsersList::validateUsers(QString name, QString userID)

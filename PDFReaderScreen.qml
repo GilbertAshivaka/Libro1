@@ -219,6 +219,7 @@ Rectangle {
                         radius: 6
 
                         ListView {
+                            boundsBehavior: Flickable.StopAtBounds
                             anchors.fill: parent
                             anchors.margins: 4
                             model: pdfRoot.recentFiles
@@ -695,6 +696,7 @@ Rectangle {
                         }
 
                         ListView {
+                            boundsBehavior: Flickable.StopAtBounds
                             id: searchResultList
                             implicitHeight: parent.height
                             model: view.searchModel
@@ -760,6 +762,7 @@ Rectangle {
                         }
 
                         GridView {
+                            boundsBehavior: Flickable.StopAtBounds
                             id: thumbnailsView
                             implicitHeight: parent.implicitHeight
                             implicitWidth: parent.implicitWidth

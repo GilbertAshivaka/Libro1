@@ -25,7 +25,9 @@ Rectangle {
     }
 
     // property var clearanceManager: clearanceManager
-    property int currentAdminId: 1 // This should be passed from your main application
+    // The logged-in admin, exposed globally by AppManager (registered as a
+    // context property in main.cpp). Used for clearance + settlement audit.
+    property int currentAdminId: appManager ? appManager.currentAdminId : 0
 
     // Connect to clearanceManager error signal
     Connections {
@@ -37,6 +39,7 @@ Rectangle {
     }
 
     ScrollView {
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         anchors.fill: parent
         anchors.margins: 20
         clip: true
@@ -356,6 +359,8 @@ Rectangle {
                         checkTitle: "Lost Books"
                         checkData: clearanceManager.clearanceResult.lost_books
                         detailsType: "lost"
+                        onPayRequested: function(issue) { paymentDialog.openFor("lost", issue) }
+                        onWaiveRequested: function(issue) { waiverDialog.openFor("lost", issue) }
                     }
 
                     ClearanceCheckItem {
@@ -363,6 +368,8 @@ Rectangle {
                         checkTitle: "Unpaid Fines"
                         checkData: clearanceManager.clearanceResult.unpaid_fines
                         detailsType: "fines"
+                        onPayRequested: function(issue) { paymentDialog.openFor("fine", issue) }
+                        onWaiveRequested: function(issue) { waiverDialog.openFor("fine", issue) }
                     }
 
                     // Divider
@@ -402,6 +409,35 @@ Rectangle {
                                     var html = clearanceManager.generateHTMLReceipt(clearanceManager.clearanceResult)
                                     htmlDialog.htmlContent = html
                                     htmlDialog.open()
+                                }
+                            }
+                        }
+
+                        // PDF Receipt (renders the same HTML via ReportExporter)
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 32
+                            radius: 6
+                            color: clearanceManager.clearanceStatus === "approved" ?
+                                       (pdfMA.containsMouse ? "#c0392b" : "#e74c3c") : "#c8c8c8"
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "PDF"
+                                font.pixelSize: 12
+                                color: "white"
+                            }
+
+                            MouseArea {
+                                id: pdfMA
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                enabled: clearanceManager.clearanceStatus === "approved" && !reportExporter.isBusy
+                                onClicked: {
+                                    var html = clearanceManager.generateHTMLReceipt(clearanceManager.clearanceResult)
+                                    var name = (clearanceManager.clearanceResult.user_name || "clearance") + "_clearance"
+                                    reportExporter.exportHtmlToPdf(html, "", name)
                                 }
                             }
                         }
@@ -501,6 +537,7 @@ Rectangle {
         property string htmlContent: ""
 
         ScrollView {
+            Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
             anchors.fill: parent
 
             TextArea {
@@ -538,6 +575,7 @@ Rectangle {
         standardButtons: Dialog.Close
 
         ScrollView {
+            Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
             anchors.fill: parent
 
             ClearanceReceipt {
@@ -615,6 +653,205 @@ Rectangle {
             id: errorText
             wrapMode: Text.WordWrap
             color: "#dc3545"
+        }
+    }
+
+    // Payment Dialog (partial payments allowed)
+    Dialog {
+        id: paymentDialog
+        title: "Record Payment"
+        anchors.centerIn: parent
+        width: 360
+        modal: true
+
+        property string sourceType: "fine"   // "fine" | "lost"
+        property var issue: null
+        property real balance: 0
+
+        function openFor(type, iss) {
+            sourceType = type
+            issue = iss
+            balance = iss && iss.balance ? iss.balance : 0
+            amountField.text = balance.toFixed(2)
+            paymentDialog.open()
+        }
+
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 10
+
+            Text {
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                font.pixelSize: 12
+                color: "#1c1c1e"
+                text: (paymentDialog.issue ? (paymentDialog.issue.book_title || "Item") : "") +
+                      "\nOutstanding balance: KSh " + paymentDialog.balance.toFixed(2)
+            }
+
+            Text { text: "Amount to pay (KSh):"; font.pixelSize: 11; color: "#666" }
+
+            TextField {
+                id: amountField
+                Layout.fillWidth: true
+                inputMethodHints: Qt.ImhFormattedNumbersOnly
+                validator: DoubleValidator { bottom: 0.01; decimals: 2; notation: DoubleValidator.StandardNotation }
+            }
+
+            Text {
+                visible: parseFloat(amountField.text || "0") > paymentDialog.balance + 0.009
+                text: "Amount exceeds the outstanding balance."
+                color: "#dc3545"
+                font.pixelSize: 10
+            }
+
+            RowLayout {
+                Layout.alignment: Qt.AlignRight
+                spacing: 8
+
+                Button { text: "Cancel"; onClicked: paymentDialog.close() }
+
+                Button {
+                    text: "Record Payment"
+                    enabled: {
+                        var a = parseFloat(amountField.text || "0")
+                        return a > 0 && a <= paymentDialog.balance + 0.009
+                    }
+                    onClicked: {
+                        var amt = parseFloat(amountField.text)
+                        if (paymentDialog.sourceType === "fine")
+                            clearanceManager.payFine(paymentDialog.issue.fine_id, amt, currentAdminId)
+                        else
+                            clearanceManager.payLostBook(paymentDialog.issue.lost_id, amt, currentAdminId)
+                        paymentDialog.close()
+                    }
+                }
+            }
+        }
+    }
+
+    // Waiver Dialog (reason required)
+    Dialog {
+        id: waiverDialog
+        title: "Waive Charge"
+        anchors.centerIn: parent
+        width: 360
+        modal: true
+
+        property string sourceType: "fine"
+        property var issue: null
+
+        function openFor(type, iss) {
+            sourceType = type
+            issue = iss
+            reasonField.text = ""
+            waiverDialog.open()
+        }
+
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 10
+
+            Text {
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                font.pixelSize: 12
+                color: "#1c1c1e"
+                text: "Waive: " + (waiverDialog.issue ? (waiverDialog.issue.book_title || "Item") : "") +
+                      "\nBalance: KSh " + (waiverDialog.issue ? (waiverDialog.issue.balance || 0).toFixed(2) : "0")
+            }
+
+            Text { text: "Reason (required):"; font.pixelSize: 11; color: "#666" }
+
+            TextArea {
+                id: reasonField
+                Layout.fillWidth: true
+                Layout.preferredHeight: 70
+                wrapMode: TextEdit.Wrap
+                placeholderText: "e.g. waived by librarian, hardship, system error..."
+                // background: Rectangle { border.color: "#ccc"; border.width: 1; radius: 4 } do not customize background
+            }
+
+            RowLayout {
+                Layout.alignment: Qt.AlignRight
+                spacing: 8
+
+                Button { text: "Cancel"; onClicked: waiverDialog.close() }
+
+                Button {
+                    text: "Waive"
+                    enabled: reasonField.text.trim().length > 0
+                    onClicked: {
+                        if (waiverDialog.sourceType === "fine")
+                            clearanceManager.waiveFine(waiverDialog.issue.fine_id, reasonField.text, currentAdminId)
+                        else
+                            clearanceManager.waiveLostBook(waiverDialog.issue.lost_id, reasonField.text, currentAdminId)
+                        waiverDialog.close()
+                    }
+                }
+            }
+        }
+    }
+
+    // Settlement feedback. On success the manager re-runs the checks, so the
+    // results refresh automatically; we only surface failures here.
+    Connections {
+        target: clearanceManager
+        function onSettlementCompleted(success, message) {
+            if (!success) {
+                errorDialog.title = "Settlement Failed"
+                errorDialog.text = message
+                errorDialog.open()
+            }
+        }
+    }
+
+    // Complete & Remove confirmation. Saves the clearance certificate and
+    // removes the user atomically (handled in ClearanceManager.finalizeClearance).
+    Dialog {
+        id: confirmDeleteDialog
+        title: "Complete Clearance"
+        anchors.centerIn: parent
+        width: 380
+        modal: true
+
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 12
+
+            Text {
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                font.pixelSize: 12
+                color: "#1c1c1e"
+                text: "This saves the clearance certificate and then permanently removes " +
+                      (clearanceManager.clearanceResult.user_name || "this user") +
+                      " from the system. This cannot be undone. Continue?"
+            }
+
+            RowLayout {
+                Layout.alignment: Qt.AlignRight
+                spacing: 8
+
+                Button { text: "Cancel"; onClicked: confirmDeleteDialog.close() }
+
+                Button {
+                    text: "Complete & Remove"
+                    onClicked: {
+                        clearanceManager.finalizeClearance()
+                        confirmDeleteDialog.close()
+                    }
+                }
+            }
+        }
+    }
+
+    Connections {
+        target: clearanceManager
+        function onClearanceFinalized(success, message) {
+            errorDialog.title = success ? "Clearance Complete" : "Could Not Complete"
+            errorDialog.text = message
+            errorDialog.open()
         }
     }
 }

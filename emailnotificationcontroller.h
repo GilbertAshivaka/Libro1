@@ -24,6 +24,7 @@ struct EmailData{
     QString userName;
     QString bookTitle;
     QString type;
+    int targetId = -1;   // issue_id / reservation_id, used for de-dup on confirmed send
 };
 
 //Email log entry for the model
@@ -89,6 +90,10 @@ class EmailNotificationController : public QObject
     Q_PROPERTY(bool useSSL READ useSSL WRITE setUseSSL NOTIFY smtpConfigChanged)
     Q_PROPERTY(bool useTLS READ useTLS WRITE setUseTLS NOTIFY smtpConfigChanged)
 
+    // Automation (daily scheduler) Properties
+    Q_PROPERTY(bool autoNotificationsEnabled READ autoNotificationsEnabled WRITE setAutoNotificationsEnabled NOTIFY automationConfigChanged)
+    Q_PROPERTY(QString notificationTime READ notificationTime WRITE setNotificationTime NOTIFY automationConfigChanged)
+
 public:
     explicit EmailNotificationController(QObject *parent = nullptr);
     ~EmailNotificationController();
@@ -129,10 +134,17 @@ public:
     void setUseSSL(bool use);
     void setUseTLS(bool use);
 
+    //Automation getters/setters
+    bool autoNotificationsEnabled() const;
+    QString notificationTime() const;
+    void setAutoNotificationsEnabled(bool enabled);
+    void setNotificationTime(const QString &time);
+
 public slots:
     //Main Email functions
     void checkAndSendOverdueNotifications();
     void checkAndSendReservedBookNotifications();
+    void runNotificationsNow();   // sends both overdue + reserved (used by scheduler)
     void sendTestEmail(const QString &recipientEmail);
     void sendCustomEmail(const QString &to, const QString &subject, const QString &body);
 
@@ -160,6 +172,7 @@ signals:
     void totalEmailsFailedChanged();
     void lastActivityChanged();
     void smtpConfigChanged();
+    void automationConfigChanged();
 
     //Notification signals
     void notificationSent(const QString &message);
@@ -171,6 +184,7 @@ private slots:
     void onSocketError(QAbstractSocket::SocketError error);
     void onSocketDisconnected();
     void onRetryTimer();
+    void onScheduleTimerTick();   // daily scheduler tick
 
 private:
     //Core email sending methods
@@ -183,6 +197,12 @@ private:
     //Database Queries
     QList<EmailData> getOverdueBooks();
     QList<EmailData> getReservedBooks();
+
+    //De-duplication: a dedicated, additive notification_log table records what
+    //was sent and when, so scheduled/automated runs never re-send within the
+    //cooldown window. This NEVER touches existing tables (CREATE TABLE IF NOT EXISTS).
+    void ensureNotificationLogSchema();
+    void recordNotificationSent(const QString &type, int targetId);
 
     //Email templates
     QString generateOverdueEmailBody(const QString &userName, const QString &bookTitle, const QDateTime &dueDate, int daysOverdue);
@@ -216,6 +236,7 @@ private:
     // QTcpSocket *m_socket;
     QSslSocket *m_socket;
     QTimer *m_retryTimer;
+    QTimer *m_scheduleTimer;   // drives the daily auto-notification check
     EmailLogsModel *m_emailLogsModel;
 
     QQueue<EmailData> m_emailQueue;
@@ -233,6 +254,11 @@ private:
     int m_retryCount;
 
     static const int MAX_RETRIES = 3;
+
+    // Minimum hours between repeat notifications for the same item. With the
+    // once-per-day scheduler this yields at most one reminder per day and
+    // blocks accidental duplicate sends (e.g. manual clicks + auto run).
+    static const int NOTIFICATION_COOLDOWN_HOURS = 20;
 
 };
 

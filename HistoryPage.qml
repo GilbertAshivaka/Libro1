@@ -275,6 +275,7 @@ Window {
     }
 
     ListView {
+        boundsBehavior: Flickable.StopAtBounds
         id: listView
         width: parent.width
         height: parent.height

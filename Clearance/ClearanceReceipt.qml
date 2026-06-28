@@ -10,8 +10,8 @@ Rectangle {
     width: 600
     height: receiptColumn.height + 40
     color: "white"
-    border.width: 2
-    border.color: "#2c3e50"
+    // border.width: 2
+    // border.color: "#2c3e50"
 
     ColumnLayout {
         id: receiptColumn

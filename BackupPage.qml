@@ -670,6 +670,7 @@ Rectangle {
             }
 
             ScrollView {
+                Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
                 anchors.fill: parent
                 anchors.margins: 20
                 clip: true
@@ -1389,6 +1390,7 @@ Rectangle {
             radius: 8
 
             ScrollView {
+                Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
                 anchors.fill: parent
                 anchors.margins: 10
                 clip: true
@@ -1397,6 +1399,7 @@ Rectangle {
                 ScrollBar.vertical.policy: ScrollBar.AlwaysOff
 
                 ListView {
+                    boundsBehavior: Flickable.StopAtBounds
                     id: historyListView
                     model: backupManager.getBackupHistory()
                     spacing: 5

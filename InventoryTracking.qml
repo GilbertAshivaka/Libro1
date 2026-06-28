@@ -155,6 +155,7 @@ Rectangle {
 
 
     ScrollView{
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         id: inventorySV
         height: parent.height
         contentHeight: parent.height + 200
@@ -814,6 +815,7 @@ Rectangle {
 
                 // Recent Books ListView
                 ListView {
+                    boundsBehavior: Flickable.StopAtBounds
                     id: recentBooksListView
                     anchors.fill: parent
                     visible: false
@@ -891,6 +893,7 @@ Rectangle {
 
                 // Category Count ListView
                 ListView {
+                    boundsBehavior: Flickable.StopAtBounds
                     id: categoryCountListView
                     anchors.fill: parent
                     visible: false
@@ -968,6 +971,7 @@ Rectangle {
 
                 // Attention Items ListView
                 ListView {
+                    boundsBehavior: Flickable.StopAtBounds
                     id: attentionItemsListView
                     anchors.fill: parent
                     visible: false
@@ -1023,6 +1027,7 @@ Rectangle {
 
                 // Under Maintenance ListView
                 ListView {
+                    boundsBehavior: Flickable.StopAtBounds
                     id: underMaintenanceListView
                     anchors.fill: parent
                     visible: false
@@ -1078,6 +1083,7 @@ Rectangle {
 
                 // Shelf List ListView
                 ListView {
+                    boundsBehavior: Flickable.StopAtBounds
                     id: shelfListListView
                     anchors.fill: parent
                     visible: false
@@ -1177,6 +1183,7 @@ Rectangle {
 
                 // Copies ListView
                 ListView {
+                    boundsBehavior: Flickable.StopAtBounds
                     id: copiesListView
                     anchors.fill: parent
                     visible: false
@@ -1752,6 +1759,7 @@ Rectangle {
         }
 
         contentItem: ScrollView {
+            Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
             clip: true
             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
             ScrollBar.vertical.policy: ScrollBar.AsNeeded

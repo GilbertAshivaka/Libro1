@@ -57,6 +57,7 @@ Page {
     }
     
     ScrollView {
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         anchors.fill: parent
         contentWidth: availableWidth
         clip: true
@@ -135,11 +136,13 @@ Page {
                             text: "⟳ Refresh"
                             onClicked: loadFinancialData()
                         }
-                        
-                        Button {
-                            text: "⤓ Export"
-                            highlighted: true
-                            onClicked: console.log("Export financial report")
+
+                        ExportButton {
+                            enabled: !reportExporter.isBusy
+                            onExportPDF: reportExporter.exportToPdf(buildReportPayload())
+                            onExportCSV: reportExporter.exportToCsv(buildReportPayload())
+                            onExportExcel: reportExporter.exportToCsv(buildReportPayload())
+                            onPrintReport: reportExporter.printReport(buildReportPayload())
                         }
                     }
                 }
@@ -229,7 +232,7 @@ Page {
                 isLoading: reportsManager.isLoading
                 
                 onRefreshClicked: loadFineCollectionOverTime()
-                onExportClicked: console.log("Export fine collection chart")
+                onExportClicked: exportChart(fineCollectionSection())
                 
                 contentItem: ChartView {
                     id: fineCollectionChart
@@ -276,7 +279,7 @@ Page {
                     isLoading: reportsManager.isLoading
                     
                     onRefreshClicked: loadFineAmountVsPaid()
-                    onExportClicked: console.log("Export amount vs paid chart")
+                    onExportClicked: exportChart(amountVsPaidSection())
                     
                     contentItem: ChartView {
                         id: amountVsPaidChart
@@ -319,7 +322,7 @@ Page {
                     isLoading: reportsManager.isLoading
                     
                     onRefreshClicked: loadPaymentStatus()
-                    onExportClicked: console.log("Export payment status chart")
+                    onExportClicked: exportChart(paymentStatusSection())
                     
                     contentItem: ChartView {
                         id: paymentStatusChart
@@ -345,7 +348,7 @@ Page {
                 isLoading: reportsManager.isLoading
                 
                 onRefreshClicked: loadLostBookCosts()
-                onExportClicked: console.log("Export lost book costs")
+                onExportClicked: exportChart(lostBookCostsSection())
                 
                 contentItem: ChartView {
                     id: lostBookCostsChart
@@ -545,5 +548,146 @@ Page {
 
         // Set Y-axis max dynamically with 10% padding
         replacementCostAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
+    }
+
+    // ========================================================================
+    // Report export / print
+    //
+    // Each section is built from the same reportsManager getters used on screen
+    // (results are cached, so this is cheap and respects the current filters).
+    // The section helpers are reused for both whole-page and per-chart export.
+    // ========================================================================
+
+    function filtersList() {
+        return [
+            { label: "Date Range",     value: dateRangeCombo.currentText },
+            { label: "User Type",      value: userTypeCombo.currentText },
+            { label: "Payment Status", value: paymentStatusCombo.currentText }
+        ]
+    }
+
+    function metricsSection() {
+        var s = reportsManager.getFinancialStats(getDateRangeValue())
+        return {
+            title: "Key Metrics",
+            kind: "metrics",
+            data: [
+                { label: "Fines Generated", value: "$" + (s.totalFinesGenerated || 0).toFixed(2) },
+                { label: "Fines Collected", value: "$" + (s.totalFinesCollected || 0).toFixed(2) },
+                { label: "Outstanding",     value: "$" + (s.outstandingFines || 0).toFixed(2) },
+                { label: "Lost Book Cost",  value: "$" + (s.lostBooksReplacementCost || 0).toFixed(2) },
+                { label: "Collection Rate", value: (s.fineCollectionRate || 0).toFixed(1), unit: "%" },
+                { label: "Avg Fine",        value: "$" + (s.averageFinePerOverdue || 0).toFixed(2) }
+            ]
+        }
+    }
+
+    function fineCollectionSection() {
+        var data = reportsManager.getFineCollectionOverTime(getDateRangeValue())
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].xValue)
+            values.push(data[i].yValue)
+        }
+        return {
+            title: "Fine Collection Over Time",
+            subtitle: "Revenue from fines collected monthly",
+            kind: "chart", chartType: "line",
+            labels: labels,
+            datasets: [ { label: "Collected", color: "#4CAF50", data: values } ]
+        }
+    }
+
+    function amountVsPaidSection() {
+        var data = reportsManager.getFineAmountVsPaid(getDateRangeValue())
+        var labels = [], generated = [], paid = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].month)
+            generated.push(data[i].generated || 0)
+            paid.push(data[i].paid || 0)
+        }
+        return {
+            title: "Fine Amount vs Fine Paid",
+            subtitle: "Monthly comparison of generated vs collected fines",
+            kind: "chart", chartType: "bar",
+            labels: labels,
+            datasets: [
+                { label: "Generated", color: "#FF9800", data: generated },
+                { label: "Paid",      color: "#4CAF50", data: paid }
+            ]
+        }
+    }
+
+    function paymentStatusSection() {
+        var data = reportsManager.getFinePaymentStatus()
+        var colorMap = {
+            "No Fine": "#9E9E9E", "Fully Paid": "#4CAF50",
+            "Partially Paid": "#FF9800", "Unpaid": "#F44336"
+        }
+        var labels = [], values = [], colors = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].label)
+            values.push(data[i].value)
+            colors.push(colorMap[data[i].label] || "#2196F3")
+        }
+        return {
+            title: "Fine Payment Status",
+            subtitle: "Distribution of payment statuses",
+            kind: "chart", chartType: "pie",
+            labels: labels,
+            datasets: [ { label: "Payments", data: values, colors: colors } ]
+        }
+    }
+
+    function lostBookCostsSection() {
+        var data = reportsManager.getLostBookCostsByMonth(getDateRangeValue())
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].category)
+            values.push(data[i].value || 0)
+        }
+        return {
+            title: "Lost Book Costs by Month",
+            subtitle: "Financial impact of lost books over time",
+            kind: "chart", chartType: "bar",
+            labels: labels,
+            datasets: [ { label: "Cost", color: "#F44336", data: values } ]
+        }
+    }
+
+    // Whole-page report payload
+    function buildReportPayload() {
+        return {
+            title: "Financial Reports",
+            subtitle: "Monitor fines, losses, and financial metrics",
+            filters: filtersList(),
+            sections: [
+                metricsSection(),
+                fineCollectionSection(),
+                amountVsPaidSection(),
+                paymentStatusSection(),
+                lostBookCostsSection()
+            ]
+        }
+    }
+
+    // Single-chart export (PDF) reusing the shared section helpers
+    function exportChart(section) {
+        reportExporter.exportToPdf({
+            title: "Financial Reports — " + section.title,
+            filters: filtersList(),
+            sections: [ section ]
+        })
+    }
+
+    // Lightweight user feedback on completion
+    Connections {
+        target: reportExporter
+        function onExportFinished(success, outputPath, message) {
+            if (success && outputPath)
+                console.log("Report exported to:", outputPath)
+            else if (!success && message)
+                console.warn("Report export failed:", message)
+        }
     }
 }

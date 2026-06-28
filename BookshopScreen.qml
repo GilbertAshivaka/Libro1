@@ -115,6 +115,7 @@ Rectangle {
 
     // Bookshops Grid
     ScrollView {
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         id: scrollView
         anchors {
             top: addBookshopBtn.bottom

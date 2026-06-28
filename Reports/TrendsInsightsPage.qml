@@ -57,6 +57,7 @@ Page {
     }
     
     ScrollView {
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         anchors.fill: parent
         contentWidth: availableWidth
         clip: true
@@ -136,11 +137,13 @@ Page {
                             text: "⟳ Refresh"
                             onClicked: loadTrendsData()
                         }
-                        
-                        Button {
-                            text: "⤓ Export"
-                            highlighted: true
-                            onClicked: console.log("Export trends report")
+
+                        ExportButton {
+                            enabled: !reportExporter.isBusy
+                            onExportPDF: reportExporter.exportToPdf(buildReportPayload())
+                            onExportCSV: reportExporter.exportToCsv(buildReportPayload())
+                            onExportExcel: reportExporter.exportToCsv(buildReportPayload())
+                            onPrintReport: reportExporter.printReport(buildReportPayload())
                         }
                     }
                 }
@@ -220,7 +223,7 @@ Page {
                 isLoading: reportsManager.isLoading
                 
                 onRefreshClicked: loadPopularSubjects()
-                onExportClicked: console.log("Export popular subjects")
+                onExportClicked: exportChart(popularSubjectsSection())
                 
                 contentItem: ChartView {
                     id: popularSubjectsChart
@@ -266,7 +269,7 @@ Page {
                     isLoading: reportsManager.isLoading
                     
                     onRefreshClicked: loadTopAuthors()
-                    onExportClicked: console.log("Export top authors")
+                    onExportClicked: exportChart(topAuthorsSection())
                     
                     contentItem: ChartView {
                         id: topAuthorsChart
@@ -306,13 +309,15 @@ Page {
                     isLoading: reportsManager.isLoading
                     
                     onRefreshClicked: loadPerformanceMatrix()
-                    onExportClicked: console.log("Export performance matrix")
+                    onExportClicked: exportChart(performanceMatrixSection())
                     
                     contentItem: ScrollView {
+                        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
                         anchors.fill: parent
                         clip: true
                         
                         ListView {
+                            boundsBehavior: Flickable.StopAtBounds
                             id: performanceListView
                             width: parent.width
                             spacing: 5
@@ -381,7 +386,7 @@ Page {
                 isLoading: reportsManager.isLoading
                 
                 onRefreshClicked: loadGenreTrends()
-                onExportClicked: console.log("Export genre trends")
+                onExportClicked: exportChart(genreTrendsSection())
                 
                 contentItem: ChartView {
                     id: genreTrendsChart
@@ -586,5 +591,149 @@ Page {
         // for (var g in seriesMap) {
         //     console.log("Series", g, "has", seriesMap[g].count, "points")
         // }
+    }
+
+    // ========================================================================
+    // Report export / print
+    // ========================================================================
+
+    function filtersList() {
+        return [
+            { label: "Date Range",  value: dateRangeCombo.currentText },
+            { label: "Genre",       value: genreCombo.currentText },
+            { label: "Min Borrows", value: String(minBorrowsSpinBox.value) }
+        ]
+    }
+
+    function metricsSection() {
+        var s = reportsManager.getTrendsInsightsStats()
+        return {
+            title: "Key Metrics", kind: "metrics",
+            data: [
+                { label: "Trending Genre",        value: String(s.trendingGenre || "N/A") },
+                { label: "Top Author",            value: String(s.mostBorrowedAuthor || "N/A") },
+                { label: "Avg Borrow Frequency",  value: (s.averageBorrowingFrequency || 0).toFixed(1) },
+                { label: "Turnover Rate",         value: (s.collectionTurnoverRate || 0).toFixed(2) },
+                { label: "Never Borrowed",        value: String(s.booksNeverBorrowed || 0) }
+            ]
+        }
+    }
+
+    function popularSubjectsSection() {
+        var data = reportsManager.getPopularSubjectsGenres(10)
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            var genre = String(data[i].label).trim()
+            if (genre.length > 25)
+                genre = genre.substring(0, 22) + "..."
+            labels.push(genre)
+            values.push(data[i].value)
+        }
+        return {
+            title: "Popular Subjects/Genres",
+            subtitle: "Top genres weighted by total borrows",
+            kind: "chart", chartType: "horizontalBar",
+            labels: labels,
+            datasets: [ { label: "Borrows", color: "#FF5722", data: values } ]
+        }
+    }
+
+    function topAuthorsSection() {
+        var data = reportsManager.getTopAuthors(10)
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            var author = String(data[i].label)
+            if (author.length > 30)
+                author = author.substring(0, 27) + "..."
+            labels.push(author)
+            values.push(data[i].value)
+        }
+        return {
+            title: "Authors with Most Borrowed Books",
+            subtitle: "Top popular authors",
+            kind: "chart", chartType: "horizontalBar",
+            labels: labels,
+            datasets: [ { label: "Borrows", color: "#9C27B0", data: values } ]
+        }
+    }
+
+    function performanceMatrixSection() {
+        var data = reportsManager.getBooksPerformanceMatrix()
+        var rows = []
+        for (var i = 0; i < data.length; i++) {
+            rows.push([
+                String(i + 1),
+                data[i].title || "",
+                data[i].author || "",
+                String(data[i].timesBorrowed || 0)
+            ])
+        }
+        return {
+            title: "Books Performance Matrix",
+            subtitle: "Top performing books",
+            kind: "table",
+            table: { headers: ["#", "Title", "Author", "Times Borrowed"], rows: rows }
+        }
+    }
+
+    function genreTrendsSection() {
+        var data = reportsManager.getGenrePopularityTrends(getDateRangeValue())
+        var genres = [], months = [], byGenre = {}
+        for (var i = 0; i < data.length; i++) {
+            var g = data[i].genre
+            var m = data[i].month
+            if (genres.indexOf(g) === -1) { genres.push(g); byGenre[g] = {} }
+            byGenre[g][m] = data[i].count
+            if (months.indexOf(m) === -1) months.push(m)
+        }
+        months.sort()
+        var palette = ["#F44336", "#2196F3", "#4CAF50", "#FF9800", "#9C27B0", "#00BCD4", "#FF5722"]
+        var datasets = []
+        for (var k = 0; k < genres.length; k++) {
+            var arr = []
+            for (var j = 0; j < months.length; j++)
+                arr.push(byGenre[genres[k]][months[j]] || 0)
+            datasets.push({ label: genres[k], color: palette[k % palette.length], data: arr })
+        }
+        return {
+            title: "Genre Popularity Trends Over Time",
+            subtitle: "How genre preferences change monthly",
+            kind: "chart", chartType: "line",
+            labels: months,
+            datasets: datasets
+        }
+    }
+
+    function buildReportPayload() {
+        return {
+            title: "Trends & Insights",
+            subtitle: "Discover popular trends and reading patterns for strategic decisions",
+            filters: filtersList(),
+            sections: [
+                metricsSection(),
+                popularSubjectsSection(),
+                topAuthorsSection(),
+                genreTrendsSection(),
+                performanceMatrixSection()
+            ]
+        }
+    }
+
+    function exportChart(section) {
+        reportExporter.exportToPdf({
+            title: "Trends & Insights — " + section.title,
+            filters: filtersList(),
+            sections: [ section ]
+        })
+    }
+
+    Connections {
+        target: reportExporter
+        function onExportFinished(success, outputPath, message) {
+            if (success && outputPath)
+                console.log("Report exported to:", outputPath)
+            else if (!success && message)
+                console.warn("Report export failed:", message)
+        }
     }
 }

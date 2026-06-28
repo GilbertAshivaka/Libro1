@@ -952,6 +952,8 @@ Rectangle {
                 }
 
                 onClicked: {
+                    // Actually end the admin session, then return to login.
+                    appManager.adminLogout()
                     mainDrawer.close()
                     mainLoader.source = "Login.qml"
                 }

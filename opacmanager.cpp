@@ -136,7 +136,7 @@ bool OpacManager::initializeConfiguration(const QString &opacUrl, const QString 
     return false;
 }
 
-bool OpacManager::updateConfiguration(const QString &opacUrl, const QString &apiKey, int &syncInterval, int pickupDays, int expiryDays)
+bool OpacManager::updateConfiguration(const QString &opacUrl, const QString &apiKey, int syncInterval, int pickupDays, int expiryDays)
 {
     bool urlChanged = (m_opacUrl != opacUrl.trimmed());
 

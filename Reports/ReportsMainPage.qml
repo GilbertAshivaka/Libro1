@@ -200,6 +200,7 @@ Rectangle {
 
     // Main content area
     ScrollView {
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         anchors {
             top: topRect.bottom
             left: parent.left

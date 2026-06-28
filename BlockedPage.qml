@@ -39,9 +39,9 @@ Rectangle {
                 width: 100
                 height: 100
                 radius: 50
-                color: "#FFEBEE"
-                border.color: errorColor
-                border.width: 2
+                color: "transparent" //"#FFEBEE"
+                // border.color: errorColor
+                // border.width: 2
 
                 Text {
                     anchors.centerIn: parent
@@ -201,7 +201,7 @@ Rectangle {
                     }
 
                     onClicked: {
-                        Qt.openUrlExternally("https://libro.yoursite.com/renew")
+                        appManager.openRenewalPage()
                     }
                 }
 
@@ -242,9 +242,10 @@ Rectangle {
 
                     onClicked: {
                         if (appManager) {
-                            appManager.manualValidation()
+                            // appManager.manualValidation()
+                            appManager.refreshLicense()
                         }
-                        retryValidation()
+                        retryValidation()                        
                     }
                 }
             }

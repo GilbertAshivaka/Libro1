@@ -4,6 +4,8 @@
 #include <QJsonArray>
 #include <QNetworkRequest>
 #include <QUrlQuery>
+#include <QSysInfo>
+#include <QDesktopServices>
 #include "activitylogs.h"
 
 // Initialize static members
@@ -37,7 +39,11 @@ AppManager::AppManager(QObject *parent)
     connect(m_networkManager, &QNetworkAccessManager::finished, this, &AppManager::onNetworkReplyFinished);
 
     // API base URL - configure this to your Libro portal
-    m_apiBaseUrl = "http://localhost:8000/api/v1"; //"https://libro.yourdomain.com/api/v1";
+    m_apiBaseUrl = "http://localhost:8005/api/v1"; //"https://libro.yourdomain.com/api/v1";
+
+    // Customer portal page the user is sent to when renewing a subscription.
+    // Local for testing; point to the deployed portal in production.
+    m_renewalUrl = "http://localhost:5180/portal/billing"; //"https://libro.yourdomain.com/portal/billing";
 
     // Start validation timer if activated
     if (isActivated()) {
@@ -91,11 +97,14 @@ bool AppManager::isGracePeriod() const
 
 int AppManager::graceDaysRemaining() const
 {
+    // Grace now means "offline tolerance": how many more days the app will keep
+    // working without a successful server validation before requiring a re-check.
     if (!isGracePeriod()) return 0;
 
-    int daysSinceExpiry = m_expiryDate.daysTo(QDate::currentDate());
-    int remaining = GRACE_PERIOD_DAYS - daysSinceExpiry;
-    return qMax(0, remaining);
+    int daysSinceValidation = m_lastValidation.isValid()
+                                  ? m_lastValidation.date().daysTo(QDate::currentDate())
+                                  : GRACE_PERIOD_DAYS;
+    return qMax(0, GRACE_PERIOD_DAYS - daysSinceValidation);
 }
 
 QString AppManager::licenseTier() const
@@ -216,6 +225,7 @@ void AppManager::activateLicense(const QString &orgId, const QString &licenseKey
     QJsonObject body;
     body["organization_id"] = orgId.trimmed();
     body["license_key"] = licenseKey.trimmed();
+    body["machine_id"] = getMachineId();
 
     QNetworkReply *reply = m_networkManager->post(request, QJsonDocument(body).toJson());
     m_pendingRequests[reply] = ActivationRequest;
@@ -252,6 +262,7 @@ void AppManager::validateLicense()
     QJsonObject body;
     body["organization_id"] = m_organizationId;
     body["license_key"] = m_licenseKey;
+    body["machine_id"] = getMachineId();
 
     QNetworkReply *reply = m_networkManager->post(request, QJsonDocument(body).toJson());
     m_pendingRequests[reply] = ValidationRequest;
@@ -270,6 +281,41 @@ void AppManager::validateLicense()
 void AppManager::manualValidation()
 {
     validateLicense();
+}
+
+void AppManager::refreshLicense()
+{
+    // Used by the "I've renewed, check again" button. Sends the current (possibly
+    // expired) credentials; the server returns the org's newest active license,
+    // which may have a NEW key that we then adopt. Works as a superset of
+    // validate: if the current key is still the active one, it's returned as-is.
+    if (!isActivated()) {
+        m_licenseStatus = "not_activated";
+        emit licenseStatusChanged();
+        return;
+    }
+
+    m_isValidating = true;
+    emit validatingChanged();
+
+    QNetworkRequest request(QUrl(buildApiUrl("/license/refresh")));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    request.setRawHeader("Accept", "application/json");
+    request.setRawHeader("User-Agent", "Libro Desktop v1.0");
+
+    QJsonObject body;
+    body["organization_id"] = m_organizationId;
+    body["license_key"] = m_licenseKey;        // existing/old key proves the org
+    body["machine_id"] = getMachineId();
+
+    QNetworkReply *reply = m_networkManager->post(request, QJsonDocument(body).toJson());
+    m_pendingRequests[reply] = RefreshRequest;
+
+    QTimer::singleShot(NETWORK_TIMEOUT_MS, reply, [reply]() {
+        if (reply->isRunning()) {
+            reply->abort();
+        }
+    });
 }
 
 QVariantMap AppManager::getLicenseDetails() const
@@ -790,7 +836,10 @@ void AppManager::onNetworkReplyFinished(QNetworkReply *reply)
     RequestType requestType = m_pendingRequests.take(reply);
 
     if (reply->error() != QNetworkReply::NoError) {
-        handleNetworkError(reply, requestType == ActivationRequest ? "Activation" : "Validation");
+        QString ctx = requestType == ActivationRequest ? "Activation"
+                      : requestType == RefreshRequest   ? "Refresh"
+                                                       : "Validation";
+        handleNetworkError(reply, ctx);
         reply->deleteLater();
         return;
     }
@@ -801,6 +850,8 @@ void AppManager::onNetworkReplyFinished(QNetworkReply *reply)
 
     if (requestType == ActivationRequest) {
         handleActivationResponse(response);
+    } else if (requestType == RefreshRequest) {
+        handleRefreshResponse(response);
     } else {
         handleValidationResponse(response);
     }
@@ -923,29 +974,63 @@ bool AppManager::saveLicenseToDatabase()
     return true;
 }
 
+void AppManager::applyServerStatus(const QString &serverStatus)
+{
+    // The backend is the source of truth when we are online. It returns one of:
+    // pending / trial / active / expired / revoked / suspended (and device_mismatch
+    // as an error). Only trial/active are usable; everything else is a hard stop.
+    if (!isActivated()) {
+        m_licenseStatus = "not_activated";
+        return;
+    }
+
+    if (serverStatus == "trial") {
+        m_licenseStatus = "trial";
+    } else if (serverStatus == "active") {
+        m_licenseStatus = "active";
+    } else if (serverStatus.isEmpty()) {
+        // Server didn't tell us; fall back to cached/offline computation.
+        updateLicenseStatus();
+    } else {
+        // expired / revoked / suspended / pending / device_mismatch
+        m_licenseStatus = "blocked";
+    }
+}
+
 void AppManager::updateLicenseStatus()
 {
+    // OFFLINE / cached computation. Used on startup before the first server
+    // round-trip and as the fallback when the server is unreachable.
+    //
+    // Policy (offline-only grace):
+    //   - Past the cached expiry date          -> blocked (hard expiry).
+    //   - Within validity AND validated recently -> keep working (trial/active).
+    //   - Haven't reached the server in too long -> blocked (force re-check).
     if (!isActivated()) {
         m_licenseStatus = "not_activated";
         return;
     }
 
     QDate today = QDate::currentDate();
-    int daysSinceExpiry = m_expiryDate.daysTo(today);
 
-    if (daysSinceExpiry < 0) {
-        // Not expired yet
-        if (m_licenseTier == "trial") {
-            m_licenseStatus = "trial";
-        } else {
-            m_licenseStatus = "active";
-        }
-    } else if (daysSinceExpiry <= GRACE_PERIOD_DAYS) {
-        // In grace period
-        m_licenseStatus = "grace_period";
-    } else {
-        // Grace period exceeded
+    if (m_expiryDate.isValid() && today > m_expiryDate) {
         m_licenseStatus = "blocked";
+        return;
+    }
+
+    int daysSinceValidation = m_lastValidation.isValid()
+                                  ? m_lastValidation.date().daysTo(today)
+                                  : 100000;  // never validated -> treat as stale
+
+    if (daysSinceValidation <= GRACE_PERIOD_DAYS) {
+        m_licenseStatus = (m_licenseTier == "trial") ? "trial" : "active";
+    } else {
+        // Still within the license's validity, but offline past the grace
+        // window. The license may be perfectly fine - it just needs a fresh
+        // online check. This is distinct from "blocked" (genuinely expired /
+        // revoked, which needs a renewal) so the UI can prompt to re-verify
+        // online rather than to pay.
+        m_licenseStatus = "reverify_required";
     }
 }
 
@@ -970,6 +1055,32 @@ void AppManager::logValidation(const QString &type, bool wasOnline, const QStrin
 QString AppManager::buildApiUrl(const QString &endpoint) const
 {
     return m_apiBaseUrl + endpoint;
+}
+
+QString AppManager::renewalUrl() const
+{
+    return m_renewalUrl;
+}
+
+void AppManager::openRenewalPage()
+{
+    // Opens the customer portal billing page in the user's default browser so
+    // they can pay/renew. After paying they return and hit "check again",
+    // which calls manualValidation() to re-validate against the server.
+    QDesktopServices::openUrl(QUrl(m_renewalUrl));
+}
+
+QString AppManager::getMachineId() const
+{
+    // Stable per-machine identifier. On Windows this derives from the
+    // registry MachineGuid; it survives reboots and app reinstalls but
+    // changes if the OS is reinstalled (admin can reset-device for that).
+    QString id = QString::fromLatin1(QSysInfo::machineUniqueId());
+    if (id.isEmpty()) {
+        // Fallback if the unique ID can't be determined.
+        id = QSysInfo::machineHostName() + "-" + QSysInfo::productType();
+    }
+    return id;
 }
 
 void AppManager::handleActivationResponse(const QJsonObject &response)
@@ -1003,9 +1114,11 @@ void AppManager::handleActivationResponse(const QJsonObject &response)
     m_lastValidation = QDateTime::currentDateTime();
     m_lastValidationStatus = "valid";
 
+    // Trust the server's computed status (active/trial). Anything else is a hard stop.
+    applyServerStatus(response["status"].toString());
+
     // Save to database
     saveLicenseToDatabase();
-    updateLicenseStatus();
 
     // Start validation timer
     m_validationTimer->start();
@@ -1038,8 +1151,8 @@ void AppManager::handleValidationResponse(const QJsonObject &response)
         m_lastValidation = QDateTime::currentDateTime();
         m_lastValidationStatus = "valid";
 
+        applyServerStatus(response["status"].toString());
         saveLicenseToDatabase();
-        updateLicenseStatus();
 
         emit licenseStatusChanged();
         emit validationCompleted(true, "License validated successfully");
@@ -1047,13 +1160,17 @@ void AppManager::handleValidationResponse(const QJsonObject &response)
 
         ActivityLogs::logActivity("INFO", "SYSTEM", "License validated successfully", "License validated successfully.");
     } else {
-        // License invalid from server
+        // License invalid from server - hard stop (no grace when online).
         QString error = response["error"].toString("License validation failed");
         m_lastValidation = QDateTime::currentDateTime();
         m_lastValidationStatus = "invalid";
 
+        // Server is authoritative: map its status (expired/revoked/suspended/
+        // device_mismatch/pending) to a blocked state.
+        applyServerStatus(response["status"].toString().isEmpty()
+                              ? QStringLiteral("blocked")
+                              : response["status"].toString());
         saveLicenseToDatabase();
-        updateLicenseStatus();
 
         emit licenseStatusChanged();
         emit validationCompleted(false, error);
@@ -1061,6 +1178,67 @@ void AppManager::handleValidationResponse(const QJsonObject &response)
 
         ActivityLogs::logActivity("WARNING", "SYSTEM", "License validation failed", "License validation failed.");
     }
+}
+
+void AppManager::handleRefreshResponse(const QJsonObject &response)
+{
+    if (!response["success"].toBool()) {
+        // The server is reachable and definitively says there is no usable
+        // license for this org (revoked / expired / not paid yet, or bad
+        // credentials). This is a HARD STOP - do NOT fall back to the cached
+        // offline computation, which would wrongly keep the app working off a
+        // stale expiry date. Offline grace only applies to network failures.
+        QString error = response["error"].toString();
+        QString message = response["message"].toString("No active license found yet.");
+        m_licenseStatus = "blocked";
+        emit licenseStatusChanged();
+        emit validationCompleted(false, message);
+        logValidation("refresh", true, m_licenseStatus, QJsonDocument(response).toJson(), error);
+        return;
+    }
+
+    // Adopt the (possibly new) license key + details returned by the server.
+    QString newKey = response["license_key"].toString();
+    if (!newKey.isEmpty()) {
+        m_licenseKey = newKey;
+    }
+
+    QJsonObject license = response["license"].toObject();
+    if (!license["tier"].toString().isEmpty()) {
+        m_licenseTier = license["tier"].toString();
+    }
+    if (!license["activation_date"].toString().isEmpty()) {
+        m_activationDate = QDate::fromString(license["activation_date"].toString(), "yyyy-MM-dd");
+    }
+    if (!license["expiry_date"].toString().isEmpty()) {
+        m_expiryDate = QDate::fromString(license["expiry_date"].toString(), "yyyy-MM-dd");
+    }
+
+    QJsonObject org = response["organization"].toObject();
+    if (!org.isEmpty()) {
+        m_organizationName = org["name"].toString(m_organizationName);
+        m_organizationLocation = org["location"].toString(m_organizationLocation);
+        m_organizationAddress = org["address"].toString(m_organizationAddress);
+        m_organizationPhone = org["phone"].toString(m_organizationPhone);
+        m_organizationEmail = org["email"].toString(m_organizationEmail);
+    }
+
+    m_lastValidation = QDateTime::currentDateTime();
+    m_lastValidationStatus = "valid";
+
+    applyServerStatus(response["status"].toString());
+    saveLicenseToDatabase();
+
+    m_validationTimer->start();
+
+    emit licenseStatusChanged();
+    emit organizationChanged();
+    emit validationCompleted(true, "License updated successfully");
+    logValidation("refresh", true, m_licenseStatus, QJsonDocument(response).toJson());
+
+    ActivityLogs::logActivity("INFO", "SYSTEM", "License refreshed", "License refreshed/renewed successfully.");
+
+    qDebug() << "License refreshed; now using key for tier:" << m_licenseTier;
 }
 
 void AppManager::handleNetworkError(QNetworkReply *reply, const QString &context)
@@ -1074,10 +1252,16 @@ void AppManager::handleNetworkError(QNetworkReply *reply, const QString &context
         emit activationFailed("Network error: " + errorMsg);
         logValidation("activation", false, "network_error", QString(), errorMsg);
     } else {
-        // Validation failed - fall back to offline check
+        // Validation failed because the server is unreachable. This is the ONLY
+        // case where grace applies: if the license is still within validity and
+        // was validated recently, keep it working but flag the offline state.
         updateLicenseStatus();
+        if (m_licenseStatus == "active" || m_licenseStatus == "trial") {
+            m_licenseStatus = "grace_period";
+        }
+        emit licenseStatusChanged();
         emit validationCompleted(false, "Offline mode - using cached license data");
-        logValidation("periodic", false, m_licenseStatus, QString(), "Network error - offline validation");        
+        logValidation("periodic", false, m_licenseStatus, QString(), "Network error - offline validation");
     }
 
     emit networkError(errorMsg);

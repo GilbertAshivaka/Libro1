@@ -57,6 +57,7 @@ Page {
     }
     
     ScrollView {
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         anchors.fill: parent
         contentWidth: availableWidth
         clip: true
@@ -135,11 +136,13 @@ Page {
                             text: "⟳ Refresh"
                             onClicked: loadOverdueData()
                         }
-                        
-                        Button {
-                            text: "⤓ Export"
-                            highlighted: true
-                            onClicked: console.log("Export overdue report")
+
+                        ExportButton {
+                            enabled: !reportExporter.isBusy
+                            onExportPDF: reportExporter.exportToPdf(buildReportPayload())
+                            onExportCSV: reportExporter.exportToCsv(buildReportPayload())
+                            onExportExcel: reportExporter.exportToCsv(buildReportPayload())
+                            onPrintReport: reportExporter.printReport(buildReportPayload())
                         }
                     }
                 }
@@ -227,7 +230,7 @@ Page {
                     isLoading: reportsManager.isLoading
                     
                     onRefreshClicked: loadOverdueByDaysRange()
-                    onExportClicked: console.log("Export days range chart")
+                    onExportClicked: exportChart(daysRangeSection())
                     
                     contentItem: ChartView {
                         id: daysRangeChart
@@ -267,7 +270,7 @@ Page {
                     isLoading: reportsManager.isLoading
                     
                     onRefreshClicked: loadOverdueByUserType()
-                    onExportClicked: console.log("Export user type chart")
+                    onExportClicked: exportChart(overdueByUserTypeSection())
                     
                     contentItem: ChartView {
                         id: overdueUserTypeChart
@@ -293,7 +296,7 @@ Page {
                 isLoading: reportsManager.isLoading
                 
                 onRefreshClicked: loadOverdueTrend()
-                onExportClicked: console.log("Export overdue trend")
+                onExportClicked: exportChart(overdueTrendSection())
                 
                 contentItem: ChartView {
                     id: overdueTrendChart
@@ -335,7 +338,7 @@ Page {
                 isLoading: reportsManager.isLoading
                 
                 onRefreshClicked: loadUsersWithMostOverdue()
-                onExportClicked: console.log("Export top overdue users")
+                onExportClicked: exportChart(usersWithMostOverdueSection())
                 
                 contentItem: ChartView {
                     id: topOverdueUsersChart
@@ -528,6 +531,133 @@ Page {
             var slice = overdueUserTypeSeries.append(data[i].label, data[i].value)
             slice.color = colors[i % colors.length]
             slice.labelVisible = true
+        }
+    }
+
+    // ========================================================================
+    // Report export / print
+    // ========================================================================
+
+    function filtersList() {
+        return [
+            { label: "Date Range", value: dateRangeCombo.currentText },
+            { label: "User Type",  value: userTypeCombo.currentText },
+            { label: "Genre",      value: genreCombo.currentText }
+        ]
+    }
+
+    function metricsSection() {
+        var s = reportsManager.getOverdueStats()
+        return {
+            title: "Key Metrics", kind: "metrics",
+            data: [
+                { label: "Total Overdue",    value: String(s.totalOverdue || 0) },
+                { label: "Longest Overdue",  value: String(Math.floor(s.longestOverdueDays || 0)), unit: "days" },
+                { label: "Avg Days Overdue", value: (s.averageDaysOverdue || 0).toFixed(1), unit: "days" },
+                { label: "30+ Days Overdue", value: String(s.overdue30Plus || 0) },
+                { label: "Overdue Rate",     value: (s.overdueRate || 0).toFixed(1), unit: "%" }
+            ]
+        }
+    }
+
+    function daysRangeSection() {
+        var data = reportsManager.getOverdueBooksByDaysRange()
+        var fixed = ["0-7 days", "8-14 days", "15-30 days", "30+ days"]
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].category || data[i].label || fixed[i] || ("Range " + (i + 1)))
+            values.push(data[i].value || 0)
+        }
+        return {
+            title: "Overdue Books by Days Range",
+            subtitle: "Severity distribution of overdue items",
+            kind: "chart", chartType: "bar",
+            labels: labels,
+            datasets: [ { label: "Overdue", color: "#FF5722", data: values } ]
+        }
+    }
+
+    function overdueByUserTypeSection() {
+        var data = reportsManager.getOverdueBooksByUserType()
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].label)
+            values.push(data[i].value)
+        }
+        return {
+            title: "Overdue Books by User Type",
+            subtitle: "Compliance issues per user group",
+            kind: "chart", chartType: "pie",
+            labels: labels,
+            datasets: [ { label: "Overdue", data: values } ]
+        }
+    }
+
+    function overdueTrendSection() {
+        var data = reportsManager.getOverdueTrendOverMonths(getDateRangeValue())
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].xValue)
+            values.push(data[i].yValue)
+        }
+        return {
+            title: "Overdue Trend Over Months",
+            subtitle: "Track if overdue problem is improving or worsening",
+            kind: "chart", chartType: "line",
+            labels: labels,
+            datasets: [ { label: "Overdue Count", color: "#F44336", data: values } ]
+        }
+    }
+
+    function usersWithMostOverdueSection() {
+        var data = reportsManager.getUsersWithMostOverdue(15, getUserTypeFilter())
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            var name = data[i].label
+            if (name.length > 30)
+                name = name.substring(0, 27) + "..."
+            labels.push(name)
+            values.push(data[i].value)
+        }
+        return {
+            title: "Users with Most Overdue Books",
+            subtitle: "Top 15 users for follow-up",
+            kind: "chart", chartType: "horizontalBar",
+            labels: labels,
+            datasets: [ { label: "Overdue", color: "#E91E63", data: values } ]
+        }
+    }
+
+    function buildReportPayload() {
+        return {
+            title: "Overdue & Compliance",
+            subtitle: "Track late returns and compliance issues",
+            filters: filtersList(),
+            sections: [
+                metricsSection(),
+                daysRangeSection(),
+                overdueByUserTypeSection(),
+                overdueTrendSection(),
+                usersWithMostOverdueSection()
+            ]
+        }
+    }
+
+    function exportChart(section) {
+        reportExporter.exportToPdf({
+            title: "Overdue & Compliance — " + section.title,
+            filters: filtersList(),
+            sections: [ section ]
+        })
+    }
+
+    Connections {
+        target: reportExporter
+        function onExportFinished(success, outputPath, message) {
+            if (success && outputPath)
+                console.log("Report exported to:", outputPath)
+            else if (!success && message)
+                console.warn("Report export failed:", message)
         }
     }
 }

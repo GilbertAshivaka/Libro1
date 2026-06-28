@@ -19,31 +19,6 @@ Page {
         anchors.fill: parent
     }
 
-    Settings {
-        id: settings
-        property string exportFolder: "" // Stores the user's selected folder
-    }
-
-    // Add FileDialog for folder selection
-    FolderDialog {
-        id: folderDialog
-        title: "Select Export Folder"
-        // selectFolder: true
-        onAccepted: {
-            // Remove "file:///" prefix and store the path
-            var path = folderDialog.selectedFolder.toString()
-            path = path.replace(/^(file:\/{3})/,"")
-            // On Windows, remove the extra slash
-            if (Qt.platform.os === "windows") {
-                path = path.replace(/^\/(.:\/)/, "$1")
-            }
-            settings.exportFolder = path
-            messageDialog.title = "Foder set"
-            messageDialog.text = "Export folder set to: " + path
-            messageDialog.open()
-        }
-    }
-
     // Back button
     Rectangle {
         id: backBtn
@@ -86,6 +61,7 @@ Page {
     }
 
     ScrollView {
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         id: collectionScrollView
         anchors.fill: parent
         contentWidth: availableWidth
@@ -200,22 +176,12 @@ Page {
                         }
 
 
-                        Button {
-                            text: "⤓ Export"
-                            highlighted: true
-
-                            Timer{
-                                id: dialogTimer
-                                interval: 3000
-                                onTriggered: {
-                                    messageDialog.close()
-                                    folderDialog.open()
-                                }
-                            }
-
-                            onClicked: {
-                                exportImage(collectionStatsGroupBox, "ReservationStats")
-                            }
+                        ExportButton {
+                            enabled: !reportExporter.isBusy
+                            onExportPDF: reportExporter.exportToPdf(buildReportPayload())
+                            onExportCSV: reportExporter.exportToCsv(buildReportPayload())
+                            onExportExcel: reportExporter.exportToCsv(buildReportPayload())
+                            onPrintReport: reportExporter.printReport(buildReportPayload())
                         }
                     }
                 }
@@ -302,7 +268,7 @@ Page {
                     isLoading: reportsManager.isLoading
 
                     onRefreshClicked: loadGenreDistribution()
-                    // onExportClicked: console.log("Export genre chart")
+                    onExportClicked: exportChart(genreSection())
 
                     contentItem: ChartView {
                         id: genreChart
@@ -315,10 +281,6 @@ Page {
                             id: genreSeries
                         }
                     }
-
-                    onExportClicked: {
-                        exportImage(genreChart, "BooksGenreDistribution")
-                    }
                 }
 
                 // Availability Status Donut Chart
@@ -330,7 +292,7 @@ Page {
                     isLoading: reportsManager.isLoading
 
                     onRefreshClicked: loadAvailabilityStatus()
-                    onExportClicked: exportImage(availabilityChart, "AvailabilityStatus")
+                    onExportClicked: exportChart(availabilitySection())
 
                     contentItem: ChartView {
                         id: availabilityChart
@@ -357,9 +319,7 @@ Page {
                 isLoading: reportsManager.isLoading
 
                 onRefreshClicked: loadPublicationYears()
-                onExportClicked: {
-                    exportImage(publicationYearChart, "BooksByPublicationYear")
-                }
+                onExportClicked: exportChart(publicationYearSection())
 
                 contentItem: ChartView {
                     id: publicationYearChart
@@ -406,9 +366,7 @@ Page {
                 isLoading: reportsManager.isLoading
 
                 onRefreshClicked: loadTopBorrowedBooks()
-                onExportClicked: {
-                    exportImage(topBorrowedChart, "TopBorrowedBooks")
-                }
+                onExportClicked: exportChart(topBorrowedSection())
 
                 contentItem: ChartView {
                     id: topBorrowedChart
@@ -458,21 +416,6 @@ Page {
     ListModel {
         id: languageModel
         ListElement { text: "All Languages" }
-    }
-
-    //Message Dialog
-    Dialog {
-        id: messageDialog
-        property alias text: messageLabel.text
-        anchors.centerIn: parent
-        modal: true
-        standardButtons: Dialog.Ok
-
-        Text {
-            id: messageLabel
-            color: "#8E8E8E"
-            text: ""
-        }
     }
 
     // Load data on component completion
@@ -611,35 +554,136 @@ Page {
         borrowedValueAxis.max = Math.ceil(maxValue * 1.1)
     }
 
-    function exportImage(item, baseFilename) {
-        // Check if folder is set
-        if (settings.exportFolder === "") {
-            messageDialog.title = "No Folder Selected"
-            messageDialog.text = "Please select an export folder first in Settings."
-            messageDialog.open()
-            dialogTimer.start()
-            return
+    // ========================================================================
+    // Report export / print
+    // ========================================================================
+
+    function filtersList() {
+        return [
+            { label: "Date Range", value: dateRangeCombo.currentText },
+            { label: "Genre",      value: genreFilterCombo.currentText },
+            { label: "Language",   value: languageFilterCombo.currentText }
+        ]
+    }
+
+    function metricsSection() {
+        var s = reportsManager.getCollectionStats()
+        var total = parseInt(s.totalBooks) || 1
+        var good = parseInt(s.booksInGoodCondition) || 0
+        return {
+            title: "Key Metrics", kind: "metrics",
+            data: [
+                { label: "Total Books",      value: String(s.totalBooks || 0) },
+                { label: "Available",        value: String(s.availableBooks || 0) },
+                { label: "Added This Month", value: String(s.booksAddedThisMonth || 0) },
+                { label: "Average Value",    value: "$" + (s.averageBookValue || 0).toFixed(2) },
+                { label: "Good Condition",   value: ((good / total) * 100).toFixed(1), unit: "%" }
+            ]
         }
+    }
 
-        // Get current date
-        var today = new Date()
-        var dateString = today.getFullYear() +
-                String(today.getMonth() + 1).padStart(2, '0') +
-                String(today.getDate()).padStart(2, '0') +
-                "_" +
-                String(today.getHours()).padStart(2, '0') +
-                String(today.getMinutes()).padStart(2, '0') +
-                String(today.getSeconds()).padStart(2, '0')
+    function genreSection() {
+        var data = reportsManager.getBooksByGenreDistribution(getDateRangeValue())
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].label)
+            values.push(data[i].value)
+        }
+        return {
+            title: "Books by Genre Distribution",
+            subtitle: "Percentage of books across genres",
+            kind: "chart", chartType: "pie",
+            labels: labels,
+            datasets: [ { label: "Books", data: values } ]
+        }
+    }
 
-        // Create filename with date
-        var filename = baseFilename + "_" + dateString + ".png"
-        var fullPath = settings.exportFolder + "/" + filename
+    function availabilitySection() {
+        var data = reportsManager.getBookAvailabilityStatus()
+        var colorMap = {
+            "Available": "#4CAF50", "Borrowed": "#FF9800", "Lost": "#F44336",
+            "Reserved": "#2196F3", "Damaged": "#9E9E9E"
+        }
+        var labels = [], values = [], colors = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].label)
+            values.push(data[i].value)
+            colors.push(colorMap[data[i].label] || "#607D8B")
+        }
+        return {
+            title: "Book Availability Status",
+            subtitle: "Current status of all books",
+            kind: "chart", chartType: "doughnut",
+            labels: labels,
+            datasets: [ { label: "Status", data: values, colors: colors } ]
+        }
+    }
 
-        item.grabToImage(function(result) {
-            result.saveToFile(fullPath)
-            messageDialog.title = "Success"
-            messageDialog.text = "Saved: " + filename + "\nLocation: " + settings.exportFolder
-            messageDialog.open()
+    function publicationYearSection() {
+        var data = reportsManager.getBooksByPublicationYear(10)
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].category)
+            values.push(data[i].value)
+        }
+        return {
+            title: "Books by Publication Year",
+            subtitle: "Top 10 recent years showing collection age",
+            kind: "chart", chartType: "bar",
+            labels: labels,
+            datasets: [ { label: "Books", color: "#2196F3", data: values } ]
+        }
+    }
+
+    function topBorrowedSection() {
+        var data = reportsManager.getTopBorrowedBooks(10, getGenreFilter(), getLanguageFilter())
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            var title = data[i].label
+            if (title.length > 40)
+                title = title.substring(0, 37) + "..."
+            labels.push(title)
+            values.push(data[i].value)
+        }
+        return {
+            title: "Top 10 Most Borrowed Books",
+            subtitle: "Most popular books in your collection",
+            kind: "chart", chartType: "horizontalBar",
+            labels: labels,
+            datasets: [ { label: "Borrows", color: "#4CAF50", data: values } ]
+        }
+    }
+
+    function buildReportPayload() {
+        return {
+            title: "Collection Overview & Statistics",
+            subtitle: "Monitor your library inventory and collection health",
+            filters: filtersList(),
+            sections: [
+                metricsSection(),
+                genreSection(),
+                availabilitySection(),
+                publicationYearSection(),
+                topBorrowedSection()
+            ]
+        }
+    }
+
+    function exportChart(section) {
+        reportExporter.exportToPdf({
+            title: "Collection Overview — " + section.title,
+            filters: filtersList(),
+            sections: [ section ]
         })
+    }
+
+    Connections {
+        target: reportExporter
+        function onExportFinished(success, outputPath, message) {
+            if (success && outputPath)
+                console.log("Report exported to:", outputPath)
+            else if (!success && message)
+                console.warn("Report export failed:", message)
+        }
     }
 }

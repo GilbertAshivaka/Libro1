@@ -233,6 +233,7 @@ Rectangle {
 
     // Main ListView
     ListView {
+        boundsBehavior: Flickable.StopAtBounds
         id: suggestionsListView
         clip: true
         anchors {
@@ -592,6 +593,7 @@ Rectangle {
 
             // Content
             Flickable {
+                boundsBehavior: Flickable.StopAtBounds
                 id: contentFlickable
                 anchors {
                     top: popupHeader.bottom

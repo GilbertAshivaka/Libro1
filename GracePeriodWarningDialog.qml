@@ -4,34 +4,48 @@ import QtQuick.Layouts
 
 /**
  * GracePeriodWarningDialog.qml
- * Modal dialog shown on startup when license is in grace period.
- * Warns user about expiration and allows them to continue.
+ * Shown once the offline grace window is exhausted (status "reverify_required").
+ * The license is still within its expiry date, but the app has been offline too
+ * long since the last successful check, so the user must verify online before
+ * continuing. (This is NOT the "expired, please renew" case - that goes to the
+ * blocked page instead.)
  */
 Dialog {
     id: gracePeriodDialog
 
-    title: "License Expired"
     modal: true
     closePolicy: Popup.NoAutoClose
 
-    width: Math.min(450, parent.width - 40)
-    height: contentColumn.height + 120
-
+    // Center on the window overlay (robust for popups).
+    parent: Overlay.overlay
     anchors.centerIn: parent
 
-    // Colors
+    width: Math.min(440, (parent ? parent.width : 440) - 40)
+    padding: 0
+
     readonly property color warningColor: "#F57C00"
     readonly property color accentColor: "#0078D4"
 
-    // Days remaining in grace period
-    property int daysRemaining: appManager ? appManager.graceDaysRemaining : 0
+    // Reflects an in-flight online validation.
+    readonly property bool verifying: appManager ? appManager.isValidating : false
+    // Last failure message to surface (offline / server error).
+    property string statusMessage: ""
 
-    // Expiry date property for external binding
-    property string expiryDateText: appManager ? Qt.formatDate(appManager.expiryDate, "MMMM d, yyyy") : "Unknown"
-
-    // Signals for external handling
-    signal continueClicked()
-    signal renewClicked()
+    // Surface verification results. On success the license status changes and
+    // Main.qml routes away (closing this dialog); we only show failures here.
+    Connections {
+        target: appManager
+        function onValidationCompleted(success, message) {
+            if (!success) {
+                gracePeriodDialog.statusMessage = (message && message.length)
+                    ? message
+                    : "Couldn't reach the licensing server. Check your internet connection and try again."
+            }
+        }
+        function onNetworkError(error) {
+            gracePeriodDialog.statusMessage = "No internet connection. Please connect and try again."
+        }
+    }
 
     background: Rectangle {
         color: "white"
@@ -40,158 +54,126 @@ Dialog {
         border.width: 1
     }
 
-    header: Item {
-        height: 60
+    contentItem: ColumnLayout {
+        id: contentColumn
+        spacing: 0
 
+        // ---- Header band (top corners rounded) ----
         Rectangle {
-            anchors.fill: parent
+            Layout.fillWidth: true
+            Layout.preferredHeight: 60
             color: "#FFF3E0"
             radius: 12
 
-            // Only round top corners
             Rectangle {
                 anchors.bottom: parent.bottom
                 width: parent.width
-                height: 12
+                height: 14
                 color: "#FFF3E0"
             }
-        }
 
-        Row {
-            anchors.centerIn: parent
-            spacing: 12
-
-            Text {
-                text: "⚠️"
-                font.pixelSize: 24
-                anchors.verticalCenter: parent.verticalCenter
-            }
-
-            Text {
-                text: "License Grace Period"
-                font.pixelSize: 18
-                font.bold: true
-                color: warningColor
-                anchors.verticalCenter: parent.verticalCenter
-            }
-        }
-    }
-
-    contentItem: ColumnLayout {
-        id: contentColumn
-        spacing: 20
-
-        // Warning message
-        Text {
-            Layout.fillWidth: true
-            text: "Your Libro license expired on " +
-                  (appManager ? Qt.formatDate(appManager.expiryDate, "MMMM d, yyyy") : "Unknown") + "."
-            font.pixelSize: 14
-            color: "#333333"
-            wrapMode: Text.WordWrap
-            horizontalAlignment: Text.AlignHCenter
-        }
-
-        // Days remaining highlight
-        Rectangle {
-            Layout.alignment: Qt.AlignHCenter
-            width: daysBox.width + 40
-            height: daysBox.height + 20
-            color: "#FFF3E0"
-            radius: 8
-            border.color: warningColor
-            border.width: 1
-
-            Column {
-                id: daysBox
+            RowLayout {
                 anchors.centerIn: parent
-                spacing: 4
+                spacing: 10
+
+                Text { text: "🔄"; font.pixelSize: 22 }
 
                 Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: daysRemaining.toString()
-                    font.pixelSize: 36
+                    text: "Verify Your License"
+                    font.pixelSize: 18
                     font.bold: true
-                    color: warningColor
-                }
-
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: daysRemaining === 1 ? "day remaining" : "days remaining"
-                    font.pixelSize: 13
-                    color: "#666666"
+                    color: gracePeriodDialog.warningColor
                 }
             }
         }
 
-        // Explanation
-        Text {
+        // ---- Body ----
+        ColumnLayout {
             Layout.fillWidth: true
-            text: "You can continue using Libro with full functionality during the grace period.\n\nAfter " +
-                  daysRemaining + (daysRemaining === 1 ? " day" : " days") +
-                  ", you will need to renew your license to continue."
-            font.pixelSize: 13
-            color: "#666666"
-            wrapMode: Text.WordWrap
-            horizontalAlignment: Text.AlignHCenter
-            lineHeight: 1.4
-        }
+            Layout.margins: 20
+            spacing: 16
 
-        // Buttons
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: 12
-
-            Button {
-                id: renewButton
+            Text {
                 Layout.fillWidth: true
-                height: 44
-
-                contentItem: Text {
-                    text: "Renew Now"
-                    color: accentColor
-                    font.pixelSize: 14
-                    font.bold: true
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-
-                background: Rectangle {
-                    color: renewButton.pressed ? "#E8E8E8" :
-                           renewButton.hovered ? "#F0F0F0" : "white"
-                    radius: 6
-                    border.color: accentColor
-                    border.width: 1
-                }
-
-                onClicked: {
-                    gracePeriodDialog.renewClicked()
-                }
+                text: "Libro has been offline for a while and needs to re-verify your license to continue.\n\n" +
+                      "Please make sure you're connected to the internet, then verify."
+                font.pixelSize: 14
+                color: "#333333"
+                wrapMode: Text.WordWrap
+                horizontalAlignment: Text.AlignHCenter
             }
 
-            Button {
-                id: continueButton
+            // Status / error message
+            Text {
                 Layout.fillWidth: true
-                height: 44
+                visible: gracePeriodDialog.statusMessage.length > 0 && !gracePeriodDialog.verifying
+                text: gracePeriodDialog.statusMessage
+                font.pixelSize: 12
+                color: "#C62828"
+                wrapMode: Text.WordWrap
+                horizontalAlignment: Text.AlignHCenter
+            }
 
-                contentItem: Text {
-                    text: "Continue to App"
-                    color: "white"
-                    font.pixelSize: 14
-                    font.bold: true
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
+            // Buttons
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.topMargin: 4
+                spacing: 12
+
+                Button {
+                    id: quitButton
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 44
+                    enabled: !gracePeriodDialog.verifying
+
+                    contentItem: Text {
+                        text: "Quit"
+                        color: gracePeriodDialog.accentColor
+                        font.pixelSize: 14
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    background: Rectangle {
+                        color: quitButton.pressed ? "#E8E8E8" :
+                               quitButton.hovered ? "#F0F0F0" : "white"
+                        radius: 6
+                        border.color: gracePeriodDialog.accentColor
+                        border.width: 1
+                    }
+
+                    onClicked: Qt.quit()
                 }
 
-                background: Rectangle {
-                    color: continueButton.pressed ? Qt.darker(accentColor, 1.1) :
-                           continueButton.hovered ? Qt.lighter(accentColor, 1.1) : accentColor
-                    radius: 6
-                }
+                Button {
+                    id: verifyButton
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 44
+                    enabled: !gracePeriodDialog.verifying
 
-                onClicked: {
-                    gracePeriodDialog.continueClicked()
-                    gracePeriodDialog.accept()
+                    contentItem: Text {
+                        text: gracePeriodDialog.verifying ? "Verifying…" : "Verify Now"
+                        color: "white"
+                        font.pixelSize: 14
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    background: Rectangle {
+                        color: !verifyButton.enabled ? "#9E9E9E" :
+                               verifyButton.pressed ? Qt.darker(gracePeriodDialog.accentColor, 1.1) :
+                               verifyButton.hovered ? Qt.lighter(gracePeriodDialog.accentColor, 1.1) :
+                               gracePeriodDialog.accentColor
+                        radius: 6
+                    }
+
+                    onClicked: {
+                        gracePeriodDialog.statusMessage = ""
+                        if (appManager)
+                            appManager.manualValidation()
+                    }
                 }
             }
         }

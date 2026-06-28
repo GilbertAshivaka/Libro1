@@ -259,6 +259,7 @@ Rectangle {
     }
 
     ListView {
+        boundsBehavior: Flickable.StopAtBounds
         id: issueBooksListView
         clip: true
         anchors {

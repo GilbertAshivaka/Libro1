@@ -166,6 +166,7 @@ Rectangle {
 
         // Reservations list
         ListView {
+            boundsBehavior: Flickable.StopAtBounds
             id: reservationsListView
             // Layout.fillWidth: true
             // Layout.preferredHeight: 400

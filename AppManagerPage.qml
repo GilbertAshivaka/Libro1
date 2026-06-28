@@ -61,6 +61,7 @@ Rectangle {
     }
 
     ScrollView {
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         anchors.fill: parent
         contentWidth: availableWidth
         clip: true
@@ -375,6 +376,7 @@ Rectangle {
 
                         // Admin list
                         ListView {
+                            boundsBehavior: Flickable.StopAtBounds
                             id: adminListView
                             Layout.fillWidth: true
                             Layout.preferredHeight: Math.min(contentHeight, 300)

@@ -75,6 +75,10 @@ private:
     bool removeFromIssuedBooks(int issueId);
     bool logReturnTransaction(const IssuedBookInfo &bookInfo, double finalFine);
     bool addToLostBooks(const IssuedBookInfo &bookInfo);
+
+    // Preserve an unpaid late fee as a persistent outstanding fine before the
+    // issued_books row is deleted, so it can be settled later during clearance.
+    bool recordOutstandingFine(const IssuedBookInfo &bookInfo, double fineAmount, double alreadyPaid);
 };
 
 #endif // ISSUEDBOOKSLIST_H

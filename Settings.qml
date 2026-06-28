@@ -485,6 +485,7 @@ Rectangle {
     }
 
     ScrollView{
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         id: settingsSV
         anchors{
             top: midRect.bottom

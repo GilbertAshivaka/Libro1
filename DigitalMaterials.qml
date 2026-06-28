@@ -323,6 +323,7 @@ Rectangle {
 
         // List View
         ListView {
+            boundsBehavior: Flickable.StopAtBounds
             id: itemsListView
             width: parent.width - 40
             height: parent.height - headerRow.height - 40
@@ -598,6 +599,7 @@ Rectangle {
             color: "#F5F5F5"
 
             ScrollView {
+                Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
                 anchors.fill: parent
                 anchors.margins: 10
 
@@ -866,6 +868,7 @@ Rectangle {
             color: "#F5F5F5"
 
             ScrollView {
+                Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
                 anchors.fill: parent
                 anchors.margins: 10
 
@@ -1022,6 +1025,7 @@ Rectangle {
                             color: "#333333"
                         }
                         ScrollView {
+                            Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
                             width: parent.width
                             height: 80
                             TextArea {
@@ -1506,6 +1510,7 @@ Rectangle {
 
                 // History ListView
                 ListView {
+                    boundsBehavior: Flickable.StopAtBounds
                     width: parent.width
                     height: parent.height - 50
                     clip: true

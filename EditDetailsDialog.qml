@@ -236,6 +236,7 @@ Popup {
 
         // Scrollable content
         ScrollView {
+            Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true

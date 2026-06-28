@@ -42,6 +42,7 @@ ColumnLayout {
     }
 
     ScrollView {
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         Layout.fillWidth: true
         Layout.preferredHeight: Math.max(minHeight, textArea.contentHeight + 24)
         Layout.maximumHeight: 300

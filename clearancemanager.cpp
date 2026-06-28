@@ -40,10 +40,30 @@ void ClearanceManager::processClearance(const QString &userName, const QString &
         return;
     }
 
+    // Remember the user context (incl. the original lookup number/type used by
+    // the receipt) so we can re-evaluate after a payment/waiver without the
+    // operator re-entering the details.
+    QVariantMap ctx = userInfo;
+    ctx["user_number"] = userNumber;
+    ctx["user_type"] = userType;
+    m_currentUserInfo = ctx;
+    m_currentAdminId = adminUserId;
+    m_hasContext = true;
+
+    buildClearanceResult(ctx, adminUserId);
+
+    m_isProcessing = false;
+    emit processingChanged();
+}
+
+void ClearanceManager::buildClearanceResult(const QVariantMap &userInfo, int adminUserId)
+{
     int userId = userInfo["user_id"].toInt();
     QString fullName = userInfo["full_name"].toString();
     QString email = userInfo["email"].toString();
     QString phone = userInfo["phone"].toString();
+    QString userNumber = userInfo.value("user_number").toString();
+    QString userType = userInfo.value("user_type").toString();
 
     // Perform all clearance checks
     QVariantMap borrowedBooksCheck = checkBorrowedBooks(userId);
@@ -60,6 +80,7 @@ void ClearanceManager::processClearance(const QString &userName, const QString &
     bool approved = booksCleared && materialsCleared && lostBooksCleared && finesCleared;
 
     // Build clearance result
+    m_clearanceResult.clear();
     m_clearanceResult["approved"] = approved;
     m_clearanceResult["status"] = approved ? "Approved" : "Rejected";
     m_clearanceResult["user_id"] = userId;
@@ -110,9 +131,13 @@ void ClearanceManager::processClearance(const QString &userName, const QString &
     emit clearanceStatusChanged();
     emit clearanceResultChanged();
     emit clearanceCompleted(approved, approved ? "Clearance Approved" : "Clearance Rejected");
+}
 
-    m_isProcessing = false;
-    emit processingChanged();
+void ClearanceManager::reevaluate()
+{
+    if (!m_hasContext)
+        return;
+    buildClearanceResult(m_currentUserInfo, m_currentAdminId);
 }
 
 QVariantMap ClearanceManager::getUserInfo(const QString &userNumber, const QString &userType)
@@ -313,30 +338,33 @@ QVariantMap ClearanceManager::checkUnpaidFines(int userId)
     QVariantList issues;
     double totalOwed = 0.0;
 
+    // Read from the persistent outstanding_fines ledger (a returned book's late
+    // fee is preserved there). Balance = fine_amount - amount_paid - amount_waived.
     QSqlQuery query(db);
-    query.prepare("SELECT ib.issue_id, b.title, b.callNumber, "
-                  "ib.fine_amount, ib.fine_paid, ib.due_date, ib.status "
-                  "FROM issued_books ib "
-                  "JOIN books b ON ib.book_id = b.bookID "
-                  "WHERE ib.user_id = :userId AND (ib.fine_amount - ib.fine_paid) > 0");
+    query.prepare("SELECT fine_id, book_title, book_call_number, fine_amount, "
+                  "amount_paid, amount_waived, fine_type, created_at "
+                  "FROM outstanding_fines "
+                  "WHERE user_id = :userId "
+                  "AND (fine_amount - amount_paid - amount_waived) > 0.009");
     query.bindValue(":userId", userId);
 
     if (query.exec()) {
         while (query.next()) {
-            double fineAmount = query.value(3).toDouble();
-            double finePaid = query.value(4).toDouble();
-            double balance = fineAmount - finePaid;
+            double fineAmount = query.value("fine_amount").toDouble();
+            double paid = query.value("amount_paid").toDouble();
+            double waived = query.value("amount_waived").toDouble();
+            double balance = fineAmount - paid - waived;
 
             if (balance > 0) {
                 QVariantMap issue;
-                issue["issue_id"] = query.value(0).toInt();
-                issue["book_title"] = query.value(1).toString();
-                issue["call_number"] = query.value(2).toString();
+                issue["fine_id"] = query.value("fine_id").toInt();
+                issue["book_title"] = query.value("book_title").toString();
+                issue["call_number"] = query.value("book_call_number").toString();
                 issue["fine_amount"] = fineAmount;
-                issue["fine_paid"] = finePaid;
+                issue["amount_paid"] = paid;
+                issue["amount_waived"] = waived;
                 issue["balance"] = balance;
-                issue["due_date"] = query.value(5).toString();
-                issue["status"] = query.value(6).toString();
+                issue["fine_type"] = query.value("fine_type").toString();
                 issues.append(issue);
                 totalOwed += balance;
             }
@@ -352,6 +380,314 @@ QVariantMap ClearanceManager::checkUnpaidFines(int userId)
     result["category"] = "Unpaid Fines";
 
     return result;
+}
+
+// ============================================================================
+// Settlement: payments (partial allowed) and waivers (reason required)
+// ============================================================================
+
+void ClearanceManager::recordSettlement(const QString &sourceType, int sourceId, int userId,
+                                        const QString &action, double amount,
+                                        const QString &reason, int adminUserId)
+{
+    QSqlQuery query(db);
+    query.prepare("INSERT INTO fine_settlements "
+                  "(source_type, source_id, user_id, action, amount, reason, admin_user_id) "
+                  "VALUES (?, ?, ?, ?, ?, ?, ?)");
+    query.addBindValue(sourceType);
+    query.addBindValue(sourceId);
+    query.addBindValue(userId);
+    query.addBindValue(action);
+    query.addBindValue(amount);
+    query.addBindValue(reason);
+    query.addBindValue(adminUserId);
+    if (!query.exec())
+        qWarning() << "Failed to record settlement:" << query.lastError().text();
+}
+
+bool ClearanceManager::payFine(int fineId, double amount, int adminUserId)
+{
+    QSqlQuery q(db);
+    q.prepare("SELECT user_id, fine_amount, amount_paid, amount_waived "
+              "FROM outstanding_fines WHERE fine_id = ?");
+    q.addBindValue(fineId);
+    if (!q.exec() || !q.next()) {
+        emit settlementCompleted(false, "Fine record not found.");
+        return false;
+    }
+    int userId = q.value(0).toInt();
+    double fineAmount = q.value(1).toDouble();
+    double paid = q.value(2).toDouble();
+    double waived = q.value(3).toDouble();
+    double balance = fineAmount - paid - waived;
+
+    if (amount <= 0.0) {
+        emit settlementCompleted(false, "Payment amount must be greater than zero.");
+        return false;
+    }
+    if (amount - balance > 0.009) {
+        emit settlementCompleted(false, QString("Payment exceeds the outstanding balance of %1.")
+                                            .arg(formatCurrency(balance)));
+        return false;
+    }
+
+    double newPaid = paid + amount;
+    bool settled = (fineAmount - newPaid - waived) <= 0.009;
+
+    QSqlQuery up(db);
+    if (settled) {
+        up.prepare("UPDATE outstanding_fines SET amount_paid = ?, status = 'paid', "
+                   "settled_by = ?, settled_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP "
+                   "WHERE fine_id = ?");
+        up.addBindValue(newPaid);
+        up.addBindValue(adminUserId);
+        up.addBindValue(fineId);
+    } else {
+        up.prepare("UPDATE outstanding_fines SET amount_paid = ?, updated_at = CURRENT_TIMESTAMP "
+                   "WHERE fine_id = ?");
+        up.addBindValue(newPaid);
+        up.addBindValue(fineId);
+    }
+    if (!up.exec()) {
+        emit settlementCompleted(false, "Failed to record payment: " + up.lastError().text());
+        return false;
+    }
+
+    recordSettlement("fine", fineId, userId, "payment", amount, QString(), adminUserId);
+    logClearance("INFO", QString("Fine payment of %1 recorded").arg(formatCurrency(amount)),
+                 QString("fine_id=%1, settled=%2").arg(fineId).arg(settled ? "yes" : "no"), userId);
+    emit settlementCompleted(true, QString("Payment of %1 recorded.").arg(formatCurrency(amount)));
+    reevaluate();
+    return true;
+}
+
+bool ClearanceManager::waiveFine(int fineId, const QString &reason, int adminUserId)
+{
+    if (reason.trimmed().isEmpty()) {
+        emit settlementCompleted(false, "A reason is required to waive a fine.");
+        return false;
+    }
+
+    QSqlQuery q(db);
+    q.prepare("SELECT user_id, fine_amount, amount_paid, amount_waived "
+              "FROM outstanding_fines WHERE fine_id = ?");
+    q.addBindValue(fineId);
+    if (!q.exec() || !q.next()) {
+        emit settlementCompleted(false, "Fine record not found.");
+        return false;
+    }
+    int userId = q.value(0).toInt();
+    double fineAmount = q.value(1).toDouble();
+    double paid = q.value(2).toDouble();
+    double waived = q.value(3).toDouble();
+    double balance = fineAmount - paid - waived;
+
+    if (balance <= 0.009) {
+        emit settlementCompleted(false, "This fine has no outstanding balance.");
+        return false;
+    }
+
+    double newWaived = waived + balance;   // waive the remaining balance
+
+    QSqlQuery up(db);
+    up.prepare("UPDATE outstanding_fines SET amount_waived = ?, status = 'waived', "
+               "waiver_reason = ?, settled_by = ?, settled_at = CURRENT_TIMESTAMP, "
+               "updated_at = CURRENT_TIMESTAMP WHERE fine_id = ?");
+    up.addBindValue(newWaived);
+    up.addBindValue(reason.trimmed());
+    up.addBindValue(adminUserId);
+    up.addBindValue(fineId);
+    if (!up.exec()) {
+        emit settlementCompleted(false, "Failed to waive fine: " + up.lastError().text());
+        return false;
+    }
+
+    recordSettlement("fine", fineId, userId, "waiver", balance, reason.trimmed(), adminUserId);
+    logClearance("WARNING", QString("Fine of %1 waived").arg(formatCurrency(balance)),
+                 QString("fine_id=%1, reason=%2").arg(fineId).arg(reason.trimmed()), userId);
+    emit settlementCompleted(true, QString("Fine of %1 waived.").arg(formatCurrency(balance)));
+    reevaluate();
+    return true;
+}
+
+bool ClearanceManager::payLostBook(int lostId, double amount, int adminUserId)
+{
+    QSqlQuery q(db);
+    q.prepare("SELECT user_id, total_amount_due, amount_paid FROM lost_books WHERE lost_id = ?");
+    q.addBindValue(lostId);
+    if (!q.exec() || !q.next()) {
+        emit settlementCompleted(false, "Lost book record not found.");
+        return false;
+    }
+    int userId = q.value(0).toInt();
+    double totalDue = q.value(1).toDouble();
+    double paid = q.value(2).toDouble();
+    double balance = totalDue - paid;
+
+    if (amount <= 0.0) {
+        emit settlementCompleted(false, "Payment amount must be greater than zero.");
+        return false;
+    }
+    if (amount - balance > 0.009) {
+        emit settlementCompleted(false, QString("Payment exceeds the outstanding balance of %1.")
+                                            .arg(formatCurrency(balance)));
+        return false;
+    }
+
+    double newPaid = paid + amount;
+    bool settled = (totalDue - newPaid) <= 0.009;
+
+    QSqlQuery up(db);
+    if (settled) {
+        up.prepare("UPDATE lost_books SET amount_paid = ?, status = 'Paid', "
+                   "payment_date = CURRENT_TIMESTAMP, resolved_by = ?, "
+                   "resolution_date = CURRENT_TIMESTAMP, resolution_type = 'Paid', "
+                   "updated_at = CURRENT_TIMESTAMP WHERE lost_id = ?");
+        up.addBindValue(newPaid);
+        up.addBindValue(adminUserId);
+        up.addBindValue(lostId);
+    } else {
+        up.prepare("UPDATE lost_books SET amount_paid = ?, payment_date = CURRENT_TIMESTAMP, "
+                   "updated_at = CURRENT_TIMESTAMP WHERE lost_id = ?");
+        up.addBindValue(newPaid);
+        up.addBindValue(lostId);
+    }
+    if (!up.exec()) {
+        emit settlementCompleted(false, "Failed to record payment: " + up.lastError().text());
+        return false;
+    }
+
+    recordSettlement("lost_book", lostId, userId, "payment", amount, QString(), adminUserId);
+    logClearance("INFO", QString("Lost book payment of %1 recorded").arg(formatCurrency(amount)),
+                 QString("lost_id=%1, settled=%2").arg(lostId).arg(settled ? "yes" : "no"), userId);
+    emit settlementCompleted(true, QString("Payment of %1 recorded.").arg(formatCurrency(amount)));
+    reevaluate();
+    return true;
+}
+
+bool ClearanceManager::waiveLostBook(int lostId, const QString &reason, int adminUserId)
+{
+    if (reason.trimmed().isEmpty()) {
+        emit settlementCompleted(false, "A reason is required to waive a lost book charge.");
+        return false;
+    }
+
+    QSqlQuery q(db);
+    q.prepare("SELECT user_id, total_amount_due, amount_paid FROM lost_books WHERE lost_id = ?");
+    q.addBindValue(lostId);
+    if (!q.exec() || !q.next()) {
+        emit settlementCompleted(false, "Lost book record not found.");
+        return false;
+    }
+    int userId = q.value(0).toInt();
+    double totalDue = q.value(1).toDouble();
+    double paid = q.value(2).toDouble();
+    double balance = totalDue - paid;
+
+    if (balance <= 0.009) {
+        emit settlementCompleted(false, "This lost book charge has no outstanding balance.");
+        return false;
+    }
+
+    // Mark as waived. checkLostBooks() only counts status IN ('Lost','Unpaid'),
+    // so a 'Waived' record is excluded without misreporting it as paid.
+    QSqlQuery up(db);
+    up.prepare("UPDATE lost_books SET status = 'Waived', resolution_type = 'Waiver', "
+               "resolved_by = ?, resolution_date = CURRENT_TIMESTAMP, "
+               "notes = COALESCE(notes, '') || ' [Waiver: ' || ? || ']', "
+               "updated_at = CURRENT_TIMESTAMP WHERE lost_id = ?");
+    up.addBindValue(adminUserId);
+    up.addBindValue(reason.trimmed());
+    up.addBindValue(lostId);
+    if (!up.exec()) {
+        emit settlementCompleted(false, "Failed to waive lost book charge: " + up.lastError().text());
+        return false;
+    }
+
+    recordSettlement("lost_book", lostId, userId, "waiver", balance, reason.trimmed(), adminUserId);
+    logClearance("WARNING", QString("Lost book charge of %1 waived").arg(formatCurrency(balance)),
+                 QString("lost_id=%1, reason=%2").arg(lostId).arg(reason.trimmed()), userId);
+    emit settlementCompleted(true, QString("Lost book charge of %1 waived.").arg(formatCurrency(balance)));
+    reevaluate();
+    return true;
+}
+
+bool ClearanceManager::finalizeClearance()
+{
+    if (m_clearanceResult.isEmpty() || !m_clearanceResult.contains("user_id")) {
+        emit clearanceFinalized(false, "No clearance to finalize.");
+        return false;
+    }
+    if (!m_clearanceResult["approved"].toBool()) {
+        emit clearanceFinalized(false, "Clearance is not approved; resolve all outstanding items first.");
+        return false;
+    }
+
+    int userId = m_clearanceResult["user_id"].toInt();
+    QString userName = m_clearanceResult["user_name"].toString();
+    QString userNumber = m_clearanceResult["user_number"].toString();
+    QString userType = m_clearanceResult["user_type"].toString();
+    QString status = m_clearanceResult["status"].toString();
+    QString summary = QString("All checks cleared. Finalized %1 by admin %2.")
+                          .arg(m_clearanceResult["clearance_date"].toString())
+                          .arg(m_currentAdminId);
+
+    db.transaction();
+
+    // 1) Persist the certificate FIRST so it survives the user's deletion.
+    QSqlQuery ins(db);
+    ins.prepare("INSERT INTO clearances "
+                "(user_id, user_name, user_number, user_type, status, summary, cleared_by) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)");
+    ins.addBindValue(userId);
+    ins.addBindValue(userName);
+    ins.addBindValue(userNumber);
+    ins.addBindValue(userType);
+    ins.addBindValue(status);
+    ins.addBindValue(summary);
+    ins.addBindValue(m_currentAdminId);
+    if (!ins.exec()) {
+        db.rollback();
+        emit clearanceFinalized(false, "Failed to save clearance record: " + ins.lastError().text());
+        return false;
+    }
+
+    // 2) Remove the role-specific row (avoids orphans if cascade is off), then the user.
+    QString roleTable, roleIdCol;
+    if (userType == "student")          { roleTable = "students";     roleIdCol = "student_id"; }
+    else if (userType == "staff")       { roleTable = "staff";        roleIdCol = "staff_id"; }
+    else if (userType == "other_user")  { roleTable = "other_users";  roleIdCol = "other_users_id"; }
+
+    if (!roleTable.isEmpty()) {
+        QSqlQuery delRole(db);
+        delRole.prepare(QString("DELETE FROM %1 WHERE %2 = ?").arg(roleTable, roleIdCol));
+        delRole.addBindValue(userId);
+        delRole.exec();   // non-fatal
+    }
+
+    QSqlQuery delUser(db);
+    delUser.prepare("DELETE FROM users WHERE user_id = ?");
+    delUser.addBindValue(userId);
+    if (!delUser.exec()) {
+        db.rollback();
+        emit clearanceFinalized(false, "Failed to remove user: " + delUser.lastError().text());
+        return false;
+    }
+
+    if (!db.commit()) {
+        db.rollback();
+        emit clearanceFinalized(false, "Failed to commit finalization: " + db.lastError().text());
+        return false;
+    }
+
+    logClearance("INFO",
+                 QString("Clearance finalized and user removed: %1 (%2)").arg(userName, userNumber),
+                 QString("Cleared by admin %1").arg(m_currentAdminId), userId);
+
+    m_hasContext = false;
+    emit clearanceFinalized(true, QString("%1 cleared and removed successfully.").arg(userName));
+    clearResult();
+    return true;
 }
 
 void ClearanceManager::logClearance(const QString &level, const QString &message,

@@ -223,6 +223,7 @@ Rectangle {
 
                 // Logs List
                 ScrollView {
+                    Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
                     Layout.fillWidth: true
                     Layout.fillHeight: true
 
@@ -232,6 +233,7 @@ Rectangle {
 
 
                     ListView {
+                        boundsBehavior: Flickable.StopAtBounds
                         id: logsListView
                         model: activityLogsClass.getLogs()
                         clip: true
@@ -385,6 +387,7 @@ Rectangle {
         }
 
         ScrollView {
+            Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
             anchors.fill: parent
 
             Column {

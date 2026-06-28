@@ -155,6 +155,7 @@ Rectangle {
         }
 
         ListView{
+            boundsBehavior: Flickable.StopAtBounds
             id: categoriesListView
             height: parent.height * 0.40
             clip: true
@@ -625,6 +626,7 @@ Rectangle {
     }
 
     ListView {
+        boundsBehavior: Flickable.StopAtBounds
         id: listView
         clip: true
         anchors{
@@ -1055,6 +1057,7 @@ Rectangle {
         }
 
         contentItem: ScrollView {
+            Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
             clip: true
             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
             ScrollBar.vertical.policy: ScrollBar.AsNeeded
@@ -1703,6 +1706,7 @@ Rectangle {
         }
 
         contentItem: ScrollView {
+            Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
             clip: true
             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
             ScrollBar.vertical.policy: ScrollBar.AsNeeded

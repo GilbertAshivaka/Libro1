@@ -194,6 +194,7 @@ Page {
 
                 // Navigation items
                 ListView {
+                    boundsBehavior: Flickable.StopAtBounds
                     id: navListView
                     Layout.fillWidth: true
                     Layout.fillHeight: true
@@ -336,6 +337,7 @@ Page {
             color: "transparent" //backgroundColor
 
             ScrollView {
+                Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
                 id: contentScrollView
                 anchors.fill: parent
                 anchors.margins: 24

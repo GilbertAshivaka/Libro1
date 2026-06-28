@@ -162,6 +162,7 @@ Rectangle {
 
 
     ScrollView{
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         id: addBooksSV
         anchors{
             top: topItemsContainer.bottom

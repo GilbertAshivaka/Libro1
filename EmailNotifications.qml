@@ -74,6 +74,45 @@ Rectangle {
             margins: 10
         }
 
+        // Scrollable wrapper so the action buttons remain reachable when the
+        // window is small / minimised. Thin scrollbar matches the email list.
+        Flickable {
+            id: actionsFlick
+            anchors.fill: parent
+            anchors.margins: 1
+            contentWidth: width
+            contentHeight: actionsContent.height
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+
+            ScrollBar.vertical: ScrollBar {
+                id: actionsVbar
+                active: true
+                policy: ScrollBar.AsNeeded
+                width: 6
+                parent: actionsFlick
+                anchors.right: actionsFlick.right
+                anchors.top: actionsFlick.top
+                anchors.bottom: actionsFlick.bottom
+
+                contentItem: Rectangle {
+                    implicitWidth: 6
+                    radius: width / 2
+                    color: actionsVbar.pressed ? "#818181" : "#c2c2c2"
+                }
+
+                background: Rectangle {
+                    implicitWidth: 6
+                    radius: width / 2
+                    color: "#f0f0f0"
+                }
+            }
+
+            Item {
+                id: actionsContent
+                width: actionsFlick.width
+                height: clearQueueBtn.y + clearQueueBtn.height + 10
+
         Rectangle {
             id: actionsLabelRect
             height: 40
@@ -179,13 +218,95 @@ Rectangle {
             }
         }
 
+        // Automation (daily scheduler) section
+        Rectangle {
+            id: automationSection
+            width: actionsContainer.btnWidth
+            height: autoColumn.height + 20
+            color: "#F5F5F5"
+            radius: 4
+            border.color: "#E0E0E0"
+            border.width: 1
+            anchors {
+                top: testEmailBtn.bottom
+                left: parent.left
+                leftMargin: 5
+                topMargin: 15
+            }
+
+            Column {
+                id: autoColumn
+                anchors {
+                    top: parent.top
+                    left: parent.left
+                    right: parent.right
+                    margins: 10
+                }
+                spacing: 8
+
+                Text {
+                    text: "Automation"
+                    font.bold: true
+                    font.pixelSize: 13
+                    color: "#333333"
+                }
+
+                CheckBox {
+                    id: autoSendCheck
+                    text: "Auto-send daily"
+                    font.pixelSize: 12
+                    checked: emailController ? emailController.autoNotificationsEnabled : false
+                    onToggled: {
+                        if (emailController)
+                            emailController.autoNotificationsEnabled = checked
+                    }
+                }
+
+                Row {
+                    width: parent.width
+                    spacing: 8
+                    visible: autoSendCheck.checked
+
+                    Text {
+                        text: "Time:"
+                        font.pixelSize: 12
+                        color: "#666666"
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    TextField {
+                        id: notifTimeField
+                        width: 70
+                        height: 30
+                        font.pixelSize: 12
+                        placeholderText: "HH:mm"
+                        inputMask: "99:99"
+                        text: emailController ? emailController.notificationTime : "08:00"
+                        onEditingFinished: {
+                            if (emailController)
+                                emailController.notificationTime = text
+                        }
+                    }
+                }
+
+                Text {
+                    text: "Sends overdue + reserved reminders once a day."
+                    font.pixelSize: 10
+                    color: "#888888"
+                    wrapMode: Text.WordWrap
+                    width: parent.width
+                    visible: autoSendCheck.checked
+                }
+            }
+        }
+
         // Statistics section
         Rectangle {
             id: statsLabelRect
             height: 40
             width: actionsContainer.btnWidth
             anchors {
-                top: testEmailBtn.bottom
+                top: automationSection.bottom
                 left: parent.left
                 leftMargin: 5
                 topMargin: 20
@@ -316,6 +437,9 @@ Rectangle {
                 }
             }
         }
+
+            } // actionsContent
+        } // actionsFlick
     }
 
     // Main content area
@@ -484,6 +608,7 @@ Rectangle {
             }
 
             ListView {
+                boundsBehavior: Flickable.StopAtBounds
                 id: emailLogsListView
                 clip: true
                 anchors {
@@ -709,6 +834,7 @@ Rectangle {
             }
 
             Flickable {
+                boundsBehavior: Flickable.StopAtBounds
                 anchors {
                     top: configTitleRect.bottom
                     left: parent.left

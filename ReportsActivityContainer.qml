@@ -4,6 +4,7 @@ import QtQuick.Controls
 Item {
     id: reportsActivityContainer
     ScrollView{
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         id: activitySV
         anchors.fill: parent
         contentHeight: reportsActivity.activityFlowHeight + 50

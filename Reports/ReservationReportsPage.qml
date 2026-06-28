@@ -60,6 +60,7 @@ Page {
     }
     
     ScrollView {
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         anchors.fill: parent
         contentWidth: availableWidth
         clip: true
@@ -146,18 +147,12 @@ Page {
                                 onClicked: loadReservationData()
                             }
 
-                            Button {
-                                text: "⤓ Export"
-                                highlighted: true
-                                onClicked: {
-                                    captureContent.grabToImage(function(result) {
-                                        result.saveToFile("C:/Users/Admin/Documents/Libro1/reservationReport1.png")
-                                        statusText.text = "Saved: reservationReport.png"
-                                        messageDialog.title = "Success"
-                                        messageDialog.text = "Saved: reservationReport1.png"
-                                        messageDialog.open()
-                                    })
-                                }
+                            ExportButton {
+                                enabled: !reportExporter.isBusy
+                                onExportPDF: reportExporter.exportToPdf(buildReportPayload())
+                                onExportCSV: reportExporter.exportToCsv(buildReportPayload())
+                                onExportExcel: reportExporter.exportToCsv(buildReportPayload())
+                                onPrintReport: reportExporter.printReport(buildReportPayload())
                             }
                         }
                     }
@@ -239,7 +234,7 @@ Page {
                     isLoading: reportsManager.isLoading
 
                     onRefreshClicked: loadReservationsOverTime()
-                    onExportClicked: console.log("Export reservations trend")
+                    onExportClicked: exportChart(reservationsOverTimeSection())
 
                     contentItem: ChartView {
                         id: reservationsTimeChart
@@ -286,7 +281,7 @@ Page {
                         isLoading: reportsManager.isLoading
 
                         onRefreshClicked: loadStatusDistribution()
-                        onExportClicked: console.log("Export status distribution")
+                        onExportClicked: exportChart(statusDistributionSection())
 
                         contentItem: ChartView {
                             id: statusDistributionChart
@@ -310,7 +305,7 @@ Page {
                         isLoading: reportsManager.isLoading
 
                         onRefreshClicked: loadReservationSource()
-                        onExportClicked: console.log("Export source breakdown")
+                        onExportClicked: exportChart(reservationSourceSection())
 
                         contentItem: ChartView {
                             id: sourceChart
@@ -337,7 +332,7 @@ Page {
                     isLoading: reportsManager.isLoading
 
                     onRefreshClicked: loadMostReservedBooks()
-                    onExportClicked: console.log("Export most reserved books")
+                    onExportClicked: exportChart(mostReservedBooksSection())
 
                     contentItem: ChartView {
                         id: mostReservedChart
@@ -370,21 +365,6 @@ Page {
         }
     }
 
-    //Message Dialog
-    Dialog {
-        id: messageDialog
-        property alias text: messageLabel.text
-        anchors.centerIn: parent
-        modal: true
-        standardButtons: Dialog.Ok
-
-        Text {
-            id: messageLabel
-            color: "#8E8E8E"
-            text: ""
-        }
-    }
-    
     Component.onCompleted: {
         loadReservationData()
     }
@@ -539,6 +519,138 @@ Page {
                 slice.color = colors[data[i].label.toLowerCase()]
             }
             slice.labelVisible = true
+        }
+    }
+
+    // ========================================================================
+    // Report export / print
+    // ========================================================================
+
+    function filtersList() {
+        return [
+            { label: "Date Range", value: dateRangeCombo.currentText },
+            { label: "Status",     value: statusCombo.currentText },
+            { label: "Source",     value: sourceCombo.currentText }
+        ]
+    }
+
+    function metricsSection() {
+        var s = reportsManager.getReservationStats()
+        return {
+            title: "Key Metrics", kind: "metrics",
+            data: [
+                { label: "Active Reservations", value: String(s.activeReservations || 0) },
+                { label: "Avg Wait Time",       value: (s.averageWaitTime || 0).toFixed(1), unit: "days" },
+                { label: "Fulfillment Rate",    value: (s.fulfillmentRate || 0).toFixed(1), unit: "%" },
+                { label: "Expired",             value: String(s.expiredReservations || 0) },
+                { label: "Books w/ Pending",    value: String(s.booksWithPendingReservations || 0) }
+            ]
+        }
+    }
+
+    function reservationsOverTimeSection() {
+        var data = reportsManager.getReservationsOverTime(getDateRangeValue())
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].xValue)
+            values.push(data[i].yValue)
+        }
+        return {
+            title: "Reservations Over Time",
+            subtitle: "Demand patterns over time",
+            kind: "chart", chartType: "line",
+            labels: labels,
+            datasets: [ { label: "Reservations", color: "#2196F3", data: values } ]
+        }
+    }
+
+    function statusDistributionSection() {
+        var data = reportsManager.getReservationStatusDistribution()
+        var colorMap = {
+            "pending": "#FF9800", "fulfilled": "#4CAF50", "expired": "#F44336", "cancelled": "#9E9E9E"
+        }
+        var labels = [], values = [], colors = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].label)
+            values.push(data[i].value)
+            colors.push(colorMap[String(data[i].label).toLowerCase()] || "#607D8B")
+        }
+        return {
+            title: "Reservation Status Distribution",
+            subtitle: "Breakdown of reservation statuses",
+            kind: "chart", chartType: "pie",
+            labels: labels,
+            datasets: [ { label: "Reservations", data: values, colors: colors } ]
+        }
+    }
+
+    function reservationSourceSection() {
+        var data = reportsManager.getReservationSource()
+        var colorMap = { "online": "#2196F3", "in-person": "#4CAF50" }
+        var labels = [], values = [], colors = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].label)
+            values.push(data[i].value)
+            colors.push(colorMap[String(data[i].label).toLowerCase()] || "#607D8B")
+        }
+        return {
+            title: "Reservation Source",
+            subtitle: "Online vs In-person reservations",
+            kind: "chart", chartType: "doughnut",
+            labels: labels,
+            datasets: [ { label: "Source", data: values, colors: colors } ]
+        }
+    }
+
+    function mostReservedBooksSection() {
+        var data = reportsManager.getMostReservedBooks(20)
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            var title = data[i].label
+            if (title.length > 30)
+                title = title.substring(0, 27) + "..."
+            labels.push(title)
+            values.push(data[i].value)
+        }
+        return {
+            title: "Most Reserved Books",
+            subtitle: "Top 20 high-demand books that may need more copies",
+            kind: "chart", chartType: "horizontalBar",
+            labels: labels,
+            datasets: [ { label: "Reservations", color: "#00BCD4", data: values } ]
+        }
+    }
+
+    function buildReportPayload() {
+        return {
+            title: "Reservation Analytics",
+            subtitle: "Track book demand and reservation efficiency",
+            filters: filtersList(),
+            sections: [
+                metricsSection(),
+                reservationsOverTimeSection(),
+                statusDistributionSection(),
+                reservationSourceSection(),
+                mostReservedBooksSection()
+            ]
+        }
+    }
+
+    function exportChart(section) {
+        reportExporter.exportToPdf({
+            title: "Reservation Analytics — " + section.title,
+            filters: filtersList(),
+            sections: [ section ]
+        })
+    }
+
+    Connections {
+        target: reportExporter
+        function onExportFinished(success, outputPath, message) {
+            if (success && outputPath)
+                console.log("Report exported to:", outputPath)
+            else if (!success && message)
+                console.warn("Report export failed:", message)
         }
     }
 }

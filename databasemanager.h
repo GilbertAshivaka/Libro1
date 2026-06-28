@@ -30,6 +30,7 @@ public:
     static QString getDatabasePath();
 
     bool createDatabase();
+    void getKey();
 
 
 public slots:

@@ -205,6 +205,7 @@ Page{
             }
 
             ScrollView{
+                Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
                 id: registrationSV
                 anchors.fill: parent
                 contentHeight: 323

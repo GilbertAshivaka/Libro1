@@ -57,6 +57,7 @@ Page {
     }
 
     ScrollView {
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         anchors.fill: parent
         contentWidth: availableWidth
         clip: true
@@ -136,10 +137,12 @@ Page {
                             onClicked: loadCirculationData()
                         }
 
-                        Button {
-                            text: "⤓ Export"
-                            highlighted: true
-                            onClicked: console.log("Export circulation report")
+                        ExportButton {
+                            enabled: !reportExporter.isBusy
+                            onExportPDF: reportExporter.exportToPdf(buildReportPayload())
+                            onExportCSV: reportExporter.exportToCsv(buildReportPayload())
+                            onExportExcel: reportExporter.exportToCsv(buildReportPayload())
+                            onPrintReport: reportExporter.printReport(buildReportPayload())
                         }
                     }
                 }
@@ -220,7 +223,7 @@ Page {
                 isLoading: reportsManager.isLoading
 
                 onRefreshClicked: loadBorrowingTrends()
-                onExportClicked: console.log("Export borrowing trends")
+                onExportClicked: exportChart(borrowingTrendsSection())
 
                 contentItem: ChartView {
                     id: borrowingTrendsChart
@@ -267,7 +270,7 @@ Page {
                     isLoading: reportsManager.isLoading
 
                     onRefreshClicked: loadBorrowingByUserType()
-                    onExportClicked: console.log("Export user type chart")
+                    onExportClicked: exportChart(borrowingByUserTypeSection())
 
                     contentItem: ChartView {
                         id: userTypeChart
@@ -302,7 +305,7 @@ Page {
                     isLoading: reportsManager.isLoading
 
                     onRefreshClicked: loadBorrowingByDayOfWeek()
-                    onExportClicked: console.log("Export day of week chart")
+                    onExportClicked: exportChart(dayOfWeekSection())
 
                     contentItem: ChartView {
                         id: dayOfWeekChart
@@ -344,7 +347,7 @@ Page {
                 isLoading: reportsManager.isLoading
 
                 onRefreshClicked: loadMonthlyCirculation()
-                onExportClicked: console.log("Export monthly circulation")
+                onExportClicked: exportChart(monthlyCirculationSection())
 
                 contentItem: ChartView {
                     id: monthlyCirculationChart
@@ -596,5 +599,146 @@ Page {
         // Set Y-axis max dynamically with 10% padding, min to 0
         monthValueAxis.min = 0
         monthValueAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
+    }
+
+    // ========================================================================
+    // Report export / print
+    // ========================================================================
+
+    function filtersList() {
+        return [
+            { label: "Time Period", value: dateRangeCombo.currentText },
+            { label: "Group By",    value: groupByCombo.currentText },
+            { label: "User Type",   value: userTypeCombo.currentText }
+        ]
+    }
+
+    function metricsSection() {
+        var s = reportsManager.getCirculationStats(getDateRangeValue())
+        return {
+            title: "Key Metrics", kind: "metrics",
+            data: [
+                { label: "Currently On Loan",  value: String(s.currentlyOnLoan || 0) },
+                { label: "Due Today",          value: String(s.dueToday || 0) },
+                { label: "Due This Week",      value: String(s.dueThisWeek || 0) },
+                { label: "Total Circulations", value: String(s.totalCirculations || 0) },
+                { label: "Avg Loan Duration",  value: (s.averageLoanDuration || 0).toFixed(1), unit: "days" }
+            ]
+        }
+    }
+
+    function borrowingTrendsSection() {
+        var data = reportsManager.getBorrowingTrends(getDateRangeValue(), getGroupByValue())
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].xValue)
+            values.push(data[i].yValue)
+        }
+        return {
+            title: "Borrowing Trends Over Time",
+            subtitle: "Daily, weekly, or monthly borrowing patterns",
+            kind: "chart", chartType: "line",
+            labels: labels,
+            datasets: [ { label: "Borrows", color: "#2196F3", data: values } ]
+        }
+    }
+
+    function borrowingByUserTypeSection() {
+        var data = reportsManager.getBorrowingTrendsByUserType(getDateRangeValue())
+        var roles = [], dates = [], byRole = {}
+        for (var i = 0; i < data.length; i++) {
+            var role = data[i].user_role
+            var d = data[i].date
+            if (roles.indexOf(role) === -1) { roles.push(role); byRole[role] = {} }
+            byRole[role][d] = data[i].count
+            if (dates.indexOf(d) === -1) dates.push(d)
+        }
+        dates.sort()
+        var palette = ["#2196F3", "#4CAF50", "#FF9800", "#9C27B0", "#F44336"]
+        var datasets = []
+        for (var r = 0; r < roles.length; r++) {
+            var arr = []
+            for (var j = 0; j < dates.length; j++)
+                arr.push(byRole[roles[r]][dates[j]] || 0)
+            datasets.push({ label: roles[r], color: palette[r % palette.length], data: arr })
+        }
+        return {
+            title: "Borrowing by User Type",
+            subtitle: "Comparing activity across user groups",
+            kind: "chart", chartType: "line",
+            labels: dates,
+            datasets: datasets
+        }
+    }
+
+    function dayOfWeekSection() {
+        var data = reportsManager.getBorrowingByDayOfWeek(getDateRangeValue())
+        var dayOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        var map = {}
+        for (var i = 0; i < data.length; i++)
+            map[data[i].category] = data[i].value
+        var values = []
+        for (var j = 0; j < dayOrder.length; j++)
+            values.push(map[dayOrder[j]] || 0)
+        return {
+            title: "Borrowing by Day of Week",
+            subtitle: "Which days are busiest",
+            kind: "chart", chartType: "bar",
+            labels: dayOrder,
+            datasets: [ { label: "Borrows", color: "#4CAF50", data: values } ]
+        }
+    }
+
+    function monthlyCirculationSection() {
+        var data = reportsManager.getMonthlyCirculation(getDateRangeValue())
+        var labels = [], issues = [], returns = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].month)
+            issues.push(data[i].issues || 0)
+            returns.push(data[i].returns || 0)
+        }
+        return {
+            title: "Monthly Circulation - Issues vs Returns",
+            subtitle: "Track circulation flow and return patterns",
+            kind: "chart", chartType: "stackedBar",
+            labels: labels,
+            datasets: [
+                { label: "Issues",  color: "#2196F3", data: issues },
+                { label: "Returns", color: "#4CAF50", data: returns }
+            ]
+        }
+    }
+
+    function buildReportPayload() {
+        return {
+            title: "Circulation Analytics",
+            subtitle: "Track borrowing patterns and library usage trends",
+            filters: filtersList(),
+            sections: [
+                metricsSection(),
+                borrowingTrendsSection(),
+                borrowingByUserTypeSection(),
+                dayOfWeekSection(),
+                monthlyCirculationSection()
+            ]
+        }
+    }
+
+    function exportChart(section) {
+        reportExporter.exportToPdf({
+            title: "Circulation Analytics — " + section.title,
+            filters: filtersList(),
+            sections: [ section ]
+        })
+    }
+
+    Connections {
+        target: reportExporter
+        function onExportFinished(success, outputPath, message) {
+            if (success && outputPath)
+                console.log("Report exported to:", outputPath)
+            else if (!success && message)
+                console.warn("Report export failed:", message)
+        }
     }
 }

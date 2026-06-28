@@ -280,6 +280,7 @@ ApplicationWindow {
                 }
 
                 ListView{
+                    boundsBehavior: Flickable.StopAtBounds
                     id: searchResultList
                     implicitHeight: parent.height
                     model: view.searchModel
@@ -353,6 +354,7 @@ ApplicationWindow {
                 }
 
                 GridView{
+                    boundsBehavior: Flickable.StopAtBounds
                     id: thumbnailsView
                     implicitHeight: parent.implicitHeight
                     implicitWidth: parent.implicitWidth

@@ -20,6 +20,7 @@
 #include "emailnotificationcontroller.h"
 #include "opacmanager.h"
 #include "reportsmanager.h"
+#include "reportexporter.h"
 #include "settingsmanager.h"
 #include "analyticsmanager.h"
 #include "clearancemanager.h"
@@ -119,6 +120,7 @@ int main(int argc, char *argv[])
     EmailNotificationController emailNotificationController; //for email notifications
     OpacManager opacManager;
     ReportsManager reportsManager;
+    ReportExporter reportExporter;
     BackupManager backupManagerInstance;
     AnalyticsManager analyticsManager;
 
@@ -141,6 +143,7 @@ int main(int argc, char *argv[])
     engine.rootContext()->setContextProperty(QStringLiteral("emailNotificationController"), &emailNotificationController);
     engine.rootContext()->setContextProperty(QStringLiteral("opacManager"), &opacManager);
     engine.rootContext()->setContextProperty(QStringLiteral("reportsManager"), &reportsManager);
+    engine.rootContext()->setContextProperty(QStringLiteral("reportExporter"), &reportExporter);
     engine.rootContext()->setContextProperty("analyticsManager", &analyticsManager);
 
     engine.rootContext()->setContextProperty("suggestionsManager", suggestionsManager);

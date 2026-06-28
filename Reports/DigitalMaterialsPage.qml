@@ -57,6 +57,7 @@ Page {
     }
     
     ScrollView {
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         anchors.fill: parent
         contentWidth: availableWidth
         clip: true
@@ -135,11 +136,13 @@ Page {
                             text: "⟳ Refresh"
                             onClicked: loadDigitalMaterialsData()
                         }
-                        
-                        Button {
-                            text: "⤓ Export"
-                            highlighted: true
-                            onClicked: console.log("Export digital materials report")
+
+                        ExportButton {
+                            enabled: !reportExporter.isBusy
+                            onExportPDF: reportExporter.exportToPdf(buildReportPayload())
+                            onExportCSV: reportExporter.exportToCsv(buildReportPayload())
+                            onExportExcel: reportExporter.exportToCsv(buildReportPayload())
+                            onPrintReport: reportExporter.printReport(buildReportPayload())
                         }
                     }
                 }
@@ -226,7 +229,7 @@ Page {
                     isLoading: reportsManager.isLoading
                     
                     onRefreshClicked: loadMaterialsByType()
-                    onExportClicked: console.log("Export materials by type")
+                    onExportClicked: exportChart(materialsByTypeSection())
                     
                     contentItem: ChartView {
                         id: materialsByTypeChart
@@ -250,7 +253,7 @@ Page {
                     isLoading: reportsManager.isLoading
                     
                     onRefreshClicked: loadAvailableVsBorrowed()
-                    onExportClicked: console.log("Export available vs borrowed")
+                    onExportClicked: exportChart(availableVsBorrowedSection())
                     
                     contentItem: ChartView {
                         id: availableVsBorrowedChart
@@ -295,7 +298,7 @@ Page {
                 isLoading: reportsManager.isLoading
                 
                 onRefreshClicked: loadLoansOverTime()
-                onExportClicked: console.log("Export loans trend")
+                onExportClicked: exportChart(loansOverTimeSection())
                 
                 contentItem: ChartView {
                     id: loansTimeChart
@@ -337,7 +340,7 @@ Page {
                 isLoading: reportsManager.isLoading
                 
                 onRefreshClicked: loadMostBorrowedDigital()
-                onExportClicked: console.log("Export most borrowed digital")
+                onExportClicked: exportChart(mostBorrowedSection())
                 
                 contentItem: ChartView {
                     id: mostBorrowedChart
@@ -515,5 +518,135 @@ Page {
 
         // Set Y-axis max dynamically with 10% padding
         availableVsBorrowedAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
+    }
+
+    // ========================================================================
+    // Report export / print
+    // ========================================================================
+
+    function filtersList() {
+        return [
+            { label: "Date Range", value: dateRangeCombo.currentText },
+            { label: "Item Type",  value: itemTypeCombo.currentText },
+            { label: "Status",     value: statusCombo.currentText }
+        ]
+    }
+
+    function metricsSection() {
+        var s = reportsManager.getDigitalMaterialsStats()
+        return {
+            title: "Key Metrics", kind: "metrics",
+            data: [
+                { label: "Total Items",        value: String(s.totalItems || 0) },
+                { label: "Currently On Loan",  value: String(s.currentlyOnLoan || 0) },
+                { label: "Most Popular",       value: String(s.mostPopularType || "N/A") },
+                { label: "Avg Loan Duration",  value: (s.averageLoanDuration || 0).toFixed(1), unit: "days" },
+                { label: "Utilization Rate",   value: (s.utilizationRate || 0).toFixed(1), unit: "%" }
+            ]
+        }
+    }
+
+    function materialsByTypeSection() {
+        var data = reportsManager.getDigitalMaterialsByType()
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].label)
+            values.push(data[i].value)
+        }
+        return {
+            title: "Digital Materials by Type",
+            subtitle: "Distribution of resource types",
+            kind: "chart", chartType: "pie",
+            labels: labels,
+            datasets: [ { label: "Items", data: values } ]
+        }
+    }
+
+    function availableVsBorrowedSection() {
+        var data = reportsManager.getDigitalMaterialsAvailableVsBorrowed()
+        var labels = [], total = [], borrowed = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].ItemType)
+            total.push(data[i].total || 0)
+            borrowed.push(data[i].borrowed || 0)
+        }
+        return {
+            title: "Available vs Borrowed",
+            subtitle: "Utilization and availability",
+            kind: "chart", chartType: "bar",
+            labels: labels,
+            datasets: [
+                { label: "Total",    color: "#2196F3", data: total },
+                { label: "Borrowed", color: "#FF9800", data: borrowed }
+            ]
+        }
+    }
+
+    function loansOverTimeSection() {
+        var data = reportsManager.getDigitalMaterialLoansOverTime(getDateRangeValue())
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].xValue)
+            values.push(data[i].yValue)
+        }
+        return {
+            title: "Digital Material Loans Over Time",
+            subtitle: "Usage trends for digital resources",
+            kind: "chart", chartType: "line",
+            labels: labels,
+            datasets: [ { label: "Loans", color: "#3F51B5", data: values } ]
+        }
+    }
+
+    function mostBorrowedSection() {
+        var data = reportsManager.getMostBorrowedDigitalItems(15)
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            var name = data[i].label
+            if (name.length > 30)
+                name = name.substring(0, 27) + "..."
+            labels.push(name)
+            values.push(data[i].value)
+        }
+        return {
+            title: "Most Borrowed Digital Items",
+            subtitle: "Top 15 popular digital resources",
+            kind: "chart", chartType: "horizontalBar",
+            labels: labels,
+            datasets: [ { label: "Borrows", color: "#00BCD4", data: values } ]
+        }
+    }
+
+    function buildReportPayload() {
+        return {
+            title: "Digital Materials & Equipment",
+            subtitle: "Monitor non-book resources and digital material usage",
+            filters: filtersList(),
+            sections: [
+                metricsSection(),
+                materialsByTypeSection(),
+                availableVsBorrowedSection(),
+                loansOverTimeSection(),
+                mostBorrowedSection()
+            ]
+        }
+    }
+
+    function exportChart(section) {
+        reportExporter.exportToPdf({
+            title: "Digital Materials — " + section.title,
+            filters: filtersList(),
+            sections: [ section ]
+        })
+    }
+
+    Connections {
+        target: reportExporter
+        function onExportFinished(success, outputPath, message) {
+            if (success && outputPath)
+                console.log("Report exported to:", outputPath)
+            else if (!success && message)
+                console.warn("Report export failed:", message)
+        }
     }
 }

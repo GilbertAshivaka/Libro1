@@ -14,27 +14,11 @@ ApplicationWindow {
     // States: checking, activation, setup, blocked, login, main
     property string appState: "checking"
 
-    // Track if grace period warning was shown this session
-    property bool graceWarningShown: false
-
-    // Grace Period Warning Dialog
+    // Offline grace is silent (no dialog) - paying users keep working
+    // undisturbed. This dialog is only shown once the grace window is exhausted
+    // (status "reverify_required"), to prompt an online re-verification.
     GracePeriodWarningDialog {
         id: gracePeriodDialog
-        daysRemaining: appManager ? appManager.graceDaysRemaining : 0
-
-        onContinueClicked: {
-            graceWarningShown = true
-            // Continue to login or setup
-            if (appManager && !appManager.hasAdminSetup) {
-                appState = "setup"
-            } else {
-                appState = "login"
-            }
-        }
-
-        onRenewClicked: {
-            Qt.openUrlExternally("https://google.com") //libro.yoursite.com/renew
-        }
     }
 
     // Main content loader
@@ -120,37 +104,35 @@ ApplicationWindow {
     }
 
     function handleLicenseState() {
-        // Don't interrupt if already past login
+        // Don't interrupt a running session. Offline grace is silent: a paying
+        // user keeps working undisturbed on the stored license details, and any
+        // status change is enforced on the next startup instead of mid-session.
         if (appState === "main") {
-            // But still show grace period warning if needed
-            if (appManager.isGracePeriod && !graceWarningShown) {
-                gracePeriodDialog.open()
-            }
             return
         }
 
         var status = appManager.licenseStatus
         console.log("License status:", status)
 
+        // Offline grace exhausted: gate the app behind an online re-verification
+        // (the license isn't expired, it just hasn't been checked in too long).
+        if (status === "reverify_required") {
+            if (!gracePeriodDialog.opened)
+                gracePeriodDialog.open()
+            return
+        }
+        // Any other state - make sure the re-verify dialog isn't left open.
+        if (gracePeriodDialog.opened)
+            gracePeriodDialog.close()
+
         if (status === "not_activated") {
             appState = "activation"
         } else if (status === "blocked") {
+            // License genuinely invalid/expired -> blocked page to renew.
             appState = "blocked"
-        } else if (status === "grace_period") {
-            // Show warning dialog first
-            if (!graceWarningShown) {
-                gracePeriodDialog.open()
-                // Dialog will handle navigation after user acknowledges
-            } else {
-                // Already shown this session, proceed
-                if (!appManager.hasAdminSetup) {
-                    appState = "setup"
-                } else {
-                    appState = "login"
-                }
-            }
         } else if (appManager.isLicenseValid) {
-            // Valid license (trial or active)
+            // Valid license: active, trial, OR quiet offline grace_period.
+            // No warning dialog - go straight in.
             if (!appManager.hasAdminSetup) {
                 appState = "setup"
             } else {

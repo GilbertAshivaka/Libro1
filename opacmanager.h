@@ -47,7 +47,7 @@ public:
     Q_INVOKABLE bool initializeConfiguration(const QString &opacUrl, const QString &apiKey,
                                              int syncInterval = 60, int pickupDays = 3, int expiryDays = 7);
     Q_INVOKABLE bool updateConfiguration(const QString &opacUrl, const QString &apiKey,
-                                         int &syncInterval, int pickupDays, int expiryDays);
+                                         int syncInterval, int pickupDays, int expiryDays);
     
     Q_INVOKABLE QVariantMap getConfiguration();
     Q_INVOKABLE void testConnection();

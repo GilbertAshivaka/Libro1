@@ -57,6 +57,7 @@ Page {
     }
     
     ScrollView {
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         anchors.fill: parent
         contentWidth: availableWidth
         clip: true
@@ -135,11 +136,13 @@ Page {
                             text: "⟳ Refresh"
                             onClicked: loadSystemData()
                         }
-                        
-                        Button {
-                            text: "⤓ Export"
-                            highlighted: true
-                            onClicked: console.log("Export system report")
+
+                        ExportButton {
+                            enabled: !reportExporter.isBusy
+                            onExportPDF: reportExporter.exportToPdf(buildReportPayload())
+                            onExportCSV: reportExporter.exportToCsv(buildReportPayload())
+                            onExportExcel: reportExporter.exportToCsv(buildReportPayload())
+                            onPrintReport: reportExporter.printReport(buildReportPayload())
                         }
                     }
                 }
@@ -219,7 +222,7 @@ Page {
                 isLoading: reportsManager.isLoading
                 
                 onRefreshClicked: loadLogsBySeverity()
-                onExportClicked: console.log("Export logs by severity")
+                onExportClicked: exportChart(logsBySeveritySection())
                 
                 contentItem: ChartView {
                     id: logsBySeverityChart
@@ -259,7 +262,7 @@ Page {
                     isLoading: reportsManager.isLoading
                     
                     onRefreshClicked: loadLogCategories()
-                    onExportClicked: console.log("Export log categories")
+                    onExportClicked: exportChart(logCategoriesSection())
                     
                     contentItem: ChartView {
                         id: logCategoriesChart
@@ -283,7 +286,7 @@ Page {
                     isLoading: reportsManager.isLoading
                     
                     onRefreshClicked: loadOpacSyncOps()
-                    onExportClicked: console.log("Export OPAC sync")
+                    onExportClicked: exportChart(opacSyncSection())
                     
                     contentItem: ChartView {
                         id: opacSyncChart
@@ -325,7 +328,7 @@ Page {
                 isLoading: reportsManager.isLoading
                 
                 onRefreshClicked: loadDailyActivity()
-                onExportClicked: console.log("Export daily activity")
+                onExportClicked: exportChart(dailyActivitySection())
                 
                 contentItem: ChartView {
                     id: dailyActivityChart
@@ -546,6 +549,146 @@ Page {
 
             activityDateAxis.min = minDateObj
             activityDateAxis.max = maxDateObj
+        }
+    }
+
+    // ========================================================================
+    // Report export / print
+    // ========================================================================
+
+    function filtersList() {
+        return [
+            { label: "Date Range", value: dateRangeCombo.currentText },
+            { label: "Log Level",  value: logLevelCombo.currentText },
+            { label: "Category",   value: categoryCombo.currentText }
+        ]
+    }
+
+    function metricsSection() {
+        var s = reportsManager.getSystemPerformanceStats()
+        return {
+            title: "Key Metrics", kind: "metrics",
+            data: [
+                { label: "Operations Today", value: String(s.operationsToday || 0) },
+                { label: "Errors (24h)",     value: String(s.errorCount24h || 0) },
+                { label: "Last OPAC Sync",   value: formatDateTime(s.lastOpacSync) },
+                { label: "Database Size",    value: String(s.databaseSize || "0 MB") },
+                { label: "Peak Usage Hour",  value: String(s.peakUsageHour || "N/A") }
+            ]
+        }
+    }
+
+    function logsBySeveritySection() {
+        var data = reportsManager.getSystemLogsBySeverity(getDateRangeValue())
+        var colorMap = { "INFO": "#2196F3", "WARNING": "#FF9800", "ERROR": "#F44336", "CRITICAL": "#9C27B0" }
+        var levels = [], dates = [], byLevel = {}
+        for (var i = 0; i < data.length; i++) {
+            var level = data[i].log_level
+            var d = data[i].date
+            if (levels.indexOf(level) === -1) { levels.push(level); byLevel[level] = {} }
+            byLevel[level][d] = data[i].count
+            if (dates.indexOf(d) === -1) dates.push(d)
+        }
+        dates.sort()
+        var datasets = []
+        for (var l = 0; l < levels.length; l++) {
+            var arr = []
+            for (var j = 0; j < dates.length; j++)
+                arr.push(byLevel[levels[l]][dates[j]] || 0)
+            datasets.push({ label: levels[l], color: colorMap[levels[l]] || "#9E9E9E", data: arr })
+        }
+        return {
+            title: "System Logs by Severity Over Time",
+            subtitle: "Track system stability and error patterns",
+            kind: "chart", chartType: "line",
+            labels: dates,
+            datasets: datasets
+        }
+    }
+
+    function logCategoriesSection() {
+        var data = reportsManager.getLogCategoriesDistribution(getDateRangeValue())
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].label)
+            values.push(data[i].value)
+        }
+        return {
+            title: "Log Categories Distribution",
+            subtitle: "Which parts of system are most active",
+            kind: "chart", chartType: "pie",
+            labels: labels,
+            datasets: [ { label: "Logs", data: values } ]
+        }
+    }
+
+    function opacSyncSection() {
+        var data = reportsManager.getOpacSyncOperations(getDateRangeValue())
+        var statusMap = { "success": 0, "failure": 0, "pending": 0 }
+        for (var i = 0; i < data.length; i++) {
+            var status = String(data[i].category).toLowerCase()
+            if (statusMap.hasOwnProperty(status))
+                statusMap[status] = data[i].value
+        }
+        return {
+            title: "OPAC Sync Operations",
+            subtitle: "Integration health with online catalog",
+            kind: "chart", chartType: "bar",
+            labels: ["Success", "Failure", "Pending"],
+            datasets: [ {
+                label: "Operations",
+                colors: ["#4CAF50", "#F44336", "#FF9800"],
+                data: [ statusMap["success"], statusMap["failure"], statusMap["pending"] ]
+            } ]
+        }
+    }
+
+    function dailyActivitySection() {
+        var data = reportsManager.getDailySystemActivity(getDateRangeValue())
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].xValue)
+            values.push(data[i].yValue)
+        }
+        return {
+            title: "Daily System Activity",
+            subtitle: "Overall system usage patterns",
+            kind: "chart", chartType: "line",
+            labels: labels,
+            datasets: [ { label: "Activity", color: "#2196F3", data: values } ]
+        }
+    }
+
+    function buildReportPayload() {
+        return {
+            title: "System Activity & Performance",
+            subtitle: "Monitor system health, usage patterns, and operational metrics",
+            filters: filtersList(),
+            sections: [
+                metricsSection(),
+                logsBySeveritySection(),
+                logCategoriesSection(),
+                opacSyncSection(),
+                dailyActivitySection()
+            ]
+        }
+    }
+
+    function exportChart(section) {
+        reportExporter.exportToPdf({
+            title: "System Performance — " + section.title,
+            filters: filtersList(),
+            sections: [ section ]
+        })
+    }
+
+    Connections {
+        target: reportExporter
+        function onExportFinished(success, outputPath, message) {
+            if (success && outputPath)
+                console.log("Report exported to:", outputPath)
+            else if (!success && message)
+                console.warn("Report export failed:", message)
         }
     }
 }

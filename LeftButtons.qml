@@ -22,8 +22,10 @@ Rectangle{
         property var settingsContainer: null
         property var allBooks: null
         property var issueBook: null
+        property var returnBook: null
         property var pendingApprovals: null
         property var allUsers: null
+        property var reportsPage: null
         property var settingsPage: null
 
         function createAddUserPage(){
@@ -46,19 +48,20 @@ Rectangle{
 
 
     ScrollView{
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         id: sideScroll
         anchors.fill: parent
         clip: true
         ScrollBar.vertical.policy: ScrollBar.AlwaysOn
-        contentHeight: allBooksBtn.height + addBooktn.height + addUserBtn.height + quickActions.height +
-                               addBooksBtn.height + cartegoryBtn.height + settingsBtn.height + logoutBtn.height + reportBtn.height +
-                               pendingApprovalsBtn.height + allUsersBtn.height + (10 * 6) + 10 // Add the space between items (5 units) for each item
+        contentHeight: allBooksBtn.height + allUsersBtn.height + addBookBtn.height + quickActions.height +
+                               addUserBtn.height + issueBookBtn.height + returnBookBtn.height + pendingApprovalsBtn.height +
+                               reportBtn.height + settingsBtn.height + logoutBtn.height + (5 * 11) + 20
 
 
 
         CustomButton{
             id: allBooksBtn
-            text: qsTr("All books")
+            text: qsTr("All Books")
             height: 50
             width: buttonsRect.btnWidth
             anchors{
@@ -70,18 +73,33 @@ Rectangle{
 
             onClicked: {
                 CustomComponentLoader.customCreateComponent(allBooks,"AllBooks", mainContainer)
-
             }
         }
 
-
         CustomButton{
-            id: addBooktn
-            text: qsTr("Add book")
+            id: allUsersBtn
+            text: qsTr("All Users")
             height: 50
             width: buttonsRect.btnWidth
             anchors{
                 top: allBooksBtn.bottom
+                left: parent.left
+                leftMargin: 5
+                topMargin: 5
+            }
+
+            onClicked: {
+                CustomComponentLoader.customCreateComponent(allUsers,"AllUsers", mainContainer)
+            }
+        }
+
+        CustomButton{
+            id: addBookBtn
+            text: qsTr("Add Book")
+            height: 50
+            width: buttonsRect.btnWidth
+            anchors{
+                top: allUsersBtn.bottom
                 left: parent.left
                 leftMargin: 5
                 topMargin: 5
@@ -91,29 +109,12 @@ Rectangle{
             }
         }
 
-        CustomButton{
-            id: addUserBtn
-            text: qsTr("Add User")
-            height: 50
-            width: buttonsRect.btnWidth
-            anchors{
-                top: addBooktn.bottom
-                left: parent.left
-                leftMargin: 5
-                topMargin: 5
-            }
-
-            onClicked:{
-                createAddUserPage()
-            }
-        }
-
         Rectangle{
             id: quickActions
             height: 50
             width: buttonsRect.btnWidth
             anchors{
-                top: addUserBtn.bottom
+                top: addBookBtn.bottom
                 left: parent.left
                 right: parent.right
                 leftMargin: 5
@@ -132,8 +133,8 @@ Rectangle{
         }
 
         CustomButton{
-            id: addBooksBtn
-            text: qsTr("Add books")
+            id: addUserBtn
+            text: qsTr("Add User")
             height: 50
             width: buttonsRect.btnWidth
             anchors{
@@ -143,20 +144,18 @@ Rectangle{
                 topMargin: 5
             }
 
-            onClicked: {
-                CustomComponentLoader.customCreateComponent(addBooks,"AddBooks", mainContainer)
+            onClicked:{
+                createAddUserPage()
             }
         }
 
-
-
         CustomButton{
-            id: cartegoryBtn
-            text: qsTr("Issue book")
+            id: issueBookBtn
+            text: qsTr("Issue Book")
             height: 50
             width: buttonsRect.btnWidth
             anchors{
-                top: addBooksBtn.bottom
+                top: addUserBtn.bottom
                 left: parent.left
                 leftMargin: 5
                 topMargin: 5
@@ -167,6 +166,56 @@ Rectangle{
             }
         }
 
+        CustomButton{
+            id: returnBookBtn
+            text: qsTr("Return Book")
+            height: 50
+            width: buttonsRect.btnWidth
+            anchors{
+                top: issueBookBtn.bottom
+                left: parent.left
+                leftMargin: 5
+                topMargin: 5
+            }
+
+            onClicked: {
+                CustomComponentLoader.customCreateComponent(returnBook,"ReturnBook", mainPageContainer)
+            }
+        }
+
+        CustomButton{
+            id: pendingApprovalsBtn
+            text: qsTr("Pending Approvals")
+            height: 50
+            width: buttonsRect.btnWidth
+            anchors{
+                top: returnBookBtn.bottom
+                left: parent.left
+                leftMargin: 5
+                topMargin: 5
+            }
+
+            onClicked: {
+                CustomComponentLoader.customCreateComponent(pendingApprovals,"PendingApprovals", mainPageContainer)
+            }
+        }
+
+        CustomButton{
+            id: reportBtn
+            text: qsTr("Reports")
+            height: 50
+            width: buttonsRect.btnWidth
+            anchors{
+                top: pendingApprovalsBtn.bottom
+                left: parent.left
+                leftMargin: 5
+                topMargin: 5
+            }
+
+            onClicked: {
+                CustomComponentLoader.customCreateComponent(reportsPage,"ReportsPage", mainContainer)
+            }
+        }
 
         CustomButton{
             id: settingsBtn
@@ -174,7 +223,7 @@ Rectangle{
             height: 50
             width: buttonsRect.btnWidth
             anchors{
-                top: cartegoryBtn.bottom
+                top: reportBtn.bottom
                 left: parent.left
                 leftMargin: 5
                 topMargin: 5
@@ -184,7 +233,6 @@ Rectangle{
                CustomComponentLoader.customCreateComponent(settingsPage,"Settings/SettingsPage", page2)
             }
         }
-
 
         CustomButton{
             id: logoutBtn
@@ -197,54 +245,12 @@ Rectangle{
                 leftMargin: 5
                 topMargin: 5
             }
-        }
-
-        CustomButton{
-            id: pendingApprovalsBtn
-            text: qsTr("Pending Approvals")
-            height: 50
-            width: buttonsRect.btnWidth
-            anchors{
-                top: logoutBtn.bottom
-                left: parent.left
-                leftMargin: 5
-                topMargin: 5
-            }
 
             onClicked: {
-                CustomComponentLoader.customCreateComponent(pendingApprovals,"PendingApprovals", mainPageContainer)
-            }
-        }
-
-
-        CustomButton{
-            id: reportBtn
-            text: qsTr("Report")
-            height: 50
-            width: buttonsRect.btnWidth
-            enabled: false
-            anchors{
-                top: pendingApprovalsBtn.bottom
-                left: parent.left
-                leftMargin: 5
-                topMargin: 5
-            }
-        }
-
-        CustomButton{
-            id: allUsersBtn
-            text: qsTr("All Users")
-            height: 50
-            width: buttonsRect.btnWidth
-            anchors{
-                top: reportBtn.bottom
-                left: parent.left
-                leftMargin: 5
-                topMargin: 5
-            }
-
-            onClicked: {
-                CustomComponentLoader.customCreateComponent(allUsers,"AllUsers", mainContainer)
+                // Actually end the admin session, then return to login.
+                appManager.adminLogout()
+                mainDrawer.close()
+                mainLoader.source = "Login.qml"
             }
         }
     }

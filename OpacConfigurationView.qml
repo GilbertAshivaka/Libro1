@@ -68,6 +68,7 @@ Page {
   }
 
   ScrollView {
+      Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
     anchors.fill: parent
     contentWidth: availableWidth
     clip: true
@@ -486,6 +487,7 @@ Page {
 
           // Reservations list
           ListView {
+              boundsBehavior: Flickable.StopAtBounds
             id: reservationsListView
             Layout.fillWidth: true
             Layout.preferredHeight: 400
@@ -822,6 +824,7 @@ Page {
       }
 
       ListView {
+          boundsBehavior: Flickable.StopAtBounds
         Layout.fillWidth: true
         Layout.fillHeight: true
         clip: true

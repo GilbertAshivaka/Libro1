@@ -1,5 +1,6 @@
 #include "issuedbookslist.h"
 #include "databasemanager.h"
+#include "settingsmanager.h"
 
 IssuedBooksList::IssuedBooksList(QObject *parent)
     : QObject{parent}, m_currentAdminId(1)
@@ -295,7 +296,13 @@ double IssuedBooksList::calculateLateFees(const QDateTime &dueDate, const QDateT
     if (daysOverdue <= 0)
         return 0.0;
 
-    return daysOverdue * 10;
+    // Use the configured fine rate and cap (consistent with the single-book
+    // return path) instead of a hard-coded, uncapped rate.
+    int dailyFine = SettingsManager::instance()->fineRatePerDay();
+    int maxFineAmount = SettingsManager::instance()->maxFineAmount();
+    qint64 fineAmount = daysOverdue * dailyFine;
+
+    return fineAmount > maxFineAmount ? maxFineAmount : static_cast<double>(fineAmount);
 }
 
 bool IssuedBooksList::processBookReturn(const IssuedBookInfo &bookInfo)
@@ -312,10 +319,66 @@ bool IssuedBooksList::processBookReturn(const IssuedBookInfo &bookInfo)
         return false;
     }
 
+    // The book is returned regardless of any outstanding fine (unchanged
+    // behaviour). But if a late fee is owed, preserve it in the outstanding_fines
+    // ledger BEFORE the issued_books row is deleted, otherwise the fine is lost.
+    if (finalFee > 0.0) {
+        double alreadyPaid = 0.0;
+        QSqlQuery paidQuery(db);
+        paidQuery.prepare("SELECT fine_paid FROM issued_books WHERE issue_id = ?");
+        paidQuery.addBindValue(bookInfo.issueId);
+        if (paidQuery.exec() && paidQuery.next())
+            alreadyPaid = paidQuery.value(0).toDouble();
+
+        if ((finalFee - alreadyPaid) > 0.0) {
+            if (!recordOutstandingFine(bookInfo, finalFee, alreadyPaid)) {
+                return false;   // abort so the transaction rolls back; fine not lost
+            }
+        }
+    }
+
     if (!removeFromIssuedBooks(bookInfo.issueId)){
         return false;
     }
 
+    // If this book had been auto-flagged as lost (>90 days overdue), mark that
+    // lost_books record resolved so a returned book stops counting as a lost
+    // charge (e.g. it no longer inflates the user's clearance balance).
+    {
+        QSqlQuery lostQuery(db);
+        lostQuery.prepare("UPDATE lost_books SET status = 'Returned', resolution_type = 'Returned', "
+                          "resolution_date = CURRENT_TIMESTAMP, resolved_by = ?, "
+                          "updated_at = CURRENT_TIMESTAMP "
+                          "WHERE original_issue_id = ? AND status IN ('Lost', 'Unpaid')");
+        lostQuery.addBindValue(m_currentAdminId);
+        lostQuery.addBindValue(bookInfo.issueId);
+        lostQuery.exec();   // non-fatal: book is already returned
+    }
+
+    return true;
+}
+
+bool IssuedBooksList::recordOutstandingFine(const IssuedBookInfo &bookInfo, double fineAmount, double alreadyPaid)
+{
+    QSqlQuery query(db);
+    query.prepare(
+        "INSERT INTO outstanding_fines "
+        "(user_id, book_id, original_issue_id, book_title, book_call_number, "
+        " fine_type, fine_amount, amount_paid, status) "
+        "VALUES (?, ?, ?, ?, ?, 'overdue', ?, ?, 'outstanding')"
+    );
+    query.addBindValue(bookInfo.userId);
+    query.addBindValue(bookInfo.bookId);
+    query.addBindValue(bookInfo.issueId);
+    query.addBindValue(bookInfo.bookTitle);
+    query.addBindValue(bookInfo.callnumber);
+    query.addBindValue(fineAmount);
+    query.addBindValue(alreadyPaid);
+
+    if (!query.exec()) {
+        emit errorOccured("Error recording outstanding fine: " + query.lastError().text());
+        return false;
+    }
     return true;
 }
 

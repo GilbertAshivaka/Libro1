@@ -56,6 +56,7 @@ Page {
     }
     
     ScrollView {
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         anchors.fill: parent
         contentWidth: availableWidth
         clip: true
@@ -134,11 +135,13 @@ Page {
                             text: "⟳ Refresh"
                             onClicked: loadLostDamagedData()
                         }
-                        
-                        Button {
-                            text: "⤓ Export"
-                            highlighted: true
-                            onClicked: console.log("Export lost/damaged report")
+
+                        ExportButton {
+                            enabled: !reportExporter.isBusy
+                            onExportPDF: reportExporter.exportToPdf(buildReportPayload())
+                            onExportCSV: reportExporter.exportToCsv(buildReportPayload())
+                            onExportExcel: reportExporter.exportToCsv(buildReportPayload())
+                            onPrintReport: reportExporter.printReport(buildReportPayload())
                         }
                     }
                 }
@@ -219,7 +222,7 @@ Page {
                 isLoading: reportsManager.isLoading
                 
                 onRefreshClicked: loadLostBooksOverTime()
-                onExportClicked: console.log("Export lost books trend")
+                onExportClicked: exportChart(lostBooksOverTimeSection())
                 
                 contentItem: ChartView {
                     id: lostBooksTimeChart
@@ -266,7 +269,7 @@ Page {
                     isLoading: reportsManager.isLoading
                     
                     onRefreshClicked: loadLostBooksByGenre()
-                    onExportClicked: console.log("Export genre breakdown")
+                    onExportClicked: exportChart(lostByGenreSection())
                     
                     contentItem: ChartView {
                         id: lostByGenreChart
@@ -303,7 +306,7 @@ Page {
                     isLoading: reportsManager.isLoading
                     
                     onRefreshClicked: loadResolutionStatus()
-                    onExportClicked: console.log("Export resolution status")
+                    onExportClicked: exportChart(resolutionStatusSection())
                     
                     contentItem: ChartView {
                         id: resolutionStatusChart
@@ -330,7 +333,7 @@ Page {
                 isLoading: reportsManager.isLoading
                 
                 onRefreshClicked: loadUsersWithLostBooks()
-                onExportClicked: console.log("Export users with lost books")
+                onExportClicked: exportChart(usersWithLostBooksSection())
                 
                 contentItem: ChartView {
                     id: usersLostBooksChart
@@ -525,5 +528,135 @@ Page {
 
         // Set X-axis max dynamically with 10% padding
         lostBooksPerUserAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
+    }
+
+    // ========================================================================
+    // Report export / print
+    // ========================================================================
+
+    function filtersList() {
+        return [
+            { label: "Date Range", value: dateRangeCombo.currentText },
+            { label: "Resolution", value: resolutionCombo.currentText },
+            { label: "User Type",  value: userTypeCombo.currentText }
+        ]
+    }
+
+    function metricsSection() {
+        var s = reportsManager.getLostDamagedStats()
+        return {
+            title: "Key Metrics", kind: "metrics",
+            data: [
+                { label: "Total Lost Books",  value: String(s.totalLostBooks || 0) },
+                { label: "Lost This Year",    value: String(s.lostBooksThisYear || 0) },
+                { label: "Replacement Cost",  value: "$" + (s.replacementCostOutstanding || 0).toFixed(2) },
+                { label: "Damaged Books",     value: String(s.damagedBooks || 0) },
+                { label: "Loss Rate",         value: (s.lossRate || 0).toFixed(2), unit: "%" }
+            ]
+        }
+    }
+
+    function lostBooksOverTimeSection() {
+        var data = reportsManager.getLostBooksOverTime(getDateRangeValue())
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].xValue)
+            values.push(data[i].yValue)
+        }
+        return {
+            title: "Lost Books Over Time",
+            subtitle: "Trend of book losses",
+            kind: "chart", chartType: "line",
+            labels: labels,
+            datasets: [ { label: "Lost Books", color: "#F44336", data: values } ]
+        }
+    }
+
+    function lostByGenreSection() {
+        var data = reportsManager.getLostBooksByGenre()
+        var labels = [], values = []
+        for (var i = 0; i < Math.min(data.length, 10); i++) {
+            labels.push(data[i].category)
+            values.push(data[i].value)
+        }
+        return {
+            title: "Lost Books by Genre",
+            subtitle: "Which types are most commonly lost",
+            kind: "chart", chartType: "bar",
+            labels: labels,
+            datasets: [ { label: "Lost", color: "#E91E63", data: values } ]
+        }
+    }
+
+    function resolutionStatusSection() {
+        var data = reportsManager.getLostBookResolutionStatus()
+        var colorMap = {
+            "Replaced": "#4CAF50", "Paid": "#2196F3", "Pending": "#FF9800", "Waived": "#9E9E9E"
+        }
+        var labels = [], values = [], colors = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].label)
+            values.push(data[i].value)
+            colors.push(colorMap[data[i].label] || "#607D8B")
+        }
+        return {
+            title: "Lost Book Resolution Status",
+            subtitle: "Status of lost book cases",
+            kind: "chart", chartType: "doughnut",
+            labels: labels,
+            datasets: [ { label: "Cases", data: values, colors: colors } ]
+        }
+    }
+
+    function usersWithLostBooksSection() {
+        var data = reportsManager.getUsersWithLostBooks(15)
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            var name = data[i].label
+            if (name.length > 30)
+                name = name.substring(0, 27) + "..."
+            labels.push(name)
+            values.push(data[i].value)
+        }
+        return {
+            title: "Users with Lost Books",
+            subtitle: "Top 15 users who frequently lose books",
+            kind: "chart", chartType: "horizontalBar",
+            labels: labels,
+            datasets: [ { label: "Lost", color: "#9C27B0", data: values } ]
+        }
+    }
+
+    function buildReportPayload() {
+        return {
+            title: "Lost & Damaged Books",
+            subtitle: "Monitor collection losses and damage",
+            filters: filtersList(),
+            sections: [
+                metricsSection(),
+                lostBooksOverTimeSection(),
+                lostByGenreSection(),
+                resolutionStatusSection(),
+                usersWithLostBooksSection()
+            ]
+        }
+    }
+
+    function exportChart(section) {
+        reportExporter.exportToPdf({
+            title: "Lost & Damaged Books — " + section.title,
+            filters: filtersList(),
+            sections: [ section ]
+        })
+    }
+
+    Connections {
+        target: reportExporter
+        function onExportFinished(success, outputPath, message) {
+            if (success && outputPath)
+                console.log("Report exported to:", outputPath)
+            else if (!success && message)
+                console.warn("Report export failed:", message)
+        }
     }
 }

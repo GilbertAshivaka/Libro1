@@ -332,6 +332,19 @@ bool SingleBookReturn::processBookReturn(const BookInfo &bookInfo)
         return false;
     }
 
+    // Resolve any lost_books record for this issue so a returned (previously
+    // "probably lost") book no longer counts as an outstanding lost charge.
+    {
+        QSqlQuery lostQuery(db);
+        lostQuery.prepare("UPDATE lost_books SET status = 'Returned', resolution_type = 'Returned', "
+                          "resolution_date = CURRENT_TIMESTAMP, resolved_by = ?, "
+                          "updated_at = CURRENT_TIMESTAMP "
+                          "WHERE original_issue_id = ? AND status IN ('Lost', 'Unpaid')");
+        lostQuery.addBindValue(m_currentAdminId);
+        lostQuery.addBindValue(bookInfo.issueId);
+        lostQuery.exec();   // non-fatal: book is already returned
+    }
+
     return true;
 }
 

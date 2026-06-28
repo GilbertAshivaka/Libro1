@@ -9,6 +9,12 @@ Rectangle {
     property var checkData: null
     property string detailsType: "books"
 
+    // Fines and lost-book charges can be settled (paid/waived) inline.
+    readonly property bool actionable: detailsType === "fines" || detailsType === "lost"
+
+    signal payRequested(var issue)
+    signal waiveRequested(var issue)
+
     implicitHeight: mainColumn.implicitHeight + 12
     color: "transparent"
 
@@ -76,31 +82,69 @@ Rectangle {
             visible: checkData && !checkData.cleared && checkData.issues && checkData.issues.length > 0
 
             Repeater {
-                model: checkData && checkData.issues ? checkData.issues.slice(0, 3) : []
+                // Actionable categories show every item (each needs its own
+                // Pay/Waive buttons); others stay compact (first 3).
+                model: checkData && checkData.issues
+                       ? (checkItem.actionable ? checkData.issues : checkData.issues.slice(0, 3))
+                       : []
 
                 Rectangle {
                     Layout.fillWidth: true
-                    height: 18
+                    height: checkItem.actionable ? 24 : 18
                     color: "#fff8e1"
                     radius: 3
 
-                    Text {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.verticalCenter: parent.verticalCenter
+                    RowLayout {
+                        anchors.fill: parent
                         anchors.leftMargin: 6
                         anchors.rightMargin: 6
-                        text: formatIssue(modelData)
-                        font.pixelSize: 10
-                        color: "#856404"
-                        elide: Text.ElideRight
+                        spacing: 6
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: formatIssue(modelData)
+                            font.pixelSize: 10
+                            color: "#856404"
+                            elide: Text.ElideRight
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        // Pay
+                        Rectangle {
+                            visible: checkItem.actionable
+                            width: 38; height: 17; radius: 3
+                            color: payMA.containsMouse ? "#218838" : "#28a745"
+                            Text { anchors.centerIn: parent; text: "Pay"; font.pixelSize: 9; color: "white" }
+                            MouseArea {
+                                id: payMA
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: checkItem.payRequested(modelData)
+                            }
+                        }
+
+                        // Waive
+                        Rectangle {
+                            visible: checkItem.actionable
+                            width: 46; height: 17; radius: 3
+                            color: waiveMA.containsMouse ? "#5a6268" : "#6c757d"
+                            Text { anchors.centerIn: parent; text: "Waive"; font.pixelSize: 9; color: "white" }
+                            MouseArea {
+                                id: waiveMA
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: checkItem.waiveRequested(modelData)
+                            }
+                        }
                     }
                 }
             }
 
-            // Show more indicator
+            // Show more indicator (compact, non-actionable categories only)
             Text {
-                visible: checkData && checkData.issues && checkData.issues.length > 3
+                visible: !checkItem.actionable && checkData && checkData.issues && checkData.issues.length > 3
                 text: "+" + (checkData.issues.length - 3) + " more..."
                 font.pixelSize: 9
                 font.italic: true

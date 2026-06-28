@@ -57,6 +57,7 @@ Page {
     }
     
     ScrollView {
+        Component.onCompleted: contentItem.boundsBehavior = Flickable.StopAtBounds
         anchors.fill: parent
         contentWidth: availableWidth
         clip: true
@@ -135,11 +136,13 @@ Page {
                             text: "⟳ Refresh"
                             onClicked: loadUserEngagementData()
                         }
-                        
-                        Button {
-                            text: "⤓ Export"
-                            highlighted: true
-                            onClicked: console.log("Export user engagement report")
+
+                        ExportButton {
+                            enabled: !reportExporter.isBusy
+                            onExportPDF: reportExporter.exportToPdf(buildReportPayload())
+                            onExportCSV: reportExporter.exportToCsv(buildReportPayload())
+                            onExportExcel: reportExporter.exportToCsv(buildReportPayload())
+                            onPrintReport: reportExporter.printReport(buildReportPayload())
                         }
                     }
                 }
@@ -224,7 +227,7 @@ Page {
                     isLoading: reportsManager.isLoading
                     
                     onRefreshClicked: loadUserDistribution()
-                    onExportClicked: console.log("Export user distribution")
+                    onExportClicked: exportChart(userDistributionSection())
                     
                     contentItem: ChartView {
                         id: userDistributionChart
@@ -248,7 +251,7 @@ Page {
                     isLoading: reportsManager.isLoading
                     
                     onRefreshClicked: loadBorrowingActivity()
-                    onExportClicked: console.log("Export borrowing activity")
+                    onExportClicked: exportChart(borrowingActivitySection())
                     
                     contentItem: ChartView {
                         id: borrowingActivityChart
@@ -293,7 +296,7 @@ Page {
                 isLoading: reportsManager.isLoading
                 
                 onRefreshClicked: loadTopBorrowers()
-                onExportClicked: console.log("Export top borrowers")
+                onExportClicked: exportChart(topBorrowersSection())
                 
                 contentItem: ChartView {
                     id: topBorrowersChart
@@ -331,7 +334,7 @@ Page {
                 isLoading: reportsManager.isLoading
                 
                 onRefreshClicked: loadNewRegistrations()
-                onExportClicked: console.log("Export new registrations")
+                onExportClicked: exportChart(newRegistrationsSection())
                 
                 contentItem: ChartView {
                     id: newRegistrationsChart
@@ -526,5 +529,135 @@ Page {
 
         // Set Y-axis max dynamically with 10% padding
         borrowingActivityValueAxis.max = maxValue > 0 ? Math.ceil(maxValue * 1.1) : 10
+    }
+
+    // ========================================================================
+    // Report export / print
+    // ========================================================================
+
+    function filtersList() {
+        return [
+            { label: "Date Range", value: dateRangeCombo.currentText },
+            { label: "User Type",  value: userTypeCombo.currentText },
+            { label: "Status",     value: statusCombo.currentText }
+        ]
+    }
+
+    function metricsSection() {
+        var s = reportsManager.getUserEngagementStats()
+        return {
+            title: "Key Metrics", kind: "metrics",
+            data: [
+                { label: "Total Users",        value: String(s.totalUsers || 0) },
+                { label: "Active (30 days)",   value: String(s.activeUsers || 0) },
+                { label: "Inactive (90+ days)",value: String(s.inactiveUsers || 0) },
+                { label: "New This Month",     value: String(s.newUsersThisMonth || 0) },
+                { label: "Avg Books/User",     value: (s.averageBooksPerUser || 0).toFixed(1) }
+            ]
+        }
+    }
+
+    function userDistributionSection() {
+        var data = reportsManager.getUserDistributionByType()
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].label)
+            values.push(data[i].value)
+        }
+        return {
+            title: "User Distribution by Type",
+            subtitle: "Breakdown of user categories",
+            kind: "chart", chartType: "pie",
+            labels: labels,
+            datasets: [ { label: "Users", data: values } ]
+        }
+    }
+
+    function borrowingActivitySection() {
+        var data = reportsManager.getBorrowingActivityByUserCategory()
+        var labels = [], total = [], active = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].user_role)
+            total.push(data[i].total_users)
+            active.push(data[i].active_users)
+        }
+        return {
+            title: "Borrowing Activity by Category",
+            subtitle: "Active vs total users per role",
+            kind: "chart", chartType: "bar",
+            labels: labels,
+            datasets: [
+                { label: "Total Users",  color: "#2196F3", data: total },
+                { label: "Active Users", color: "#4CAF50", data: active }
+            ]
+        }
+    }
+
+    function topBorrowersSection() {
+        var data = reportsManager.getTopActiveBorrowers(20, getUserTypeFilter())
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            var name = data[i].label
+            if (name.length > 30)
+                name = name.substring(0, 27) + "..."
+            labels.push(name)
+            values.push(data[i].value)
+        }
+        return {
+            title: "Top 20 Most Active Borrowers",
+            subtitle: "Power users of the library",
+            kind: "chart", chartType: "horizontalBar",
+            labels: labels,
+            datasets: [ { label: "Borrows", color: "#9C27B0", data: values } ]
+        }
+    }
+
+    function newRegistrationsSection() {
+        var data = reportsManager.getNewUserRegistrations(getDateRangeValue())
+        var labels = [], values = []
+        for (var i = 0; i < data.length; i++) {
+            labels.push(data[i].xValue)
+            values.push(data[i].yValue)
+        }
+        return {
+            title: "New User Registrations Over Time",
+            subtitle: "User growth trends",
+            kind: "chart", chartType: "line",
+            labels: labels,
+            datasets: [ { label: "New Users", color: "#00BCD4", data: values } ]
+        }
+    }
+
+    function buildReportPayload() {
+        return {
+            title: "User Engagement & Demographics",
+            subtitle: "Understand your user base and participation levels",
+            filters: filtersList(),
+            sections: [
+                metricsSection(),
+                userDistributionSection(),
+                borrowingActivitySection(),
+                topBorrowersSection(),
+                newRegistrationsSection()
+            ]
+        }
+    }
+
+    function exportChart(section) {
+        reportExporter.exportToPdf({
+            title: "User Engagement — " + section.title,
+            filters: filtersList(),
+            sections: [ section ]
+        })
+    }
+
+    Connections {
+        target: reportExporter
+        function onExportFinished(success, outputPath, message) {
+            if (success && outputPath)
+                console.log("Report exported to:", outputPath)
+            else if (!success && message)
+                console.warn("Report export failed:", message)
+        }
     }
 }

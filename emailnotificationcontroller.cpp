@@ -1,11 +1,14 @@
 #include "emailnotificationcontroller.h"
 #include <QCoreApplication>
+#include <QTime>
+#include <QDate>
 
 
 EmailNotificationController::EmailNotificationController(QObject *parent)
     : QObject{parent}
     , m_socket(new QSslSocket(this)) //changed here from QTcpSocket
     , m_retryTimer(new QTimer(this))
+    , m_scheduleTimer(new QTimer(this))
     , m_emailLogsModel(new EmailLogsModel(this))
     , m_totalEmailsSent(0)
     , m_totalEmailsFailed(0)
@@ -58,6 +61,20 @@ EmailNotificationController::EmailNotificationController(QObject *parent)
 
 
     loadConfiguration();
+
+    // Ensure the (additive, non-destructive) de-duplication table exists.
+    ensureNotificationLogSchema();
+
+    // Daily scheduler: tick periodically and let onScheduleTimerTick() decide
+    // whether it's time to run (gated by the configured time-of-day and a
+    // persisted "last run" date so it fires at most once per day).
+    connect(m_scheduleTimer, &QTimer::timeout, this, &EmailNotificationController::onScheduleTimerTick);
+    m_scheduleTimer->start(15 * 60 * 1000); // every 15 minutes
+
+    // Startup catch-up: if the app launches after the scheduled time and today's
+    // run hasn't happened yet, send shortly after startup.
+    QTimer::singleShot(8000, this, &EmailNotificationController::onScheduleTimerTick);
+
     updateLastActivity("Email notification system initialised.");
 }
 
@@ -182,6 +199,43 @@ void EmailNotificationController::setUseTLS(bool use)
     }
 }
 
+//Automation (daily scheduler) configuration
+
+bool EmailNotificationController::autoNotificationsEnabled() const
+{
+    QSettings settings("LibroILMS", "EmailSettings");
+    return settings.value("automation/enabled", false).toBool();
+}
+
+QString EmailNotificationController::notificationTime() const
+{
+    QSettings settings("LibroILMS", "EmailSettings");
+    return settings.value("automation/time", "08:00").toString();
+}
+
+void EmailNotificationController::setAutoNotificationsEnabled(bool enabled)
+{
+    QSettings settings("LibroILMS", "EmailSettings");
+    if (settings.value("automation/enabled", false).toBool() != enabled) {
+        settings.setValue("automation/enabled", enabled);
+        updateLastActivity(enabled ? "Automatic daily notifications enabled"
+                                   : "Automatic daily notifications disabled");
+        emit automationConfigChanged();
+        // Re-evaluate immediately so enabling late in the day can still fire today.
+        if (enabled)
+            QTimer::singleShot(0, this, &EmailNotificationController::onScheduleTimerTick);
+    }
+}
+
+void EmailNotificationController::setNotificationTime(const QString &time)
+{
+    QSettings settings("LibroILMS", "EmailSettings");
+    if (settings.value("automation/time", "08:00").toString() != time) {
+        settings.setValue("automation/time", time);
+        emit automationConfigChanged();
+    }
+}
+
 //Main Email sending functions
 
 void EmailNotificationController::checkAndSendOverdueNotifications()
@@ -233,6 +287,45 @@ void EmailNotificationController::checkAndSendReservedBookNotifications()
 
     emit queueSizeChanged();
     processEmailQueue();
+}
+
+void EmailNotificationController::runNotificationsNow()
+{
+    // Send both reminder types in one pass. The per-item de-dup guard prevents
+    // re-sending anything already notified within the cooldown window.
+    checkAndSendOverdueNotifications();
+    checkAndSendReservedBookNotifications();
+}
+
+void EmailNotificationController::onScheduleTimerTick()
+{
+    if (!autoNotificationsEnabled())
+        return;
+
+    if (!isConfigured())
+        return; // silently wait until SMTP is configured
+
+    const QDateTime now = QDateTime::currentDateTime();
+
+    QTime scheduled = QTime::fromString(notificationTime(), "HH:mm");
+    if (!scheduled.isValid())
+        scheduled = QTime(8, 0);
+
+    // Only after the configured time-of-day.
+    if (now.time() < scheduled)
+        return;
+
+    // At most once per calendar day (persisted across restarts).
+    QSettings settings("LibroILMS", "EmailSettings");
+    const QString today = now.date().toString("yyyy-MM-dd");
+    if (settings.value("automation/lastRun", "").toString() == today)
+        return;
+
+    settings.setValue("automation/lastRun", today);
+    updateLastActivity("Automated daily notifications triggered");
+    logEmailActivity("Scheduler: running daily overdue + reserved notifications");
+
+    runNotificationsNow();
 }
 
 void EmailNotificationController::sendTestEmail(const QString &recipientEmail)
@@ -368,7 +461,7 @@ int EmailNotificationController::getPendingOverdueCount()
     }
 
     QSqlQuery query(db);
-    QString queryString = R"(
+    QString queryString = QString(R"(
         SELECT COUNT(*)
         FROM issued_books ib
         JOIN users u ON ib.user_id = u.user_id
@@ -376,7 +469,13 @@ int EmailNotificationController::getPendingOverdueCount()
         AND ib.due_date < datetime('now')
         AND u.email IS NOT NULL
         AND u.email != ''
-    )";
+        AND NOT EXISTS (
+            SELECT 1 FROM notification_log nl
+            WHERE nl.notification_type = 'overdue'
+            AND nl.target_id = ib.issue_id
+            AND (julianday('now') - julianday(nl.sent_at)) * 24 < %1
+        )
+    )").arg(NOTIFICATION_COOLDOWN_HOURS);
 
     if (query.exec(queryString) && query.next()) {
         return query.value(0).toInt();
@@ -397,7 +496,7 @@ int EmailNotificationController::getPendingReservedCount()
 
     // Count reservations that are ready for pickup notification
     // (notified status OR pending with book available)
-    QString pickupCountQuery = R"(
+    QString pickupCountQuery = QString(R"(
         SELECT COUNT(*)
         FROM reserved_books rb
         JOIN books b ON rb.book_id = b.bookID
@@ -408,14 +507,20 @@ int EmailNotificationController::getPendingReservedCount()
         )
         AND rb.user_email IS NOT NULL
         AND rb.user_email != ''
-    )";
+        AND NOT EXISTS (
+            SELECT 1 FROM notification_log nl
+            WHERE nl.notification_type = 'reservation_pickup'
+            AND nl.target_id = rb.reservation_id
+            AND (julianday('now') - julianday(nl.sent_at)) * 24 < %1
+        )
+    )").arg(NOTIFICATION_COOLDOWN_HOURS);
 
     if (query.exec(pickupCountQuery) && query.next()) {
         count += query.value(0).toInt();
     }
 
     // Count reservations nearing expiry (within 2 days)
-    QString expiryCountQuery = R"(
+    QString expiryCountQuery = QString(R"(
         SELECT COUNT(*)
         FROM reserved_books rb
         JOIN books b ON rb.book_id = b.bookID
@@ -425,7 +530,13 @@ int EmailNotificationController::getPendingReservedCount()
         AND julianday(rb.expiry_date) - julianday('now') >= 0
         AND rb.user_email IS NOT NULL
         AND rb.user_email != ''
-    )";
+        AND NOT EXISTS (
+            SELECT 1 FROM notification_log nl
+            WHERE nl.notification_type = 'reservation_expiry'
+            AND nl.target_id = rb.reservation_id
+            AND (julianday('now') - julianday(nl.sent_at)) * 24 < %1
+        )
+    )").arg(NOTIFICATION_COOLDOWN_HOURS);
 
     if (query.exec(expiryCountQuery) && query.next()) {
         count += query.value(0).toInt();
@@ -720,6 +831,15 @@ void EmailNotificationController::processServerResponse(const QString &response)
             m_emailLogsModel->addLog(m_currentEmail.to, m_currentEmail.subject, "Sent",
                                      m_currentEmail.type);
 
+            // Record for de-duplication ONLY on confirmed delivery, so a failed
+            // send is retried on the next run instead of being suppressed.
+            if (m_currentEmail.targetId >= 0 &&
+                (m_currentEmail.type == "overdue" ||
+                 m_currentEmail.type == "reservation_pickup" ||
+                 m_currentEmail.type == "reservation_expiry")) {
+                recordNotificationSent(m_currentEmail.type, m_currentEmail.targetId);
+            }
+
             m_totalEmailsSent++;
             emit totalEmailsSentChanged();
             emit notificationSent("Email sent to " + m_currentEmail.to);
@@ -758,6 +878,47 @@ void EmailNotificationController::resetConnection(const QString &from)
     processEmailQueue();
 }
 
+void EmailNotificationController::ensureNotificationLogSchema()
+{
+    // Additive only: creates a NEW table if missing. Never alters or drops any
+    // existing table, so existing data is completely untouched.
+    QSqlDatabase db = DatabaseManager::getConnection();
+    if (!db.open()) {
+        logEmailActivity("Could not open database to ensure notification_log table", "WARNING");
+        return;
+    }
+
+    QSqlQuery query(db);
+    if (!query.exec(
+            "CREATE TABLE IF NOT EXISTS notification_log ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "notification_type TEXT NOT NULL,"   // 'overdue' | 'reservation_pickup' | 'reservation_expiry'
+            "target_id INTEGER,"                 // issue_id or reservation_id
+            "sent_at DATETIME DEFAULT CURRENT_TIMESTAMP)")) {
+        logEmailActivity("Failed to create notification_log table: " + query.lastError().text(), "ERROR");
+        return;
+    }
+    query.exec("CREATE INDEX IF NOT EXISTS idx_notiflog_lookup "
+               "ON notification_log(notification_type, target_id, sent_at)");
+}
+
+void EmailNotificationController::recordNotificationSent(const QString &type, int targetId)
+{
+    QSqlDatabase db = DatabaseManager::getConnection();
+    if (!db.open())
+        return;
+
+    QSqlQuery query(db);
+    query.prepare("INSERT INTO notification_log (notification_type, target_id, sent_at) "
+                  "VALUES (:type, :id, datetime('now'))");
+    query.bindValue(":type", type);
+    query.bindValue(":id", targetId);
+    if (!query.exec()) {
+        logEmailActivity(QString("Failed to record notification (%1, %2): %3")
+                             .arg(type).arg(targetId).arg(query.lastError().text()), "WARNING");
+    }
+}
+
 QList<EmailData> EmailNotificationController::getOverdueBooks()
 {
     QList<EmailData> overdueEmails;
@@ -769,8 +930,11 @@ QList<EmailData> EmailNotificationController::getOverdueBooks()
     }
 
     QSqlQuery query(db);
-    QString queryString = R"(
+    // De-dup guard: skip rows already notified within the cooldown window
+    // (tracked in the additive notification_log table).
+    QString queryString = QString(R"(
         SELECT
+            ib.issue_id,
             u.email,
             u.first_name || ' ' || u.second_name AS full_name,
             b.title,
@@ -783,8 +947,14 @@ QList<EmailData> EmailNotificationController::getOverdueBooks()
         AND ib.due_date < datetime('now')
         AND u.email IS NOT NULL
         AND u.email != ''
+        AND NOT EXISTS (
+            SELECT 1 FROM notification_log nl
+            WHERE nl.notification_type = 'overdue'
+            AND nl.target_id = ib.issue_id
+            AND (julianday('now') - julianday(nl.sent_at)) * 24 < %1
+        )
         ORDER BY days_overdue DESC
-    )";
+    )").arg(NOTIFICATION_COOLDOWN_HOURS);
 
     if (!query.exec(queryString)) {
         logEmailActivity("Failed to query overdue books: " + query.lastError().text(), "ERROR");
@@ -797,6 +967,7 @@ QList<EmailData> EmailNotificationController::getOverdueBooks()
         email.userName = query.value("full_name").toString();
         email.bookTitle = query.value("title").toString();
         email.type = "overdue";
+        email.targetId = query.value("issue_id").toInt();
 
         QDateTime dueDate = query.value("due_date").toDateTime();
         int daysOverdue = query.value("days_overdue").toInt();
@@ -826,7 +997,7 @@ QList<EmailData> EmailNotificationController::getReservedBooks()
     // Reservations where status is 'notified' (book is available and waiting)
     // OR status is 'pending' but the book is actually Available now
     QSqlQuery pickupQuery(db);
-    QString pickupQueryString = R"(
+    QString pickupQueryString = QString(R"(
         SELECT
             rb.reservation_id,
             rb.user_email,
@@ -845,8 +1016,14 @@ QList<EmailData> EmailNotificationController::getReservedBooks()
         )
         AND rb.user_email IS NOT NULL
         AND rb.user_email != ''
+        AND NOT EXISTS (
+            SELECT 1 FROM notification_log nl
+            WHERE nl.notification_type = 'reservation_pickup'
+            AND nl.target_id = rb.reservation_id
+            AND (julianday('now') - julianday(nl.sent_at)) * 24 < %1
+        )
         ORDER BY rb.reservation_date ASC
-    )";
+    )").arg(NOTIFICATION_COOLDOWN_HOURS);
 
     if (!pickupQuery.exec(pickupQueryString)) {
         logEmailActivity("Failed to query reserved books for pickup: " + pickupQuery.lastError().text(), "ERROR");
@@ -894,6 +1071,7 @@ QList<EmailData> EmailNotificationController::getReservedBooks()
         email.userName = pickupQuery.value("user_name").toString();
         email.bookTitle = pickupQuery.value("title").toString();
         email.type = "reservation_pickup";
+        email.targetId = reservationId;
 
         // Use the existing or newly-set pickup deadline
         QDateTime pickupDeadline;
@@ -915,7 +1093,7 @@ QList<EmailData> EmailNotificationController::getReservedBooks()
     // Pending reservations where the book is NOT yet available and
     // the expiry date is within 2 days from now
     QSqlQuery expiryQuery(db);
-    QString expiryQueryString = R"(
+    QString expiryQueryString = QString(R"(
         SELECT
             rb.reservation_id,
             rb.user_email,
@@ -932,8 +1110,14 @@ QList<EmailData> EmailNotificationController::getReservedBooks()
         AND julianday(rb.expiry_date) - julianday('now') >= 0
         AND rb.user_email IS NOT NULL
         AND rb.user_email != ''
+        AND NOT EXISTS (
+            SELECT 1 FROM notification_log nl
+            WHERE nl.notification_type = 'reservation_expiry'
+            AND nl.target_id = rb.reservation_id
+            AND (julianday('now') - julianday(nl.sent_at)) * 24 < %1
+        )
         ORDER BY rb.expiry_date ASC
-    )";
+    )").arg(NOTIFICATION_COOLDOWN_HOURS);
 
     if (!expiryQuery.exec(expiryQueryString)) {
         logEmailActivity("Failed to query expiring reservations: " + expiryQuery.lastError().text(), "ERROR");
@@ -946,6 +1130,7 @@ QList<EmailData> EmailNotificationController::getReservedBooks()
         email.userName = expiryQuery.value("user_name").toString();
         email.bookTitle = expiryQuery.value("title").toString();
         email.type = "reservation_expiry";
+        email.targetId = expiryQuery.value("reservation_id").toInt();
 
         QDateTime expiryDate = expiryQuery.value("expiry_date").toDateTime();
         int daysRemaining = expiryQuery.value("days_remaining").toInt();
